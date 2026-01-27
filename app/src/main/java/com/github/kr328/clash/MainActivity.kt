@@ -139,7 +139,7 @@ class MainActivity : BaseActivity<MainDesign>() {
 
     private suspend fun queryAppVersionName(): String {
         return withContext(Dispatchers.IO) {
-            packageManager.getPackageInfo(packageName, 0).versionName
+            packageManager.getPackageInfo(packageName, 0).versionName ?: ""
         }
     }
 
