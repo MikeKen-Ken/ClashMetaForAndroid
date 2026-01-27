@@ -24,8 +24,21 @@ if(CURL_EXECUTABLE)
         string(REGEX REPLACE "[ ]+" "" REMOTE_VERSION "${REMOTE_VERSION}")
         
         if(REMOTE_VERSION)
-            set(GIT_VERSION "${REMOTE_VERSION}")
-            message(STATUS "Successfully fetched remote version: ${GIT_VERSION}")
+            # 获取 mihomo submodule 的 commit hash
+            execute_process(
+                COMMAND git submodule foreach git log -1 --format=%H   
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} 
+                OUTPUT_VARIABLE COMMIT_HASH
+            )
+            string(REPLACE "\n" ";" COMMIT_HASH "${COMMIT_HASH}")
+            list(GET COMMIT_HASH 1 COMMIT_HASH)
+            string(REGEX REPLACE "[\n\t\r]" "" COMMIT_HASH ${COMMIT_HASH})
+            string(SUBSTRING ${COMMIT_HASH} 0 7 COMMIT_HASH)
+            message(STATUS "mihomo commit hash= ${COMMIT_HASH}")
+            
+            # 组合远端版本号和 commit hash
+            set(GIT_VERSION "${REMOTE_VERSION}_${COMMIT_HASH}")
+            message(STATUS "Successfully fetched remote version: ${REMOTE_VERSION}, combined with commit hash: ${GIT_VERSION}")
         else()
             message(STATUS "Remote version is empty, falling back to local version")
             set(REMOTE_VERSION "")
