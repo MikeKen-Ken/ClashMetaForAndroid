@@ -39,40 +39,40 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Cache debug keystore
-        id: cache-keystore
-        uses: actions/cache@v4
-        with:
-          path: ~/.android/debug.keystore
-          key: debug-keystore-${{ runner.os }}
-          restore-keys: |
-            debug-keystore-${{ runner.os }}
-
-      - name: Generate debug keystore if not exists
-        if: steps.cache-keystore.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p ~/.android
-          keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-
       - name: Update CA
         run: |
           sudo apt-get update && sudo apt-get install ca-certificates
           sudo update-ca-certificates
           cp -f /etc/ssl/certs/ca-certificates.crt core/src/foss/golang/clash/component/ca/ca-certificates.crt
 
-      # - name: Signing properties
-      #   env:
-      #     SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
-      #     SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
-      #     SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
-      #   run: |
-      #     touch signing.properties
-      #     echo keystore.password="$SIGNING_STORE_PASSWORD" > signing.properties
-      #     echo key.alias="$SIGNING_KEY_ALIAS" >> signing.properties
-      #     echo key.password="$SIGNING_KEY_PASSWORD" >> signing.properties
-      #       
-      #     echo "cat signing.properties"
-      #     cat signing.properties
+      - name: Setup signing
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+          DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
+        run: |
+          # 优先使用 release 签名，如果配置完整
+          if [ -n "$SIGNING_KEYSTORE_BASE64" ] && [ -n "$SIGNING_STORE_PASSWORD" ] && [ -n "$SIGNING_KEY_ALIAS" ] && [ -n "$SIGNING_KEY_PASSWORD" ]; then
+            echo "Using release signing"
+            echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > release.keystore
+            touch signing.properties
+            echo keystore.password="$SIGNING_STORE_PASSWORD" > signing.properties
+            echo key.alias="$SIGNING_KEY_ALIAS" >> signing.properties
+            echo key.password="$SIGNING_KEY_PASSWORD" >> signing.properties
+            cat signing.properties
+          # 否则使用固定的 debug keystore（通过 secrets 存储，确保一致性）
+          elif [ -n "$DEBUG_KEYSTORE_BASE64" ]; then
+            echo "Using fixed debug keystore from secrets"
+            mkdir -p ~/.android
+            echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > ~/.android/debug.keystore
+            echo "Fixed debug keystore restored"
+          # 最后回退：生成并使用缓存的 debug keystore（不推荐，可能导致签名不一致）
+          else
+            echo "Warning: No signing secrets found, will use default debug signing (may cause signature mismatch)"
+            echo "To ensure consistent signatures, please set DEBUG_KEYSTORE_BASE64 secret"
+          fi
 
       - name: Pre-release Build
         if: success()

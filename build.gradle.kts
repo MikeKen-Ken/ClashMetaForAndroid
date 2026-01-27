@@ -153,12 +153,17 @@ subprojects {
                     keyPassword = prop.getProperty("key.password")!!
                 }
             }
+            // 如果没有signing.properties，release构建会使用debug签名配置
+            // 这样可以确保release构建始终使用相同的签名，避免签名不匹配的问题
+            // 注意：为了保持签名一致，建议始终使用相同的签名配置（要么都有signing.properties，要么都没有）
         }
 
         buildTypes {
             named("release") {
                 isMinifyEnabled = isApp
                 isShrinkResources = isApp
+                // 如果存在release签名配置就使用它，否则使用debug签名配置
+                // 这样可以确保即使没有signing.properties，release构建也使用一致的签名
                 signingConfig = signingConfigs.findByName("release") ?: signingConfigs["debug"]
                 proguardFiles(
                     getDefaultProguardFile("proguard-android-optimize.txt"),
