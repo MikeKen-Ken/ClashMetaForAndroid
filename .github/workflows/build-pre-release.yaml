@@ -11,6 +11,9 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
       
       - name: Checkout submodules
         run: git submodule update --init --recursive --remote --force
@@ -120,6 +123,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check tags
+        id: check-tags
+        run: |
+          if git tag -l | grep -q .; then
+            echo "has_tags=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_tags=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Upload Alpha
         uses: softprops/action-gh-release@v2
         if: ${{  success() }}
@@ -131,4 +143,5 @@ jobs:
 
       - name: Release Changelog Builder
         uses: mikepenz/release-changelog-builder-action@v4
+        if: ${{ steps.check-tags.outputs.has_tags == 'true' }}
         continue-on-error: true
