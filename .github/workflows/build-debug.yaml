@@ -3,9 +3,6 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 jobs:
   BuildDebug:
@@ -65,14 +62,6 @@ jobs:
         if: success()
         run: ./gradlew --no-daemon app:assembleAlphaRelease
           
-      - name: Upload Aritfact (universal)
-        uses: actions/upload-artifact@v4
-        if: ${{  success() }}
-        with:
-          name: CMFA Debug Unsigned APK (universal) 
-          path: |
-            app/build/outputs/apk/alpha/release/*-universal-*.apk
-      
       - name: Upload Aritfact (arm64-v8a)
         uses: actions/upload-artifact@v4
         if: ${{  success() }}
@@ -80,27 +69,3 @@ jobs:
           name: CMFA Debug Unsigned APK (arm64-v8a)
           path: |
             app/build/outputs/apk/alpha/release/*-arm64-v8a-*.apk
-      
-      - name: Upload Aritfact (armeabi-v7a)
-        uses: actions/upload-artifact@v4
-        if: ${{  success() }}
-        with:
-          name: CMFA Debug Unsigned APK (armeabi-v7a)
-          path: |
-            app/build/outputs/apk/alpha/release/*-armeabi-v7a-*.apk
-      
-      - name: Upload Aritfact (x86_64)
-        uses: actions/upload-artifact@v4
-        if: ${{  success() }}
-        with:
-          name: CMFA Debug Unsigned APK (x86_64)
-          path: |
-            app/build/outputs/apk/alpha/release/*-x86_64-*.apk
-      
-      - name: Upload Aritfact (x86)
-        uses: actions/upload-artifact@v4
-        if: ${{  success() }}
-        with:
-          name: CMFA Debug Unsigned APK (x86)
-          path: |
-            app/build/outputs/apk/alpha/release/*-x86-*.apk

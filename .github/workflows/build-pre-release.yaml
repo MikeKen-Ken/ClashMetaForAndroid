@@ -39,25 +39,39 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      - name: Cache debug keystore
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: debug-keystore-${{ runner.os }}
+          restore-keys: |
+            debug-keystore-${{ runner.os }}
+
+      - name: Generate debug keystore if not exists
+        if: cache-hit != 'true'
+        run: |
+          mkdir -p ~/.android
+          keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+
       - name: Update CA
         run: |
           sudo apt-get update && sudo apt-get install ca-certificates
           sudo update-ca-certificates
           cp -f /etc/ssl/certs/ca-certificates.crt core/src/foss/golang/clash/component/ca/ca-certificates.crt
 
-      - name: Signing properties
-        env:
-          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
-          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
-          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
-        run: |
-          touch signing.properties
-          echo keystore.password="$SIGNING_STORE_PASSWORD" > signing.properties
-          echo key.alias="$SIGNING_KEY_ALIAS" >> signing.properties
-          echo key.password="$SIGNING_KEY_PASSWORD" >> signing.properties
-            
-          echo "cat signing.properties"
-          cat signing.properties
+      # - name: Signing properties
+      #   env:
+      #     SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+      #     SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+      #     SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+      #   run: |
+      #     touch signing.properties
+      #     echo keystore.password="$SIGNING_STORE_PASSWORD" > signing.properties
+      #     echo key.alias="$SIGNING_KEY_ALIAS" >> signing.properties
+      #     echo key.password="$SIGNING_KEY_PASSWORD" >> signing.properties
+      #       
+      #     echo "cat signing.properties"
+      #     cat signing.properties
 
       - name: Pre-release Build
         if: success()
