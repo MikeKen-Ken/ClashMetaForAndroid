@@ -207,6 +207,7 @@
     <string name="import_">匯入</string>
     <string name="sources">原始碼</string>
     <string name="clash_meta_core">Clash Meta 核心</string>
+    <string name="mihomo_core_version">Mihomo 核心版本: %s</string>
     <string name="name_server_policy">Name Server 政策</string>
     <string name="block_loopback">攔截本地回送</string>
     <string name="block_loopback_summary">攔截本地回送連結</string>

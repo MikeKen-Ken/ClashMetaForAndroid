@@ -71,7 +71,7 @@ class MainActivity : BaseActivity<MainDesign>() {
                         MainDesign.Request.OpenHelp ->
                             startActivity(HelpActivity::class.intent)
                         MainDesign.Request.OpenAbout ->
-                            design.showAbout(queryAppVersionName())
+                            design.showAbout(queryAppVersionName(), queryCoreVersion())
                     }
                 }
                 if (clashRunning) {
@@ -139,7 +139,13 @@ class MainActivity : BaseActivity<MainDesign>() {
 
     private suspend fun queryAppVersionName(): String {
         return withContext(Dispatchers.IO) {
-            packageManager.getPackageInfo(packageName, 0).versionName + "\n" + Bridge.nativeCoreVersion().replace("_", "-")
+            packageManager.getPackageInfo(packageName, 0).versionName
+        }
+    }
+
+    private suspend fun queryCoreVersion(): String {
+        return withContext(Dispatchers.IO) {
+            getString(com.github.kr328.clash.design.R.string.mihomo_core_version, Bridge.nativeCoreVersion().replace("_", "-"))
         }
     }
 
