@@ -16,4 +16,8 @@
     <string name="profile_updating">配置更新中</string>
     <string name="profile_service_status">配置文件服务状态</string>
     <string name="profile_process_result">配置文件处理结果</string>
+    <string name="health_check_notification_channel">健康检查</string>
+    <string name="health_check_notification_channel_description">当 Fallback 组触发健康检查时的通知</string>
+    <string name="health_check_triggered_title">Fallback 健康检查</string>
+    <string name="health_check_triggered_message">组 \"%s\" 触发了健康检查</string>
 </resources>
