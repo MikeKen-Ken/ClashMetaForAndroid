@@ -76,14 +76,13 @@ jobs:
             echo "Using cached keystore from previous build"
           fi
           
-          # 创建 signing.properties 供 Gradle 使用
-          cat > signing.properties << EOF
-          keystore.password=$KEYSTORE_PASSWORD
-          key.alias=$KEY_ALIAS
-          key.password=$KEY_PASSWORD
-          EOF
+          # 创建 signing.properties 供 Gradle 使用（注意：不能有缩进）
+          echo "keystore.password=$KEYSTORE_PASSWORD" > signing.properties
+          echo "key.alias=$KEY_ALIAS" >> signing.properties
+          echo "key.password=$KEY_PASSWORD" >> signing.properties
           
           echo "Signing configuration ready"
+          cat signing.properties
           ls -la release.keystore
 
       - name: Pre-release Build
