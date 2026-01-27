@@ -38,6 +38,15 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
+      
+      - name: Cache debug keystore
+        uses: actions/cache@v4
+        id: cache-debug-keystore
+        with:
+          path: ~/.android/debug.keystore
+          key: ${{ runner.os }}-debug-keystore-fixed
+          restore-keys: |
+            ${{ runner.os }}-debug-keystore-fixed
 
       - name: Update CA
         run: |
@@ -53,8 +62,20 @@ jobs:
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
           DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
         run: |
-          # 优先使用 release 签名，如果配置完整
+          mkdir -p ~/.android
+          
+          # 检查 release 签名配置是否完整
+          HAS_RELEASE_SIGNING=false
           if [ -n "$SIGNING_KEYSTORE_BASE64" ] && [ -n "$SIGNING_STORE_PASSWORD" ] && [ -n "$SIGNING_KEY_ALIAS" ] && [ -n "$SIGNING_KEY_PASSWORD" ]; then
+            HAS_RELEASE_SIGNING=true
+            echo "Release signing configuration is complete"
+          else
+            echo "Release signing configuration is incomplete or missing"
+            echo "Will fall back to debug signing"
+          fi
+          
+          # 设置 release 签名（如果可用）
+          if [ "$HAS_RELEASE_SIGNING" = "true" ]; then
             echo "Using release signing"
             echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > release.keystore
             touch signing.properties
@@ -62,17 +83,43 @@ jobs:
             echo key.alias="$SIGNING_KEY_ALIAS" >> signing.properties
             echo key.password="$SIGNING_KEY_PASSWORD" >> signing.properties
             cat signing.properties
-          # 否则使用固定的 debug keystore（通过 secrets 存储，确保一致性）
-          elif [ -n "$DEBUG_KEYSTORE_BASE64" ]; then
-            echo "Using fixed debug keystore from secrets"
-            mkdir -p ~/.android
-            echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > ~/.android/debug.keystore
-            echo "Fixed debug keystore restored"
-          # 最后回退：生成并使用缓存的 debug keystore（不推荐，可能导致签名不一致）
-          else
-            echo "Warning: No signing secrets found, will use default debug signing (may cause signature mismatch)"
-            echo "To ensure consistent signatures, please set DEBUG_KEYSTORE_BASE64 secret"
           fi
+          
+          # 无论是否使用 release 签名，都确保 debug keystore 的一致性
+          # 这样可以确保即使 release 签名配置变化，debug keystore 也保持一致
+          # 优先从 secrets 获取，如果没有则使用缓存
+          if [ -n "$DEBUG_KEYSTORE_BASE64" ]; then
+            echo "Setting up fixed debug keystore from secrets"
+            echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > ~/.android/debug.keystore
+            echo "Fixed debug keystore restored from secrets"
+          elif [ -f ~/.android/debug.keystore ]; then
+            echo "Using cached debug keystore (from previous build)"
+          else
+            echo "Warning: No DEBUG_KEYSTORE_BASE64 secret found and no cached keystore"
+            echo "This build will generate a new debug keystore"
+            echo "Note: If release signing is not configured, this may cause signature mismatch"
+            echo "To ensure consistent signatures across builds, please set DEBUG_KEYSTORE_BASE64 secret"
+          fi
+          
+          # 验证 debug keystore 是否存在（用于 fallback）
+          if [ -f ~/.android/debug.keystore ]; then
+            echo "Debug keystore is ready at ~/.android/debug.keystore"
+            ls -lh ~/.android/debug.keystore
+          fi
+          
+          # 总结签名配置
+          echo "=== Signing Configuration Summary ==="
+          if [ "$HAS_RELEASE_SIGNING" = "true" ]; then
+            echo "✓ Release signing: ENABLED"
+          else
+            echo "✗ Release signing: DISABLED (will use debug signing)"
+          fi
+          if [ -f ~/.android/debug.keystore ]; then
+            echo "✓ Debug keystore: AVAILABLE"
+          else
+            echo "✗ Debug keystore: NOT AVAILABLE (will be generated)"
+          fi
+          echo "====================================="
 
       - name: Pre-release Build
         if: success()

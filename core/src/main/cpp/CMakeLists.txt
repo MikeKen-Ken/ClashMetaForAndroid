@@ -1,95 +1,20 @@
 cmake_minimum_required(VERSION 3.0)
 
-# 尝试从远端 URL 获取版本号
-set(REMOTE_VERSION_URL "https://github.com/MikeKen-Ken/mihomo/releases/download/Prerelease-Alpha/version.txt")
-set(REMOTE_VERSION "")
-
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR= ${CMAKE_CURRENT_SOURCE_DIR}")
-message(STATUS "Attempting to fetch version from: ${REMOTE_VERSION_URL}")
 
-# 尝试使用 curl 获取远端版本号
-find_program(CURL_EXECUTABLE curl)
-if(CURL_EXECUTABLE)
-    execute_process(
-        COMMAND ${CURL_EXECUTABLE} -sL --connect-timeout 5 --max-time 10 ${REMOTE_VERSION_URL}
-        OUTPUT_VARIABLE REMOTE_VERSION
-        ERROR_VARIABLE CURL_ERROR
-        RESULT_VARIABLE CURL_RESULT
-    )
-    
-    if(CURL_RESULT EQUAL 0)
-        # 清理版本号： 去除换行符、空格等
-        string(STRIP "${REMOTE_VERSION}" REMOTE_VERSION)
-        string(REGEX REPLACE "[\n\r\t]" "" REMOTE_VERSION "${REMOTE_VERSION}")
-        string(REGEX REPLACE "[ ]+" "" REMOTE_VERSION "${REMOTE_VERSION}")
-        
-        if(REMOTE_VERSION)
-            # 获取 mihomo submodule 的 commit hash
-            execute_process(
-                COMMAND git submodule foreach git log -1 --format=%H   
-                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} 
-                OUTPUT_VARIABLE COMMIT_HASH
-            )
-            string(REPLACE "\n" ";" COMMIT_HASH "${COMMIT_HASH}")
-            list(GET COMMIT_HASH 1 COMMIT_HASH)
-            string(REGEX REPLACE "[\n\t\r]" "" COMMIT_HASH ${COMMIT_HASH})
-            string(SUBSTRING ${COMMIT_HASH} 0 7 COMMIT_HASH)
-            message(STATUS "mihomo commit hash= ${COMMIT_HASH}")
-            
-            # 组合远端版本号和 commit hash
-            set(GIT_VERSION "${REMOTE_VERSION}_${COMMIT_HASH}")
-            message(STATUS "Successfully fetched remote version: ${REMOTE_VERSION}, combined with commit hash: ${GIT_VERSION}")
-        else()
-            message(STATUS "Remote version is empty, falling back to local version")
-            set(REMOTE_VERSION "")
-        endif()
-    else()
-        message(STATUS "Failed to fetch remote version (curl result: ${CURL_RESULT}), falling back to local version")
-        set(REMOTE_VERSION "")
-    endif()
-else()
-    message(STATUS "curl not found, falling back to local version")
-endif()
-
-# 如果远端获取失败，使用本地 git hash 方式
-if(NOT REMOTE_VERSION)
-    message(STATUS "Using local git-based version")
-    
-    # 获取git hash
-    execute_process(
-        COMMAND git submodule foreach git log -1 --format=%H   
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} 
-        OUTPUT_VARIABLE COMMIT_HASH
-    )
-    string(REPLACE "\n" ";" COMMIT_HASH "${COMMIT_HASH}")
-    list(GET COMMIT_HASH 1 COMMIT_HASH)
-    string (REGEX REPLACE "[\n\t\r]" "" COMMIT_HASH ${COMMIT_HASH})
-    string(SUBSTRING ${COMMIT_HASH} 0 7 COMMIT_HASH)
-    message(STATUS "git hash= ${COMMIT_HASH}")
-
-    # 获取分支名称
-    execute_process(
-        COMMAND git submodule foreach git branch -r --contains ${COMMIT_HASH}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} 
-        OUTPUT_VARIABLE CURRENT_BRANCH
-    )
-    string(REPLACE "\n" ";" CURRENT_BRANCH "${CURRENT_BRANCH}")
-    list(GET CURRENT_BRANCH 1 CURRENT_BRANCH)
-    string (REGEX REPLACE "origin/" "" CURRENT_BRANCH ${CURRENT_BRANCH})
-    string (REGEX REPLACE "[\n\t\r]" "" CURRENT_BRANCH ${CURRENT_BRANCH})
-    message(STATUS "git current branch = ${CURRENT_BRANCH}")
-
-    # 获取生成时间
-    string(TIMESTAMP COMPILE_TIME "%y%m%d")
-    string (REGEX REPLACE "[\n\t\r]" "" COMPILE_TIME ${COMPILE_TIME})
-    string(REGEX REPLACE "\"" "" COMPILE_TIME ${COMPILE_TIME})
-
-    # 生成版本信息
-    set(GIT_VERSION "${CURRENT_BRANCH}_${COMMIT_HASH}_${COMPILE_TIME}")
-    
-    # 去除空格
-    string(REGEX REPLACE "[ ]+" "" GIT_VERSION "${GIT_VERSION}")
-endif()
+# 获取 mihomo submodule 的完整 commit hash
+message(STATUS "Getting mihomo commit hash")
+execute_process(
+    COMMAND git submodule foreach git log -1 --format=%H   
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} 
+    OUTPUT_VARIABLE COMMIT_HASH
+)
+string(REPLACE "\n" ";" COMMIT_HASH "${COMMIT_HASH}")
+list(GET COMMIT_HASH 1 COMMIT_HASH)
+string(REGEX REPLACE "[\n\t\r]" "" COMMIT_HASH ${COMMIT_HASH})
+# 使用完整的 commit hash，不截取
+set(GIT_VERSION "${COMMIT_HASH}")
+message(STATUS "mihomo commit hash= ${GIT_VERSION}")
 
 message(STATUS "Final version info = ${GIT_VERSION}")
 
