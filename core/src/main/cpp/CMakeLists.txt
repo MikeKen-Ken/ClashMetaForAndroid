@@ -18,7 +18,7 @@ message(STATUS "mihomo commit hash= ${GIT_VERSION}")
 
 message(STATUS "Final version info = ${GIT_VERSION}")
 
-# 保存变量到 文件
+# 保存变量 到 文件
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_SOURCE_DIR}/version.h @ONLY)
 
 project(clash-bridge C)
