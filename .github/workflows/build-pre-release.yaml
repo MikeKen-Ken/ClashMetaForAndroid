@@ -50,7 +50,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: release.keystore
-          key: signing-keystore-v3
+          key: signing-keystore-v4
 
       - name: Setup fixed signing
         run: |
@@ -59,25 +59,24 @@ jobs:
           KEY_ALIAS="androiddebugkey"
           KEY_PASSWORD="android"
           
-          # 强制删除旧的 keystore 并重新生成（确保密码匹配）
-          if [ -f release.keystore ]; then
-            echo "Removing old keystore to ensure password consistency..."
-            rm -f release.keystore
+          # 只在缓存中没有 keystore 时才生成新的
+          if [ ! -f release.keystore ]; then
+            echo "No cached keystore found, generating new one..."
+            keytool -genkeypair \
+              -keystore release.keystore \
+              -alias "$KEY_ALIAS" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 36500 \
+              -storepass "$KEYSTORE_PASSWORD" \
+              -keypass "$KEY_PASSWORD" \
+              -dname "CN=CMFA, OU=CMFA, O=MetaCubeX, L=Unknown, ST=Unknown, C=US"
+            echo "New keystore generated and will be cached for future builds"
+          else
+            echo "Using cached keystore from previous build"
           fi
           
-          echo "Generating signing keystore..."
-          keytool -genkeypair \
-            -keystore release.keystore \
-            -alias "$KEY_ALIAS" \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 36500 \
-            -storepass "$KEYSTORE_PASSWORD" \
-            -keypass "$KEY_PASSWORD" \
-            -dname "CN=CMFA, OU=CMFA, O=MetaCubeX, L=Unknown, ST=Unknown, C=US"
-          echo "Keystore generated"
-          
-          # 验证 keystore 是否可以正确读取
+          # 验证 keystore
           echo "Verifying keystore..."
           keytool -list -keystore release.keystore -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS"
           
@@ -88,8 +87,6 @@ jobs:
           
           echo "=== Signing configuration ==="
           cat signing.properties
-          echo "=== Keystore info ==="
-          ls -la release.keystore
 
       - name: Pre-release Build
         if: success()
