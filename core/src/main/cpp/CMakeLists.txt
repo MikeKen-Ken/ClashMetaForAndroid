@@ -11,13 +11,13 @@ message(STATUS "Attempting to fetch version from: ${REMOTE_VERSION_URL}")
 find_program(CURL_EXECUTABLE curl)
 if(CURL_EXECUTABLE)
     execute_process(
-        COMMAND ${CURL_EXECUTABLE} -sL --connect-timeout 5 --max-time 10 "${REMOTE_VERSION_URL}"
+        COMMAND ${CURL_EXECUTABLE} -sL --connect-timeout 5 --max-time 10 ${REMOTE_VERSION_URL}
         OUTPUT_VARIABLE REMOTE_VERSION
         ERROR_VARIABLE CURL_ERROR
         RESULT_VARIABLE CURL_RESULT
     )
     
-    if(CURL_RESULT EQUAL 0 AND REMOTE_VERSION)
+    if(CURL_RESULT EQUAL 0)
         # 清理版本号：去除换行符、空格等
         string(STRIP "${REMOTE_VERSION}" REMOTE_VERSION)
         string(REGEX REPLACE "[\n\r\t]" "" REMOTE_VERSION "${REMOTE_VERSION}")
@@ -26,7 +26,8 @@ if(CURL_EXECUTABLE)
         if(REMOTE_VERSION)
             set(GIT_VERSION "${REMOTE_VERSION}")
             message(STATUS "Successfully fetched remote version: ${GIT_VERSION}")
-        else
+        else()
+            message(STATUS "Remote version is empty, falling back to local version")
             set(REMOTE_VERSION "")
         endif()
     else()
