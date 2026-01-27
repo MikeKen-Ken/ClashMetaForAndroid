@@ -18,7 +18,7 @@ if(CURL_EXECUTABLE)
     )
     
     if(CURL_RESULT EQUAL 0)
-        # 清理版本号：去除换行符、空格等
+        # 清理版本号： 去除换行符、空格等
         string(STRIP "${REMOTE_VERSION}" REMOTE_VERSION)
         string(REGEX REPLACE "[\n\r\t]" "" REMOTE_VERSION "${REMOTE_VERSION}")
         string(REGEX REPLACE "[ ]+" "" REMOTE_VERSION "${REMOTE_VERSION}")
