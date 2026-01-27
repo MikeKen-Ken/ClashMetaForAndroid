@@ -103,3 +103,4 @@ jobs:
 
       - name: Release Changelog Builder
         uses: mikepenz/release-changelog-builder-action@v4
+        continue-on-error: true
