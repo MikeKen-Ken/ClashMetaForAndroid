@@ -325,6 +325,7 @@ static jmethodID m_tun_interface_query_socket_uid;
 static jmethodID m_completable_complete;
 static jmethodID m_completable_complete_exceptionally;
 static jmethodID m_logcat_interface_received;
+static jmethodID m_health_check_callback_on_triggered;
 static jmethodID m_clash_exception;
 static jmethodID m_fetch_callback_report;
 static jmethodID m_fetch_callback_complete;
