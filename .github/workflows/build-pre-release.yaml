@@ -38,15 +38,6 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      
-      - name: Cache debug keystore
-        uses: actions/cache@v4
-        id: cache-debug-keystore
-        with:
-          path: ~/.android/debug.keystore
-          key: ${{ runner.os }}-debug-keystore-fixed
-          restore-keys: |
-            ${{ runner.os }}-debug-keystore-fixed
 
       - name: Update CA
         run: |
@@ -54,72 +45,46 @@ jobs:
           sudo update-ca-certificates
           cp -f /etc/ssl/certs/ca-certificates.crt core/src/foss/golang/clash/component/ca/ca-certificates.crt
 
-      - name: Setup signing
-        env:
-          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
-          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
-          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
-          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
-          DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
+      - name: Cache signing keystore
+        id: cache-keystore
+        uses: actions/cache@v4
+        with:
+          path: release.keystore
+          key: signing-keystore-v1
+
+      - name: Setup fixed signing
         run: |
-          mkdir -p ~/.android
+          # 固定的签名参数
+          KEYSTORE_PASSWORD="cmfa_pre_release"
+          KEY_ALIAS="cmfa"
+          KEY_PASSWORD="cmfa_pre_release"
           
-          # 检查 release 签名配置是否完整
-          HAS_RELEASE_SIGNING=false
-          if [ -n "$SIGNING_KEYSTORE_BASE64" ] && [ -n "$SIGNING_STORE_PASSWORD" ] && [ -n "$SIGNING_KEY_ALIAS" ] && [ -n "$SIGNING_KEY_PASSWORD" ]; then
-            HAS_RELEASE_SIGNING=true
-            echo "Release signing configuration is complete"
+          # 如果缓存中没有 keystore，则生成一个新的
+          if [ ! -f release.keystore ]; then
+            echo "Generating new signing keystore..."
+            keytool -genkeypair \
+              -keystore release.keystore \
+              -alias "$KEY_ALIAS" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 36500 \
+              -storepass "$KEYSTORE_PASSWORD" \
+              -keypass "$KEY_PASSWORD" \
+              -dname "CN=CMFA Pre-Release, OU=CMFA, O=MetaCubeX, L=Unknown, ST=Unknown, C=US"
+            echo "New keystore generated and will be cached for future builds"
           else
-            echo "Release signing configuration is incomplete or missing"
-            echo "Will fall back to debug signing"
+            echo "Using cached keystore from previous build"
           fi
           
-          # 设置 release 签名（如果可用）
-          if [ "$HAS_RELEASE_SIGNING" = "true" ]; then
-            echo "Using release signing"
-            echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > release.keystore
-            touch signing.properties
-            echo keystore.password="$SIGNING_STORE_PASSWORD" > signing.properties
-            echo key.alias="$SIGNING_KEY_ALIAS" >> signing.properties
-            echo key.password="$SIGNING_KEY_PASSWORD" >> signing.properties
-            cat signing.properties
-          fi
+          # 创建 signing.properties 供 Gradle 使用
+          cat > signing.properties << EOF
+          keystore.password=$KEYSTORE_PASSWORD
+          key.alias=$KEY_ALIAS
+          key.password=$KEY_PASSWORD
+          EOF
           
-          # 无论是否使用 release 签名，都确保 debug keystore 的一致性
-          # 这样可以确保即使 release 签名配置变化，debug keystore 也保持一致
-          # 优先从 secrets 获取，如果没有则使用缓存
-          if [ -n "$DEBUG_KEYSTORE_BASE64" ]; then
-            echo "Setting up fixed debug keystore from secrets"
-            echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > ~/.android/debug.keystore
-            echo "Fixed debug keystore restored from secrets"
-          elif [ -f ~/.android/debug.keystore ]; then
-            echo "Using cached debug keystore (from previous build)"
-          else
-            echo "Warning: No DEBUG_KEYSTORE_BASE64 secret found and no cached keystore"
-            echo "This build will generate a new debug keystore"
-            echo "Note: If release signing is not configured, this may cause signature mismatch"
-            echo "To ensure consistent signatures across builds, please set DEBUG_KEYSTORE_BASE64 secret"
-          fi
-          
-          # 验证 debug keystore 是否存在（用于 fallback）
-          if [ -f ~/.android/debug.keystore ]; then
-            echo "Debug keystore is ready at ~/.android/debug.keystore"
-            ls -lh ~/.android/debug.keystore
-          fi
-          
-          # 总结签名配置
-          echo "=== Signing Configuration Summary ==="
-          if [ "$HAS_RELEASE_SIGNING" = "true" ]; then
-            echo "✓ Release signing: ENABLED"
-          else
-            echo "✗ Release signing: DISABLED (will use debug signing)"
-          fi
-          if [ -f ~/.android/debug.keystore ]; then
-            echo "✓ Debug keystore: AVAILABLE"
-          else
-            echo "✗ Debug keystore: NOT AVAILABLE (will be generated)"
-          fi
-          echo "====================================="
+          echo "Signing configuration ready"
+          ls -la release.keystore
 
       - name: Pre-release Build
         if: success()
