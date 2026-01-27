@@ -40,6 +40,7 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Cache debug keystore
+        id: cache-keystore
         uses: actions/cache@v4
         with:
           path: ~/.android/debug.keystore
@@ -48,7 +49,7 @@ jobs:
             debug-keystore-${{ runner.os }}
 
       - name: Generate debug keystore if not exists
-        if: cache-hit != 'true'
+        if: steps.cache-keystore.outputs.cache-hit != 'true'
         run: |
           mkdir -p ~/.android
           keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
