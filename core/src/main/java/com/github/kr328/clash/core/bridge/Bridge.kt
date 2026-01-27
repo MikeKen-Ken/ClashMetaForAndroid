@@ -48,6 +48,7 @@ object Bridge {
     external fun nativeClearOverride(slot: Int)
     external fun nativeQueryConfiguration(): String
     external fun nativeSubscribeLogcat(callback: LogcatInterface)
+    external fun nativeSubscribeHealthCheck(callback: HealthCheckCallback)
     external fun nativeCoreVersion(): String
 
     private external fun nativeInit(home: String, versionName: String, sdkVersion: Int)

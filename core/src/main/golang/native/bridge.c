@@ -13,6 +13,8 @@ void (*fetch_complete_func)(void *fetch_callback, const char *error);
 
 int (*logcat_received_func)(void *logcat_interface, const char *payload);
 
+void (*health_check_triggered_func)(void *health_check_callback, const char *group_name);
+
 int (*open_content_func)(const char *url, char *error, int error_length);
 
 void (*release_object_func)(void *obj);
@@ -66,6 +68,14 @@ int logcat_received(void *logcat_interface, char *payload) {
     free(payload);
 
     return result;
+}
+
+void health_check_triggered(void *health_check_callback, char *group_name) {
+    TRACE_METHOD();
+
+    health_check_triggered_func(health_check_callback, group_name);
+
+    free(group_name);
 }
 
 int open_content(char *url, char *error, int error_length) {

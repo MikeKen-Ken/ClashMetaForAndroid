@@ -309,6 +309,16 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeSubscribeLogcat(JNIEnv *env
     subscribeLogcat(_callback);
 }
 
+JNIEXPORT void JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeSubscribeHealthCheck(JNIEnv *env, jobject thiz,
+                                                                           jobject callback) {
+    TRACE_METHOD();
+
+    jobject _callback = new_global(callback);
+
+    subscribeHealthCheck(_callback);
+}
+
 
 static jmethodID m_tun_interface_mark_socket;
 static jmethodID m_tun_interface_query_socket_uid;
@@ -418,6 +428,19 @@ static int call_logcat_interface_received_impl(void *callback, const char *paylo
     return 0;
 }
 
+static void call_health_check_callback_on_triggered_impl(void *callback, const char *group_name) {
+    TRACE_METHOD();
+
+    ATTACH_JNI();
+
+    (*env)->CallVoidMethod(env,
+                           (jobject) callback,
+                           (jmethodID) m_health_check_callback_on_triggered,
+                           (jstring) new_string(group_name));
+
+    jni_catch_exception(env);
+}
+
 static int open_content_impl(const char *url, char *error, int error_length) {
     TRACE_METHOD();
 
@@ -492,6 +515,9 @@ JNI_OnLoad(JavaVM *vm, void *reserved) {
                                                        "(Ljava/lang/Throwable;)Z");
     m_logcat_interface_received = find_method(c_logcat_interface, "received",
                                               "(Ljava/lang/String;)V");
+    jclass c_health_check_callback = find_class("com/github/kr328/clash/core/bridge/HealthCheckCallback");
+    m_health_check_callback_on_triggered = find_method(c_health_check_callback, "onHealthCheckTriggered",
+                                                        "(Ljava/lang/String;)V");
     m_clash_exception = find_method(_c_clash_exception, "<init>",
                                     "(Ljava/lang/String;)V");
     m_get_message = find_method(c_throwable, "getMessage",
@@ -513,6 +539,7 @@ JNI_OnLoad(JavaVM *vm, void *reserved) {
     fetch_report_func = &call_fetch_callback_report_impl;
     fetch_complete_func = &call_fetch_callback_complete_impl;
     logcat_received_func = &call_logcat_interface_received_impl;
+    health_check_triggered_func = &call_health_check_callback_on_triggered_impl;
     open_content_func = &open_content_impl;
     release_object_func = &release_jni_object_impl;
 

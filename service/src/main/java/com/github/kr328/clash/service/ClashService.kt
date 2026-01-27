@@ -36,6 +36,7 @@ class ClashService : BaseService() {
         install(AppListCacheModule(self))
         install(TimeZoneModule(self))
         install(SuspendModule(self))
+        install(HealthCheckNotificationModule(self))
 
         try {
             while (isActive) {
@@ -76,6 +77,7 @@ class ClashService : BaseService() {
 
         StaticNotificationModule.createNotificationChannel(this)
         StaticNotificationModule.notifyLoadingNotification(this)
+        HealthCheckNotificationModule.createNotificationChannel(this)
 
         runtime.launch()
     }

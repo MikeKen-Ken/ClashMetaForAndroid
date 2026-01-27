@@ -18,4 +18,8 @@
     <string name="provider_files">Provider Files</string>
     <string name="profile_updater">Profile Updater</string>
     <string name="profile_updating">Profile Updating</string>
+    <string name="health_check_notification_channel">Health Check</string>
+    <string name="health_check_notification_channel_description">Notifications when fallback groups trigger health checks</string>
+    <string name="health_check_triggered_title">Fallback Health Check</string>
+    <string name="health_check_triggered_message">Group \"%s\" triggered health check</string>
 </resources>

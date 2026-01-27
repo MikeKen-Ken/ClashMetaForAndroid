@@ -8,6 +8,8 @@ import (
 	"time"
 	"unsafe"
 
+	"cfa/native/delegate"
+
 	"github.com/metacubex/mihomo/log"
 )
 
@@ -69,4 +71,21 @@ func subscribeLogcat(remote unsafe.Pointer) {
 	}(remote)
 
 	log.Infoln("[APP] Logcat level: %s", log.Level().String())
+}
+
+var healthCheckCallback unsafe.Pointer
+
+//export subscribeHealthCheck
+func subscribeHealthCheck(remote unsafe.Pointer) {
+	healthCheckCallback = remote
+	log.Infoln("[APP] Health check callback registered")
+	
+	// Set the callback function in delegate package
+	delegate.SetHealthCheckNotifyFunc(func(groupName string) {
+		if healthCheckCallback == nil {
+			return
+		}
+		cGroupName := C.CString(groupName)
+		C.health_check_triggered(healthCheckCallback, cGroupName)
+	})
 }
