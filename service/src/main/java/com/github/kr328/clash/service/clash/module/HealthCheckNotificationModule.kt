@@ -57,7 +57,7 @@ class HealthCheckNotificationModule(service: Service) : Module<Unit>(service) {
     private fun showNotification(groupName: String) {
         val notification = NotificationCompat.Builder(service, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_logo_service)
-            .setColor(service.getColorCompat(com.github.kr328.clash.design.R.color.color_clash))
+            .setColor(service.getColorCompat(R.color.color_clash))
             .setContentTitle(service.getString(R.string.health_check_triggered_title))
             .setContentText(service.getString(R.string.health_check_triggered_message, groupName))
             .setStyle(NotificationCompat.BigTextStyle()
