@@ -50,7 +50,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: release.keystore
-          key: signing-keystore-v1
+          key: signing-keystore-v2
 
       - name: Setup fixed signing
         run: |
