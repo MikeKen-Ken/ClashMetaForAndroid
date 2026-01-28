@@ -42,6 +42,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         install(AppListCacheModule(self))
         install(TimeZoneModule(self))
         install(SuspendModule(self))
+        install(HealthCheckNotificationModule(self))
 
         try {
             tun.open()
@@ -90,6 +91,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
         StaticNotificationModule.createNotificationChannel(this)
         StaticNotificationModule.notifyLoadingNotification(this)
+        HealthCheckNotificationModule.createNotificationChannel(this)
 
         runtime.launch()
     }
