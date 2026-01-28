@@ -58,9 +58,18 @@ jobs:
       #     echo "cat signing.properties"
       #     cat signing.properties
 
+      - name: Clean Build
+        run: |
+          ./gradlew --no-daemon clean
+          # Remove build directories to ensure fresh build
+          rm -rf app/build
+          rm -rf .gradle
+          # Clear Gradle cache for resources
+          rm -rf ~/.gradle/caches/
+      
       - name: Build
         if: success()
-        run: ./gradlew --no-daemon app:assembleAlphaRelease
+        run: ./gradlew --no-daemon --no-build-cache app:assembleAlphaRelease
           
       - name: Upload Aritfact (arm64-v8a)
         uses: actions/upload-artifact@v4

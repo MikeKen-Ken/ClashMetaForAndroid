@@ -98,9 +98,18 @@ jobs:
           echo "cat signing.properties"
           cat signing.properties
 
+      - name: Clean Build
+        run: |
+          ./gradlew --no-daemon clean
+          # Remove build directories to ensure fresh build
+          rm -rf app/build
+          rm -rf .gradle
+          # Clear Gradle cache for resources
+          rm -rf ~/.gradle/caches/
+      
       - name: Release Build
         if: success()
-        run: ./gradlew --no-daemon app:assembleMetaRelease
+        run: ./gradlew --no-daemon --no-build-cache app:assembleMetaRelease
 
       - name: Tag Repo
         uses: richardsimko/update-tag@v1

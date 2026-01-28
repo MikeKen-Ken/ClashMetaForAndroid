@@ -105,9 +105,18 @@ jobs:
           echo "=== Signing configuration ==="
           cat signing.properties
 
+      - name: Clean Build
+        run: |
+          ./gradlew --no-daemon clean
+          # Remove build directories to ensure fresh build
+          rm -rf app/build
+          rm -rf .gradle
+          # Clear Gradle cache for resources
+          rm -rf ~/.gradle/caches/
+      
       - name: Pre-release Build
         if: success()
-        run: ./gradlew --no-daemon app:assembleAlphaRelease
+        run: ./gradlew --no-daemon --no-build-cache app:assembleAlphaRelease
 
       # Delete old Prerelease-alpha
       - uses: dev-drprasad/delete-tag-and-release@v1.1
