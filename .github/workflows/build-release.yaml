@@ -84,6 +84,10 @@ jobs:
           sudo update-ca-certificates
           cp -f /etc/ssl/certs/ca-certificates.crt core/src/foss/golang/clash/component/ca/ca-certificates.crt
 
+      - name: Tidy Go modules
+        run: |
+          cd core/src/foss/golang && go mod tidy
+
       - name: Signing properties
         env:
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}

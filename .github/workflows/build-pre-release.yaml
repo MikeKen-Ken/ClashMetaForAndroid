@@ -48,6 +48,10 @@ jobs:
           sudo update-ca-certificates
           cp -f /etc/ssl/certs/ca-certificates.crt core/src/foss/golang/clash/component/ca/ca-certificates.crt
 
+      - name: Tidy Go modules
+        run: |
+          cd core/src/foss/golang && go mod tidy
+
       - name: Cache signing keystore
         id: cache-keystore
         uses: actions/cache@v4
