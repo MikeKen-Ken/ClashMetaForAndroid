@@ -2,3 +2,7 @@
 	path = core/src/foss/golang/clash
 	url = https://github.com/MikeKen-Ken/mihomo
 	branch = Alpha
+[submodule "clash-verge-rev"]
+	path = clash-verge-rev
+	url = ../clash-verge-rev.git
+	branch = dev
