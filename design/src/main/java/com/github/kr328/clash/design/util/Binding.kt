@@ -50,9 +50,27 @@ fun setLogMessage(textView: TextView, logMessage: LogMessage?) {
         for (i in segments.indices) {
             val start = pos
             val end = pos + segments[i].length
-            if (i == 1 || i == 4) {
-                spannable.setSpan(StyleSpan(Typeface.BOLD), start, end, 0)
-                spannable.setSpan(ForegroundColorSpan(colorHighlight), start, end, 0)
+            when (i) {
+                1 -> {
+                    // Highlight process name (segment 1)
+                    spannable.setSpan(StyleSpan(Typeface.BOLD), start, end, 0)
+                    spannable.setSpan(ForegroundColorSpan(colorHighlight), start, end, 0)
+                }
+                4 -> {
+                    // Highlight only the value part after comma in rule detail (segment 4)
+                    // e.g., "DOMAIN-SUFFIX,+.bugly.qq.com" -> only highlight "+.bugly.qq.com"
+                    val segment = segments[i]
+                    val commaIndex = segment.indexOf(',')
+                    if (commaIndex != -1 && commaIndex < segment.length - 1) {
+                        val valueStart = start + commaIndex + 1
+                        spannable.setSpan(StyleSpan(Typeface.BOLD), valueStart, end, 0)
+                        spannable.setSpan(ForegroundColorSpan(colorHighlight), valueStart, end, 0)
+                    } else {
+                        // No comma found, highlight the whole segment
+                        spannable.setSpan(StyleSpan(Typeface.BOLD), start, end, 0)
+                        spannable.setSpan(ForegroundColorSpan(colorHighlight), start, end, 0)
+                    }
+                }
             }
             pos = end + LOG_SEPARATOR.length
         }
