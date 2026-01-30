@@ -1,9 +1,11 @@
 package com.github.kr328.clash
 
+import com.github.kr328.clash.common.util.ticker
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.design.ConnectionsDesign
 import com.github.kr328.clash.util.withClash
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 import java.util.concurrent.TimeUnit
 
@@ -12,13 +14,13 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
         val design = ConnectionsDesign(this)
         setContentDesign(design)
 
-        val ticker = com.github.kr328.clash.common.util.ticker(TimeUnit.SECONDS.toMillis(1))
+        val ticker = ticker(TimeUnit.SECONDS.toMillis(1))
 
         while (isActive) {
             select<Unit> {
                 events.onReceive {
                     when (it) {
-                        Event.ActivityStart -> refreshConnections(design)
+                        Event.ActivityStart -> launch { refreshConnections(design) }
                         else -> Unit
                     }
                 }
@@ -26,12 +28,12 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
                     when (it) {
                         is ConnectionsDesign.Request.CloseConnection -> {
                             withClash { Clash.closeConnection(it.connection.id) }
-                            refreshConnections(design)
+                            launch { refreshConnections(design) }
                         }
                     }
                 }
                 ticker.onReceive {
-                    refreshConnections(design)
+                    launch { refreshConnections(design) }
                 }
             }
         }
