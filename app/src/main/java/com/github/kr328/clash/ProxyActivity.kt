@@ -2,6 +2,7 @@ package com.github.kr328.clash
 
 import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.core.Clash
+import com.github.kr328.clash.core.model.TunnelState
 import com.github.kr328.clash.core.model.Proxy
 import com.github.kr328.clash.design.ProxyDesign
 import com.github.kr328.clash.design.model.ProxyState
@@ -28,6 +29,14 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
         )
 
         setContentDesign(design)
+
+        if (mode == null) {
+            withClash {
+                val o = queryOverride(Clash.OverrideSlot.Session)
+                o.mode = TunnelState.Mode.Rule
+                patchOverride(Clash.OverrideSlot.Session, o)
+            }
+        }
 
         design.requests.send(ProxyDesign.Request.ReloadAll)
 
@@ -118,7 +127,7 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                     healthCheck(names[it.index])
                                 }
 
-                                design.requests.send(ProxyDesign.Request.Reload(it.index))
+                                design.requests.send(ProxyDesign.Request.ReloadAll)
                             }
                         }
                         is ProxyDesign.Request.PatchMode -> {

@@ -50,49 +50,88 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
-                        android:layout_toStartOf="@id/url_test_layout" />
+                        android:layout_toStartOf="@id/toolbar_end_layout" />
 
-                    <FrameLayout
-                        android:id="@+id/url_test_layout"
+                    <LinearLayout
+                        android:id="@+id/toolbar_end_layout"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_marginStart="@dimen/item_tailing_margin"
-                        android:layout_toStartOf="@id/menu_view">
-
-                        <ImageView
-                            android:id="@+id/url_test_view"
-                            android:layout_width="@dimen/item_tailing_component_size"
-                            android:layout_height="@dimen/item_tailing_component_size"
-                            android:layout_gravity="center"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:clickable="true"
-                            android:contentDescription="@string/delay_test"
-                            android:focusable="true"
-                            android:onClick="@{() -> self.requestUrlTesting()}"
-                            android:padding="@dimen/toolbar_image_action_padding"
-                            android:src="@drawable/ic_baseline_flash_on" />
-
-                        <ProgressBar
-                            android:id="@+id/url_test_progress_view"
-                            android:layout_width="@dimen/item_tailing_component_size"
-                            android:layout_height="@dimen/item_tailing_component_size"
-                            android:visibility="gone" />
-                    </FrameLayout>
-
-                    <ImageView
-                        android:id="@+id/menu_view"
-                        android:layout_width="@dimen/item_tailing_component_size"
-                        android:layout_height="@dimen/item_tailing_component_size"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
                         android:layout_marginStart="@dimen/item_tailing_margin"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:clickable="true"
-                        android:contentDescription="@string/more"
-                        android:focusable="true"
-                        android:padding="@dimen/toolbar_image_action_padding"
-                        android:src="@drawable/ic_baseline_more_vert" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButtonToggleGroup
+                            android:id="@+id/mode_toggle_group"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            app:singleSelection="true"
+                            app:selectionRequired="true">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/rule_mode_btn"
+                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                android:layout_width="wrap_content"
+                                android:layout_height="@dimen/item_tailing_component_size"
+                                android:minWidth="0dp"
+                                android:minHeight="0dp"
+                                android:paddingStart="@dimen/item_text_margin"
+                                android:paddingEnd="@dimen/item_text_margin"
+                                android:text="@string/rule_mode"
+                                android:textSize="12sp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/global_mode_btn"
+                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                android:layout_width="wrap_content"
+                                android:layout_height="@dimen/item_tailing_component_size"
+                                android:minWidth="0dp"
+                                android:minHeight="0dp"
+                                android:paddingStart="@dimen/item_text_margin"
+                                android:paddingEnd="@dimen/item_text_margin"
+                                android:text="@string/global_mode"
+                                android:textSize="12sp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/direct_mode_btn"
+                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                android:layout_width="wrap_content"
+                                android:layout_height="@dimen/item_tailing_component_size"
+                                android:minWidth="0dp"
+                                android:minHeight="0dp"
+                                android:paddingStart="@dimen/item_text_margin"
+                                android:paddingEnd="@dimen/item_text_margin"
+                                android:text="@string/direct_mode"
+                                android:textSize="12sp" />
+                        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                        <FrameLayout
+                            android:id="@+id/url_test_layout"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/item_tailing_margin">
+
+                            <ImageView
+                                android:id="@+id/url_test_view"
+                                android:layout_width="@dimen/item_tailing_component_size"
+                                android:layout_height="@dimen/item_tailing_component_size"
+                                android:layout_gravity="center"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:clickable="true"
+                                android:contentDescription="@string/delay_test"
+                                android:focusable="true"
+                                android:onClick="@{() -> self.requestUrlTesting()}"
+                                android:padding="@dimen/toolbar_image_action_padding"
+                                android:src="@drawable/ic_baseline_flash_on" />
+
+                            <ProgressBar
+                                android:id="@+id/url_test_progress_view"
+                                android:layout_width="@dimen/item_tailing_component_size"
+                                android:layout_height="@dimen/item_tailing_component_size"
+                                android:visibility="gone" />
+                        </FrameLayout>
+                    </LinearLayout>
 
                 </RelativeLayout>
             </com.github.kr328.clash.design.view.ActivityBarLayout>
@@ -115,20 +154,5 @@
                 android:elevation="@dimen/tab_layout_elevation" />
         </LinearLayout>
 
-        <FrameLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end|bottom"
-            android:paddingBottom="@{self.surface.insets.bottom}">
-
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/url_test_float_view"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/item_tailing_margin"
-                android:contentDescription="@string/delay_test"
-                android:onClick="@{() -> self.requestUrlTesting()}"
-                android:src="@drawable/ic_baseline_flash_on" />
-        </FrameLayout>
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </layout>

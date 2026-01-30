@@ -66,10 +66,10 @@ class MainActivity : BaseActivity<MainDesign>() {
                                 startActivity(LogsActivity::class.intent)
                             }
                         }
-                        MainDesign.Request.OpenSettings ->
-                            startActivity(SettingsActivity::class.intent)
-                        MainDesign.Request.OpenHelp ->
-                            startActivity(HelpActivity::class.intent)
+                        MainDesign.Request.OpenNetwork ->
+                            startActivity(NetworkSettingsActivity::class.intent)
+                        MainDesign.Request.OpenApp ->
+                            startActivity(AppSettingsActivity::class.intent)
                         MainDesign.Request.OpenAbout ->
                             design.showAbout(queryAppVersionName(), queryCoreVersion())
                     }

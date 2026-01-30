@@ -48,7 +48,7 @@ class ServiceStore(context: Context) {
 
     var allowBypass by store.boolean(
         key = "allow_bypass",
-        defaultValue = true
+        defaultValue = false
     )
 
     var allowIpv6 by store.boolean(
@@ -58,7 +58,7 @@ class ServiceStore(context: Context) {
 
     var tunStackMode by store.string(
         key = "tun_stack_mode",
-        defaultValue = "system"
+        defaultValue = "mixed"
     )
 
     var dynamicNotification by store.boolean(

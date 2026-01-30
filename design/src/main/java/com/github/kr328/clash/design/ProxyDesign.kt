@@ -1,7 +1,6 @@
 package com.github.kr328.clash.design
 
 import android.content.Context
-import android.content.res.ColorStateList
 import android.view.View
 import android.widget.Toast
 import androidx.viewpager2.widget.ViewPager2
@@ -9,15 +8,14 @@ import com.github.kr328.clash.core.model.Proxy
 import com.github.kr328.clash.core.model.TunnelState
 import com.github.kr328.clash.design.adapter.ProxyAdapter
 import com.github.kr328.clash.design.adapter.ProxyPageAdapter
-import com.github.kr328.clash.design.component.ProxyMenu
 import com.github.kr328.clash.design.component.ProxyViewConfig
 import com.github.kr328.clash.design.databinding.DesignProxyBinding
 import com.github.kr328.clash.design.model.ProxyState
 import com.github.kr328.clash.design.store.UiStore
 import com.github.kr328.clash.design.util.applyFrom
 import com.github.kr328.clash.design.util.layoutInflater
-import com.github.kr328.clash.design.util.resolveThemedColor
 import com.github.kr328.clash.design.util.root
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.tabs.TabLayoutMediator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -43,18 +41,9 @@ class ProxyDesign(
 
     private var config = ProxyViewConfig(context, uiStore.proxyLine)
 
-    private val menu: ProxyMenu by lazy {
-        ProxyMenu(context, binding.menuView, overrideMode, uiStore, requests) {
-            config.proxyLine = uiStore.proxyLine
-        }
-    }
-
     private val adapter: ProxyPageAdapter
         get() = binding.pagesView.adapter!! as ProxyPageAdapter
 
-    private var horizontalScrolling = false
-    private val verticalBottomScrolled: Boolean
-        get() = adapter.states[binding.pagesView.currentItem].bottom
     private var urlTesting: Boolean
         get() = adapter.states[binding.pagesView.currentItem].urlTesting
         set(value) {
@@ -94,8 +83,22 @@ class ProxyDesign(
 
         binding.activityBarLayout.applyFrom(context)
 
-        binding.menuView.setOnClickListener {
-            menu.show()
+        val initialMode = overrideMode ?: TunnelState.Mode.Rule
+        binding.modeToggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            val mode = when (checkedId) {
+                R.id.rule_mode_btn -> TunnelState.Mode.Rule
+                R.id.global_mode_btn -> TunnelState.Mode.Global
+                R.id.direct_mode_btn -> TunnelState.Mode.Direct
+                else -> return@addOnButtonCheckedListener
+            }
+            requests.trySend(Request.PatchMode(mode))
+        }
+        when (initialMode) {
+            TunnelState.Mode.Rule -> binding.modeToggleGroup.check(R.id.rule_mode_btn)
+            TunnelState.Mode.Global -> binding.modeToggleGroup.check(R.id.global_mode_btn)
+            TunnelState.Mode.Direct -> binding.modeToggleGroup.check(R.id.direct_mode_btn)
+            else -> binding.modeToggleGroup.check(R.id.rule_mode_btn)
         }
 
         if (groupNames.isEmpty()) {
@@ -105,12 +108,7 @@ class ProxyDesign(
             binding.tabLayoutView.visibility = View.GONE
             binding.elevationView.visibility = View.GONE
             binding.pagesView.visibility = View.GONE
-            binding.urlTestFloatView.visibility = View.GONE
         } else {
-            binding.urlTestFloatView.supportImageTintList = ColorStateList.valueOf(
-                context.resolveThemedColor(com.google.android.material.R.attr.colorOnPrimary)
-            )
-
             binding.pagesView.apply {
                 adapter = ProxyPageAdapter(
                     surface,
@@ -127,8 +125,6 @@ class ProxyDesign(
 
                 registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                     override fun onPageScrollStateChanged(state: Int) {
-                        horizontalScrolling = state != ViewPager2.SCROLL_STATE_IDLE
-
                         updateUrlTestButtonStatus()
                     }
 
@@ -160,12 +156,6 @@ class ProxyDesign(
     }
 
     private fun updateUrlTestButtonStatus() {
-        if (verticalBottomScrolled || horizontalScrolling || urlTesting) {
-            binding.urlTestFloatView.hide()
-        } else {
-            binding.urlTestFloatView.show()
-        }
-
         if (urlTesting) {
             binding.urlTestView.visibility = View.GONE
             binding.urlTestProgressView.visibility = View.VISIBLE

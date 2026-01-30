@@ -22,10 +22,6 @@ class SettingsActivity : BaseActivity<SettingsDesign>() {
                             startActivity(AppSettingsActivity::class.intent)
                         SettingsDesign.Request.StartNetwork ->
                             startActivity(NetworkSettingsActivity::class.intent)
-                        SettingsDesign.Request.StartOverride ->
-                            startActivity(OverrideSettingsActivity::class.intent)
-                        SettingsDesign.Request.StartMetaFeature ->
-                            startActivity(MetaFeatureSettingsActivity::class.intent)
                     }
                 }
             }

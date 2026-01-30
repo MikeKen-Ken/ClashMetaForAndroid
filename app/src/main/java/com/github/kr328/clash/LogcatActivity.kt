@@ -12,8 +12,10 @@ import com.github.kr328.clash.common.log.Log
 import com.github.kr328.clash.common.util.fileName
 import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.common.util.ticker
+import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.core.model.LogMessage
 import com.github.kr328.clash.design.LogcatDesign
+import com.github.kr328.clash.util.withClash
 import com.github.kr328.clash.design.dialog.withModelProgressBar
 import com.github.kr328.clash.design.model.LogFile
 import com.github.kr328.clash.design.ui.ToastDuration
@@ -53,14 +55,22 @@ class LogcatActivity : BaseActivity<LogcatDesign>() {
             return showInvalid()
         }
 
-        val design = LogcatDesign(this, false)
+        val initialLogLevel = withClash { Clash.queryOverride(Clash.OverrideSlot.Session).logLevel } ?: LogMessage.Level.Info
+        val design = LogcatDesign(this, false, initialLogLevel)
 
         setContentDesign(design)
 
         design.patchMessages(messages, 0, messages.size)
 
         while (isActive) {
-            when (design.requests.receive()) {
+            when (val req = design.requests.receive()) {
+                is LogcatDesign.Request.ChangeLogLevel -> {
+                    withClash {
+                        val o = Clash.queryOverride(Clash.OverrideSlot.Session)
+                        o.logLevel = req.level
+                        Clash.patchOverride(Clash.OverrideSlot.Session, o)
+                    }
+                }
                 LogcatDesign.Request.Delete -> {
                     withContext(Dispatchers.IO) {
                         logsDir.resolve(file.fileName).delete()
@@ -92,7 +102,8 @@ class LogcatActivity : BaseActivity<LogcatDesign>() {
     }
 
     private suspend fun mainStreaming() {
-        val design = LogcatDesign(this, true)
+        val initialLogLevel = withClash { Clash.queryOverride(Clash.OverrideSlot.Session).logLevel } ?: LogMessage.Level.Info
+        val design = LogcatDesign(this, true, initialLogLevel)
 
         setContentDesign(design)
 
@@ -110,6 +121,13 @@ class LogcatActivity : BaseActivity<LogcatDesign>() {
                 }
                 design.requests.onReceive {
                     when (it) {
+                        is LogcatDesign.Request.ChangeLogLevel -> {
+                            withClash {
+                                val o = Clash.queryOverride(Clash.OverrideSlot.Session)
+                                o.logLevel = it.level
+                                Clash.patchOverride(Clash.OverrideSlot.Session, o)
+                            }
+                        }
                         LogcatDesign.Request.Close -> {
                             stopService(LogcatService::class.intent)
                             startActivity(LogsActivity::class.intent)

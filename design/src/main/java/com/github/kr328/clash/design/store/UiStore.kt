@@ -37,7 +37,7 @@ class UiStore(context: Context) {
 
     var proxyLine: Int by store.int(
         key = "proxy_line",
-        defaultValue = 2
+        defaultValue = 3
     )
 
     var proxySort: ProxySort by store.enum(
