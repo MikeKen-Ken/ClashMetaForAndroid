@@ -16,6 +16,12 @@ class ConnectionAdapter(
 
     var connections: List<Connection> = emptyList()
 
+    init {
+        setHasStableIds(true)
+    }
+
+    override fun getItemId(position: Int): Long = connections[position].id.hashCode().toLong()
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
         return Holder(
             AdapterConnectionItemBinding.inflate(context.layoutInflater, parent, false)
@@ -25,12 +31,38 @@ class ConnectionAdapter(
     override fun onBindViewHolder(holder: Holder, position: Int) {
         val conn = connections[position]
         holder.binding.connection = conn
+        val ruleText = formatRuleDisplay(conn)
+        holder.binding.ruleDisplayText = ruleText
+        holder.binding.ruleDisplayView.visibility = if (ruleText.isNotEmpty()) View.VISIBLE else View.GONE
         val processView = holder.binding.processView
         val process = conn.metadata?.process?.takeIf { it.isNotEmpty() }
         processView.text = process
         processView.visibility = if (process != null) View.VISIBLE else View.GONE
+        val iconView = holder.binding.appIconView
+        if (process != null) {
+            try {
+                iconView.setImageDrawable(context.packageManager.getApplicationIcon(process))
+                iconView.visibility = View.VISIBLE
+            } catch (_: Exception) {
+                iconView.visibility = View.GONE
+            }
+        } else {
+            iconView.visibility = View.GONE
+        }
         holder.binding.closeView.setOnClickListener { onClose(conn) }
     }
 
     override fun getItemCount(): Int = connections.size
+
+    private fun formatRuleDisplay(conn: Connection): String {
+        return buildString {
+            append(conn.chains)
+            if (conn.rule.isNotEmpty()) {
+                append(" --> [")
+                append(conn.rule)
+                if (conn.ruleDetail.isNotEmpty()) append(",").append(conn.ruleDetail)
+                append("]")
+            }
+        }
+    }
 }

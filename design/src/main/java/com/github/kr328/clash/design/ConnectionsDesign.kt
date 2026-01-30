@@ -9,6 +9,7 @@ import com.github.kr328.clash.design.databinding.DesignConnectionsBinding
 import com.github.kr328.clash.design.util.applyFrom
 import com.github.kr328.clash.design.util.applyLinearAdapter
 import com.github.kr328.clash.design.util.layoutInflater
+import com.github.kr328.clash.design.util.patchDataSet
 import com.github.kr328.clash.design.util.root
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -29,8 +30,7 @@ class ConnectionsDesign(context: Context) : Design<ConnectionsDesign.Request>(co
 
     suspend fun patchConnections(snapshot: ConnectionsSnapshot) {
         withContext(Dispatchers.Main) {
-            adapter.connections = snapshot.connections
-            adapter.notifyDataSetChanged()
+            adapter.patchDataSet(adapter::connections, snapshot.connections, detectMove = true) { it.id }
         }
     }
 

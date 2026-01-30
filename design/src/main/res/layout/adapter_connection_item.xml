@@ -5,6 +5,9 @@
         <variable
             name="connection"
             type="com.github.kr328.clash.core.model.Connection" />
+        <variable
+            name="ruleDisplayText"
+            type="String" />
     </data>
 
     <LinearLayout
@@ -14,14 +17,27 @@
         android:clickable="true"
         android:focusable="true"
         android:orientation="horizontal"
-        android:paddingHorizontal="@dimen/item_tailing_margin"
-        android:paddingVertical="@dimen/item_padding_vertical">
+        android:paddingStart="@dimen/item_tailing_margin"
+        android:paddingEnd="@dimen/item_tailing_margin"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp">
+
+        <ImageView
+            android:id="@+id/app_icon_view"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginEnd="@dimen/item_text_margin"
+            android:contentDescription="@null"
+            android:scaleType="centerCrop"
+            android:visibility="gone" />
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:minHeight="44dp">
 
             <TextView
                 android:layout_width="match_parent"
@@ -29,27 +45,32 @@
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:text="@{connection.metadata != null ? connection.metadata.host : connection.chains}"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Body1" />
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
+                android:textSize="15sp" />
 
             <TextView
                 android:id="@+id/process_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/item_text_margin"
+                android:layout_marginTop="2dp"
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-                android:textColor="?attr/colorControlActivated" />
+                android:textColor="?attr/colorControlActivated"
+                android:textSize="12sp" />
 
             <TextView
+                android:id="@+id/rule_display_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/item_text_margin"
+                android:layout_marginTop="2dp"
                 android:ellipsize="end"
-                android:maxLines="1"
-                android:text="@{connection.chains}"
+                android:maxLines="2"
+                android:text="@{ruleDisplayText}"
                 android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-                android:textColor="?attr/colorControlActivated" />
+                android:textColor="?attr/colorControlActivated"
+                android:textSize="11sp"
+                android:fontFamily="monospace" />
         </LinearLayout>
 
         <ImageView
@@ -57,6 +78,7 @@
             android:layout_width="@dimen/item_tailing_component_size"
             android:layout_height="@dimen/item_tailing_component_size"
             android:layout_gravity="center_vertical"
+            android:layout_marginStart="@dimen/item_text_margin"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/delete"
             android:padding="@dimen/toolbar_image_action_padding"
