@@ -44,8 +44,7 @@ func queryConnectionsSnapshot() *connectionsSnapshotDTO {
 		UploadTotal:   snap.UploadTotal,
 		Connections:   make([]connectionDTO, 0, len(snap.Connections)),
 	}
-	for _, c := range snap.Connections {
-		info := c.Info()
+	for _, info := range snap.Connections {
 		if info == nil {
 			continue
 		}
