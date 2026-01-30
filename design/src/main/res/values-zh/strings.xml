@@ -20,6 +20,9 @@
     <string name="delete_all_logs">删除所有日志</string>
     <string name="delete_all_logs_warn">所有历史日志将丢失</string>
     <string name="detail">详情</string>
+    <string name="proxy_rule">规则</string>
+    <string name="proxy_global">全局</string>
+    <string name="proxy_direct">直连</string>
     <string name="direct_mode">直连模式</string>
     <string name="disabled">已禁用</string>
     <string name="dns_hijacking">DNS 劫持</string>
@@ -57,6 +60,7 @@
     <string name="profile_name">配置名称</string>
     <string name="profiles">配置</string>
     <string name="properties">参数</string>
+    <string name="connections">连接</string>
     <string name="proxy">代理</string>
     <string name="recently">近期</string>
     <string name="route_system_traffic">自动路由系统流量</string>

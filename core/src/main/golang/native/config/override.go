@@ -1,10 +1,13 @@
 package config
 
 import (
+	"encoding/json"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/metacubex/mihomo/constant"
+	"github.com/metacubex/mihomo/log"
 )
 
 type OverrideSlot int
@@ -18,6 +21,11 @@ const defaultPersistOverride = `{}`
 const defaultSessionOverride = `{}`
 
 var sessionOverride = defaultSessionOverride
+
+// sessionOverrideLogLevel is used to apply log-level from session override immediately
+type sessionOverrideLogLevel struct {
+	LogLevel *string `json:"log-level"`
+}
 
 func overridePersistPath() string {
 	return constant.Path.Resolve("override.json")
@@ -55,6 +63,14 @@ func WriteOverride(slot OverrideSlot, content string) {
 		_, err = file.Write([]byte(content))
 	case OverrideSlotSession:
 		sessionOverride = content
+		// Apply log-level immediately so changing level in UI takes effect without reloading config
+		var o sessionOverrideLogLevel
+		if err := json.Unmarshal([]byte(content), &o); err == nil && o.LogLevel != nil {
+			levelText := strings.ToLower(strings.TrimSpace(*o.LogLevel))
+			if level, ok := log.LogLevelMapping[levelText]; ok {
+				log.SetLevel(level)
+			}
+		}
 	}
 }
 

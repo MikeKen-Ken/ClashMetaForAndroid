@@ -2,6 +2,9 @@ package com.github.kr328.clash.design
 
 import android.content.Context
 import android.view.View
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import com.github.kr328.clash.core.model.LogMessage
 import com.github.kr328.clash.design.adapter.LogFileAdapter
 import com.github.kr328.clash.design.databinding.DesignLogsBinding
 import com.github.kr328.clash.design.model.LogFile
@@ -12,11 +15,14 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 
-class LogsDesign(context: Context) : Design<LogsDesign.Request>(context) {
+class LogsDesign(
+    context: Context,
+    initialLogLevel: LogMessage.Level?,
+) : Design<LogsDesign.Request>(context) {
     sealed class Request {
         object StartLogcat : Request()
         object DeleteAll : Request()
-
+        data class ChangeLogLevel(val level: LogMessage.Level) : Request()
         data class OpenFile(val file: LogFile) : Request()
     }
 
@@ -53,5 +59,32 @@ class LogsDesign(context: Context) : Design<LogsDesign.Request>(context) {
         binding.activityBarLayout.applyFrom(context)
 
         binding.recyclerList.applyLinearAdapter(context, adapter)
+
+        val logLevels = arrayOf(
+            LogMessage.Level.Debug,
+            LogMessage.Level.Info,
+            LogMessage.Level.Warning,
+            LogMessage.Level.Error,
+            LogMessage.Level.Silent,
+        )
+        val levelStrings = arrayOf(
+            context.getString(R.string.debug),
+            context.getString(R.string.info),
+            context.getString(R.string.warning),
+            context.getString(R.string.error),
+            context.getString(R.string.silent),
+        )
+        val levelAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, levelStrings).apply {
+            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
+        binding.logLevelSpinner.adapter = levelAdapter
+        val initialIndex = logLevels.indexOf(initialLogLevel).coerceAtLeast(0)
+        binding.logLevelSpinner.setSelection(initialIndex)
+        binding.logLevelSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                requests.trySend(Request.ChangeLogLevel(logLevels[position]))
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
     }
 }

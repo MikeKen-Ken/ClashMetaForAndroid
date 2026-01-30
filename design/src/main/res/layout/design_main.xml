@@ -92,6 +92,16 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginVertical="@dimen/main_card_margin_vertical"
+                    android:onClick="@{() -> self.request(Request.OpenConnections)}"
+                    android:visibility="@{clashRunning ? View.VISIBLE : View.GONE}"
+                    app:icon="@drawable/ic_baseline_domain"
+                    app:subtext="@string/connections"
+                    app:text="@string/connections" />
+
+                <com.github.kr328.clash.design.view.LargeActionCard
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="@dimen/main_card_margin_vertical"
                     android:onClick="@{() -> self.request(Request.OpenProxy)}"
                     android:visibility="@{clashRunning ? View.VISIBLE : View.GONE}"
                     app:icon="@drawable/ic_baseline_apps"

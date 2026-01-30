@@ -299,6 +299,25 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeQueryConfiguration(JNIEnv *
     return new_string(response);
 }
 
+JNIEXPORT jstring JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeQueryConnections(JNIEnv *env, jobject thiz) {
+    TRACE_METHOD();
+
+    scoped_string response = queryConnections();
+
+    return new_string(response);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeCloseConnection(JNIEnv *env, jobject thiz,
+                                                                      jstring id) {
+    TRACE_METHOD();
+
+    scoped_string _id = get_string(id);
+
+    return (jboolean) closeConnection(_id);
+}
+
 JNIEXPORT void JNICALL
 Java_com_github_kr328_clash_core_bridge_Bridge_nativeSubscribeLogcat(JNIEnv *env, jobject thiz,
                                                                      jobject callback) {

@@ -2,9 +2,12 @@ package com.github.kr328.clash
 
 import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.common.util.setFileName
+import com.github.kr328.clash.core.Clash
+import com.github.kr328.clash.core.model.LogMessage
 import com.github.kr328.clash.design.LogsDesign
 import com.github.kr328.clash.design.model.LogFile
 import com.github.kr328.clash.util.logsDir
+import com.github.kr328.clash.util.withClash
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.selects.select
@@ -13,7 +16,8 @@ import kotlinx.coroutines.withContext
 class LogsActivity : BaseActivity<LogsDesign>() {
 
     override suspend fun main() {
-        val design = LogsDesign(this)
+        val initialLogLevel = withClash { Clash.queryOverride(Clash.OverrideSlot.Session).logLevel } ?: LogMessage.Level.Info
+        val design = LogsDesign(this, initialLogLevel)
 
         setContentDesign(design)
 
@@ -33,6 +37,13 @@ class LogsActivity : BaseActivity<LogsDesign>() {
                 }
                 design.requests.onReceive {
                     when (it) {
+                        is LogsDesign.Request.ChangeLogLevel -> {
+                            withClash {
+                                val o = Clash.queryOverride(Clash.OverrideSlot.Session)
+                                o.logLevel = it.level
+                                Clash.patchOverride(Clash.OverrideSlot.Session, o)
+                            }
+                        }
                         LogsDesign.Request.StartLogcat -> {
                             startActivity(LogcatActivity::class.intent)
                             finish()

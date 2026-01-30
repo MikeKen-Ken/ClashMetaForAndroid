@@ -4,8 +4,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.view.View
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
 import androidx.core.content.getSystemService
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.github.kr328.clash.core.model.LogMessage
@@ -20,13 +18,11 @@ import kotlinx.coroutines.withContext
 class LogcatDesign(
     context: Context,
     private val streaming: Boolean,
-    initialLogLevel: LogMessage.Level?,
 ) : Design<LogcatDesign.Request>(context) {
     sealed class Request {
         object Close : Request()
         object Delete : Request()
         object Export : Request()
-        data class ChangeLogLevel(val level: LogMessage.Level) : Request()
     }
 
     private val binding = DesignLogcatBinding
@@ -72,33 +68,6 @@ class LogcatDesign(
             }
         }
         binding.recyclerList.adapter = adapter
-
-        val logLevels = arrayOf(
-            LogMessage.Level.Debug,
-            LogMessage.Level.Info,
-            LogMessage.Level.Warning,
-            LogMessage.Level.Error,
-            LogMessage.Level.Silent,
-        )
-        val levelStrings = arrayOf(
-            context.getString(R.string.debug),
-            context.getString(R.string.info),
-            context.getString(R.string.warning),
-            context.getString(R.string.error),
-            context.getString(R.string.silent),
-        )
-        val levelAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, levelStrings).apply {
-            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        }
-        binding.logLevelSpinner.adapter = levelAdapter
-        val initialIndex = logLevels.indexOf(initialLogLevel).coerceAtLeast(0)
-        binding.logLevelSpinner.setSelection(initialIndex)
-        binding.logLevelSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                requests.trySend(Request.ChangeLogLevel(logLevels[position]))
-            }
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
-        }
 
         binding.deleteView.setOnClickListener { requests.trySend(Request.Delete) }
         binding.exportView.setOnClickListener { requests.trySend(Request.Export) }

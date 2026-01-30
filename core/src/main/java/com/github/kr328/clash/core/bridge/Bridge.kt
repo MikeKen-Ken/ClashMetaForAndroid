@@ -47,6 +47,8 @@ object Bridge {
     external fun nativeWriteOverride(slot: Int, content: String)
     external fun nativeClearOverride(slot: Int)
     external fun nativeQueryConfiguration(): String
+    external fun nativeQueryConnections(): String
+    external fun nativeCloseConnection(id: String): Boolean
     external fun nativeSubscribeLogcat(callback: LogcatInterface)
     external fun nativeSubscribeHealthCheck(callback: HealthCheckCallback)
     external fun nativeCoreVersion(): String

@@ -9,7 +9,11 @@
     <string name="running">Running</string>
     <string name="format_traffic_forwarded">%s Forwarded</string>
 
+    <string name="connections">Connections</string>
     <string name="proxy">Proxy</string>
+    <string name="proxy_rule">Rule</string>
+    <string name="proxy_global">Global</string>
+    <string name="proxy_direct">Direct</string>
     <string name="direct_mode">Direct Mode</string>
     <string name="rule_mode">Rule Mode</string>
     <string name="global_mode">Global Mode</string>

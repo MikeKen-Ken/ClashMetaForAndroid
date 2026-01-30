@@ -41,17 +41,7 @@
                     android:layout_height="wrap_content"
                     android:layout_alignParentStart="true"
                     android:layout_centerVertical="true"
-                    android:layout_toStartOf="@id/log_level_spinner" />
-
-                <Spinner
-                    android:id="@+id/log_level_spinner"
-                    android:layout_width="wrap_content"
-                    android:layout_height="@dimen/item_tailing_component_size"
-                    android:layout_centerVertical="true"
-                    android:layout_marginEnd="@dimen/item_tailing_margin"
-                    android:layout_marginStart="@dimen/item_tailing_margin"
-                    android:layout_toStartOf="@id/action_layout"
-                    android:minWidth="80dp" />
+                    android:layout_toStartOf="@id/action_layout" />
 
                 <FrameLayout
                     android:id="@+id/action_layout"

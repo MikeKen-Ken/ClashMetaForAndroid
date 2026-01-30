@@ -216,6 +216,17 @@ object Clash {
         )
     }
 
+    fun queryConnections(): ConnectionsSnapshot {
+        return Json.Default.decodeFromString(
+            ConnectionsSnapshot.serializer(),
+            Bridge.nativeQueryConnections()
+        )
+    }
+
+    fun closeConnection(id: String): Boolean {
+        return Bridge.nativeCloseConnection(id)
+    }
+
     fun subscribeLogcat(): ReceiveChannel<LogMessage> {
         return Channel<LogMessage>(32).apply {
             Bridge.nativeSubscribeLogcat(object : LogcatInterface {

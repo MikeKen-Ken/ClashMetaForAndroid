@@ -73,36 +73,36 @@
                                 android:id="@+id/rule_mode_btn"
                                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                                 android:layout_width="wrap_content"
-                                android:layout_height="@dimen/item_tailing_component_size"
+                                android:layout_height="wrap_content"
                                 android:minWidth="0dp"
-                                android:minHeight="0dp"
-                                android:paddingStart="@dimen/item_text_margin"
-                                android:paddingEnd="@dimen/item_text_margin"
-                                android:text="@string/rule_mode"
+                                android:minHeight="36dp"
+                                android:paddingStart="10dp"
+                                android:paddingEnd="10dp"
+                                android:text="@string/proxy_rule"
                                 android:textSize="12sp" />
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/global_mode_btn"
                                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                                 android:layout_width="wrap_content"
-                                android:layout_height="@dimen/item_tailing_component_size"
+                                android:layout_height="wrap_content"
                                 android:minWidth="0dp"
-                                android:minHeight="0dp"
-                                android:paddingStart="@dimen/item_text_margin"
-                                android:paddingEnd="@dimen/item_text_margin"
-                                android:text="@string/global_mode"
+                                android:minHeight="36dp"
+                                android:paddingStart="10dp"
+                                android:paddingEnd="10dp"
+                                android:text="@string/proxy_global"
                                 android:textSize="12sp" />
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/direct_mode_btn"
                                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                                 android:layout_width="wrap_content"
-                                android:layout_height="@dimen/item_tailing_component_size"
+                                android:layout_height="wrap_content"
                                 android:minWidth="0dp"
-                                android:minHeight="0dp"
-                                android:paddingStart="@dimen/item_text_margin"
-                                android:paddingEnd="@dimen/item_text_margin"
-                                android:text="@string/direct_mode"
+                                android:minHeight="36dp"
+                                android:paddingStart="10dp"
+                                android:paddingEnd="10dp"
+                                android:text="@string/proxy_direct"
                                 android:textSize="12sp" />
                         </com.google.android.material.button.MaterialButtonToggleGroup>
 

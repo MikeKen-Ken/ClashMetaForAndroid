@@ -53,6 +53,8 @@ class MainActivity : BaseActivity<MainDesign>() {
                             else
                                 design.startClash()
                         }
+                        MainDesign.Request.OpenConnections ->
+                            startActivity(ConnectionsActivity::class.intent)
                         MainDesign.Request.OpenProxy ->
                             startActivity(ProxyActivity::class.intent)
                         MainDesign.Request.OpenProfiles ->

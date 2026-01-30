@@ -118,6 +118,11 @@
             android:exported="false"
             android:label="@string/profile" />
         <activity
+            android:name=".ConnectionsActivity"
+            android:configChanges="uiMode"
+            android:exported="false"
+            android:label="@string/connections" />
+        <activity
             android:name=".ProxyActivity"
             android:configChanges="uiMode"
             android:exported="false"
