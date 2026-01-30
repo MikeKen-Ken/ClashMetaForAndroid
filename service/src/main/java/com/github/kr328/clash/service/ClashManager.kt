@@ -68,6 +68,14 @@ class ClashManager(private val context: Context) : IClashManager,
         Clash.clearOverride(slot)
     }
 
+    override fun queryConnections(): ConnectionsSnapshot {
+        return Clash.queryConnections()
+    }
+
+    override fun closeConnection(id: String): Boolean {
+        return Clash.closeConnection(id)
+    }
+
     override suspend fun healthCheck(group: String) {
         return Clash.healthCheck(group).await()
     }

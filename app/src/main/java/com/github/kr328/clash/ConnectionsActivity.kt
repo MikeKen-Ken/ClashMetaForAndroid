@@ -14,6 +14,8 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
         val design = ConnectionsDesign(this)
         setContentDesign(design)
 
+        refreshConnections(design)
+
         val ticker = ticker(TimeUnit.SECONDS.toMillis(1))
 
         while (isActive) {
@@ -27,7 +29,7 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
                 design.requests.onReceive {
                     when (it) {
                         is ConnectionsDesign.Request.CloseConnection -> {
-                            withClash { Clash.closeConnection(it.connection.id) }
+                            withClash { closeConnection(it.connection.id) }
                             launch { refreshConnections(design) }
                         }
                     }
@@ -40,7 +42,13 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
     }
 
     private suspend fun refreshConnections(design: ConnectionsDesign) {
-        val snapshot = withClash { Clash.queryConnections() }
-        design.patchConnections(snapshot)
+        try {
+            val snapshot = withClash { queryConnections() }
+            design.patchConnections(snapshot)
+        } catch (_: Exception) {
+            design.patchConnections(
+                com.github.kr328.clash.core.model.ConnectionsSnapshot(connections = emptyList())
+            )
+        }
     }
 }

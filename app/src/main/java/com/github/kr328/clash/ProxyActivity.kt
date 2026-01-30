@@ -30,14 +30,6 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
 
         setContentDesign(design)
 
-        if (mode == null) {
-            withClash {
-                val o = queryOverride(Clash.OverrideSlot.Session)
-                o.mode = TunnelState.Mode.Rule
-                patchOverride(Clash.OverrideSlot.Session, o)
-            }
-        }
-
         design.requests.send(ProxyDesign.Request.ReloadAll)
 
         while (isActive) {

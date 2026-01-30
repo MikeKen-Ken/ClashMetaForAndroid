@@ -83,7 +83,6 @@ class ProxyDesign(
 
         binding.activityBarLayout.applyFrom(context)
 
-        val initialMode = overrideMode ?: TunnelState.Mode.Rule
         binding.modeToggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
             val mode = when (checkedId) {
@@ -94,11 +93,11 @@ class ProxyDesign(
             }
             requests.trySend(Request.PatchMode(mode))
         }
-        when (initialMode) {
+        when (overrideMode) {
             TunnelState.Mode.Rule -> binding.modeToggleGroup.check(R.id.rule_mode_btn)
             TunnelState.Mode.Global -> binding.modeToggleGroup.check(R.id.global_mode_btn)
             TunnelState.Mode.Direct -> binding.modeToggleGroup.check(R.id.direct_mode_btn)
-            else -> binding.modeToggleGroup.check(R.id.rule_mode_btn)
+            else -> binding.modeToggleGroup.clearChecked()
         }
 
         if (groupNames.isEmpty()) {
