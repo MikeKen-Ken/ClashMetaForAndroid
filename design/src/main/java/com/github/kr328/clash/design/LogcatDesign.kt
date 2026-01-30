@@ -99,5 +99,9 @@ class LogcatDesign(
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
+
+        binding.deleteView.setOnClickListener { requests.trySend(Request.Delete) }
+        binding.exportView.setOnClickListener { requests.trySend(Request.Export) }
+        binding.closeView.setOnClickListener { requests.trySend(Request.Close) }
     }
 }

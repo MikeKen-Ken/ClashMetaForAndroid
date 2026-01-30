@@ -8,7 +8,6 @@
             name="streaming"
             type="boolean" />
         <import type="android.view.View" />
-        <import type="com.github.kr328.clash.design.LogcatDesign.Request" />
     </data>
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -67,6 +66,7 @@
                         android:visibility="@{streaming ? View.GONE : View.VISIBLE}">
 
                         <ImageView
+                            android:id="@+id/delete_view"
                             android:layout_width="@dimen/item_tailing_component_size"
                             android:layout_height="@dimen/item_tailing_component_size"
                             android:layout_marginStart="@dimen/item_tailing_margin"
@@ -74,11 +74,11 @@
                             android:clickable="true"
                             android:contentDescription="@string/delete"
                             android:focusable="true"
-                            android:onClick="@{() -> self.requests.offer(Request.Delete)}"
                             android:padding="@dimen/toolbar_image_action_padding"
                             android:src="@drawable/ic_baseline_delete" />
 
                         <ImageView
+                            android:id="@+id/export_view"
                             android:layout_width="@dimen/item_tailing_component_size"
                             android:layout_height="@dimen/item_tailing_component_size"
                             android:layout_marginStart="@dimen/item_tailing_margin"
@@ -86,12 +86,12 @@
                             android:clickable="true"
                             android:contentDescription="@string/export"
                             android:focusable="true"
-                            android:onClick="@{() -> self.requests.offer(Request.Export)}"
                             android:padding="@dimen/toolbar_image_action_padding"
                             android:src="@drawable/ic_baseline_publish" />
                     </LinearLayout>
 
                     <ImageView
+                        android:id="@+id/close_view"
                         android:layout_width="@dimen/item_tailing_component_size"
                         android:layout_height="@dimen/item_tailing_component_size"
                         android:layout_gravity="end"
@@ -100,7 +100,6 @@
                         android:clickable="true"
                         android:contentDescription="@string/close"
                         android:focusable="true"
-                        android:onClick="@{() -> self.requests.offer(Request.Close)}"
                         android:padding="@dimen/toolbar_image_action_padding"
                         android:src="@drawable/ic_baseline_stop"
                         android:visibility="@{streaming ? View.VISIBLE : View.GONE}" />
