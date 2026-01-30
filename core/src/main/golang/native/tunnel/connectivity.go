@@ -25,6 +25,11 @@ func HealthCheck(name string) {
 		return
 	}
 
+	// 测速时清空手动选择状态，使所有节点都不再是“手动选择”
+	if clearable, ok := p.Adapter().(outboundgroup.ClearManualSelectionAble); ok {
+		clearable.ClearManualSelection()
+	}
+
 	wg := &sync.WaitGroup{}
 
 	for _, pr := range g.Providers() {
