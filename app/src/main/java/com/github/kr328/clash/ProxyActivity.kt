@@ -91,6 +91,26 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                             }
 
                             design.requestRedrawVisible()
+
+                            // 切换节点后重新拉取该组数据，使界面上的延迟等字段与 core 同步更新
+                            launch {
+                                val group = reloadLock.withPermit {
+                                    withClash {
+                                        queryProxyGroup(names[it.index], uiStore.proxySort)
+                                    }
+                                }
+                                val state = states[it.index]
+                                state.now = group.now
+                                design.updateGroup(
+                                    it.index,
+                                    group.proxies,
+                                    group.type == Proxy.Type.Selector ||
+                                        group.type == Proxy.Type.Fallback ||
+                                        group.type == Proxy.Type.URLTest,
+                                    state,
+                                    unorderedStates
+                                )
+                            }
                         }
                         is ProxyDesign.Request.UrlTest -> {
                             launch {
