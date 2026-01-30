@@ -98,12 +98,12 @@ func queryProviders() *C.char {
 
 //export queryConnections
 func queryConnections() *C.char {
-	return marshalJson(tunnel.QueryConnectionsSnapshot())
+	return marshalJson(queryConnectionsSnapshot())
 }
 
 //export closeConnection
 func closeConnection(id C.c_string) C.int {
-	if tunnel.CloseConnection(C.GoString(id)) {
+	if closeConnectionByID(C.GoString(id)) {
 		return 1
 	}
 	return 0

@@ -1,4 +1,4 @@
-package tunnel
+package main
 
 import (
 	"time"
@@ -8,16 +8,16 @@ import (
 
 // connectionDTO is JSON-serializable (atomic types copied to int64, etc.)
 type connectionDTO struct {
-	Id           string         `json:"id"`
-	Metadata     *metadataDTO   `json:"metadata"`
-	Upload       int64          `json:"upload"`
-	Download     int64          `json:"download"`
-	Start        string         `json:"start"`
-	Chains       string         `json:"chains"`
-	ProviderChains string       `json:"providerChains,omitempty"`
-	Rule         string         `json:"rule"`
-	RulePayload  string         `json:"rulePayload"`
-	RuleDetail   string         `json:"ruleDetail,omitempty"`
+	Id            string       `json:"id"`
+	Metadata      *metadataDTO `json:"metadata"`
+	Upload        int64        `json:"upload"`
+	Download      int64        `json:"download"`
+	Start         string       `json:"start"`
+	Chains        string       `json:"chains"`
+	ProviderChains string      `json:"providerChains,omitempty"`
+	Rule          string       `json:"rule"`
+	RulePayload   string       `json:"rulePayload"`
+	RuleDetail    string       `json:"ruleDetail,omitempty"`
 }
 
 type metadataDTO struct {
@@ -34,7 +34,7 @@ type connectionsSnapshotDTO struct {
 	Connections   []connectionDTO `json:"connections"`
 }
 
-func QueryConnectionsSnapshot() *connectionsSnapshotDTO {
+func queryConnectionsSnapshot() *connectionsSnapshotDTO {
 	snap := statistic.DefaultManager.Snapshot()
 	if snap == nil {
 		return &connectionsSnapshotDTO{Connections: []connectionDTO{}}
@@ -59,7 +59,7 @@ func QueryConnectionsSnapshot() *connectionsSnapshotDTO {
 			RulePayload: info.RulePayload,
 			RuleDetail:  info.RuleDetail,
 		}
-		if info.ProviderChain != nil && len(info.ProviderChain) > 0 {
+		if len(info.ProviderChain) > 0 {
 			dto.ProviderChains = info.ProviderChain.String()
 		}
 		if info.Metadata != nil {
@@ -77,7 +77,7 @@ func QueryConnectionsSnapshot() *connectionsSnapshotDTO {
 	return out
 }
 
-func CloseConnection(id string) bool {
+func closeConnectionByID(id string) bool {
 	c := statistic.DefaultManager.Get(id)
 	if c == nil {
 		return false
