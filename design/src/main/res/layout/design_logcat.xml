@@ -78,6 +78,18 @@
                             android:focusable="true"
                             android:padding="@dimen/toolbar_image_action_padding"
                             android:src="@drawable/ic_baseline_publish" />
+
+                        <ImageView
+                            android:id="@+id/sort_order_view"
+                            android:layout_width="@dimen/item_tailing_component_size"
+                            android:layout_height="@dimen/item_tailing_component_size"
+                            android:layout_marginStart="@dimen/item_tailing_margin"
+                            android:background="?selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:contentDescription="@string/log_reverse_order"
+                            android:focusable="true"
+                            android:padding="@dimen/toolbar_image_action_padding"
+                            android:src="@drawable/ic_baseline_swap_vert" />
                     </LinearLayout>
 
                     <ImageView

@@ -99,6 +99,7 @@
     <string name="delete_all_logs">Удалить все логи</string>
     <string name="delete_all_logs_warn">Вся история будет ПОТЕРЯНА</string>
     <string name="file_exported">Файл экспортирован</string>
+    <string name="log_reverse_order">Обратный порядок</string>
 
     <string name="behavior">Поведение</string>
     <string name="network">Сеть</string>

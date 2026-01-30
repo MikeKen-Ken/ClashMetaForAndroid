@@ -33,6 +33,7 @@
     <string name="external">外部</string>
     <string name="file">檔案</string>
     <string name="file_exported">檔案已匯出</string>
+    <string name="log_reverse_order">倒序</string>
     <string name="format_minutes">%d 分鐘</string>
     <string name="format_profile_activated">%s 已啟用</string>
     <string name="format_traffic_forwarded">%s 已轉送</string>

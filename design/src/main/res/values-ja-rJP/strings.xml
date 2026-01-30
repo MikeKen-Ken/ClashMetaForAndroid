@@ -80,6 +80,7 @@
     <string name="delete_all_logs">すべてのログを削除</string>
     <string name="delete_all_logs_warn">すべてのログが削除されます</string>
     <string name="file_exported">ファイルをエクスポートしました</string>
+    <string name="log_reverse_order">逆順</string>
     <string name="behavior">動作</string>
     <string name="network">ネットワーク</string>
     <string name="interface_">インターフェイス</string>

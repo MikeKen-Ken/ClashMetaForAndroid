@@ -80,6 +80,7 @@
     <string name="delete_all_logs">전체 로그 삭제</string>
     <string name="delete_all_logs_warn">전체 로그가 삭제됩니다.</string>
     <string name="file_exported">파일 내보내기 완료</string>
+    <string name="log_reverse_order">역순</string>
     <string name="behavior">동작</string>
     <string name="network">네트워크</string>
     <string name="interface_">테마</string>

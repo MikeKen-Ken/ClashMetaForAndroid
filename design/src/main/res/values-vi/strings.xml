@@ -95,6 +95,7 @@
     <string name="feedback">Phản hồi</string>
     <string name="file">Tệp</string>
     <string name="file_exported">Tệp đã xuất</string>
+    <string name="log_reverse_order">Đảo thứ tự</string>
     <string name="file_name">Tên tệp</string>
     <string name="files">Tệp</string>
     <string name="filter">Bộ lọc</string>

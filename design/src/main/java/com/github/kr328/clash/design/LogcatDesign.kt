@@ -27,6 +27,10 @@ class LogcatDesign(
 
     private val binding = DesignLogcatBinding
         .inflate(context.layoutInflater, context.root, false)
+
+    /** When true, display order is reversed (oldest-first when streaming; newest-first when file). */
+    private var reversedOrder = false
+
     private val adapter = LogMessageAdapter(context) {
         launch {
             val data = ClipData.newPlainText("log_message", it.message)
@@ -62,15 +66,26 @@ class LogcatDesign(
         binding.recyclerList.bindAppBarElevation(binding.activityBarLayout)
 
         binding.recyclerList.layoutManager = LinearLayoutManager(context).apply {
-            if (streaming) {
-                reverseLayout = true
-                stackFromEnd = true
-            }
+            applySortOrder(false)
         }
         binding.recyclerList.adapter = adapter
 
         binding.deleteView.setOnClickListener { requests.trySend(Request.Delete) }
         binding.exportView.setOnClickListener { requests.trySend(Request.Export) }
+        binding.sortOrderView.setOnClickListener { toggleSortOrder() }
         binding.closeView.setOnClickListener { requests.trySend(Request.Close) }
+    }
+
+    private fun toggleSortOrder() {
+        reversedOrder = !reversedOrder
+        (binding.recyclerList.layoutManager as? LinearLayoutManager)?.applySortOrder(true)
+    }
+
+    private fun LinearLayoutManager.applySortOrder(scrollToTop: Boolean) {
+        reverseLayout = streaming != reversedOrder
+        stackFromEnd = reverseLayout
+        if (scrollToTop) {
+            binding.recyclerList.scrollToPosition(0)
+        }
     }
 }

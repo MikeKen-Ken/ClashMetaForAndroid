@@ -4,30 +4,13 @@ import (
 	"os"
 	P "path"
 	"runtime"
-	"strings"
 
 	"cfa/native/app"
 
-	"github.com/metacubex/mihomo/common/yaml"
 	"github.com/metacubex/mihomo/config"
 	"github.com/metacubex/mihomo/hub"
 	"github.com/metacubex/mihomo/log"
 )
-
-func logDns(cfg *config.RawConfig) {
-	bytes, err := yaml.Marshal(&cfg.DNS)
-	if err != nil {
-		log.Warnln("Marshal dns: %s", err.Error())
-
-		return
-	}
-
-	log.Infoln("dns:")
-
-	for _, line := range strings.Split(string(bytes), "\n") {
-		log.Infoln("  %s", line)
-	}
-}
 
 func UnmarshalAndPatch(profilePath string) (*config.RawConfig, error) {
 	configPath := P.Join(profilePath, "config.yaml")
@@ -65,8 +48,6 @@ func Load(path string) error {
 
 		return err
 	}
-
-	logDns(rawCfg)
 
 	cfg, err := Parse(rawCfg)
 	if err != nil {

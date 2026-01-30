@@ -109,6 +109,7 @@
     <string name="delete_all_logs">Delete All Logs</string>
     <string name="delete_all_logs_warn">All historical logs will *LOST*</string>
     <string name="file_exported">File Exported</string>
+    <string name="log_reverse_order">Reverse order</string>
 
     <string name="behavior">Behavior</string>
     <string name="network">Network</string>

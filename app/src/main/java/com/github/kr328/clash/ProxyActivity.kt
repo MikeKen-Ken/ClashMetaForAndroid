@@ -7,6 +7,7 @@ import com.github.kr328.clash.core.model.Proxy
 import com.github.kr328.clash.design.ProxyDesign
 import com.github.kr328.clash.design.model.ProxyState
 import com.github.kr328.clash.util.withClash
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
@@ -19,7 +20,7 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
         val names = withClash { queryProxyGroupNames(uiStore.proxyExcludeNotSelectable) }
         val states = List(names.size) { ProxyState("?") }
         val unorderedStates = names.indices.map { names[it] to states[it] }.toMap()
-        val reloadLock = Semaphore(10)
+        val reloadLock = Semaphore(3)
 
         val design = ProxyDesign(
             this,
@@ -58,8 +59,16 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                             finish()
                         }
                         ProxyDesign.Request.ReloadAll -> {
-                            names.indices.forEach { idx ->
-                                design.requests.trySend(ProxyDesign.Request.Reload(idx))
+                            launch {
+                                val priority =
+                                    names.indexOf(uiStore.proxyLastGroup).let { if (it >= 0) it else 0 }
+                                design.requests.send(ProxyDesign.Request.Reload(priority))
+                                names.indices.forEach { idx ->
+                                    if (idx != priority) {
+                                        delay(45)
+                                        design.requests.send(ProxyDesign.Request.Reload(idx))
+                                    }
+                                }
                             }
                         }
                         is ProxyDesign.Request.Reload -> {
