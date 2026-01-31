@@ -10,6 +10,18 @@ import com.github.kr328.clash.common.compat.getDrawableCompat
 import com.github.kr328.clash.design.R
 import com.github.kr328.clash.design.store.UiStore
 
+/**
+ * Ensures [breakCount] does not cut in the middle of a UTF-16 surrogate pair (e.g. emoji).
+ * Otherwise drawText would show replacement character for the second half.
+ */
+private fun safeBreakCount(text: CharSequence, breakCount: Int): Int {
+    var count = breakCount.coerceIn(0, text.length)
+    while (count > 0 && count < text.length && Character.isHighSurrogate(text[count - 1])) {
+        count--
+    }
+    return count
+}
+
 class ProxyView(
     context: Context,
     config: ProxyViewConfig,
@@ -123,12 +135,15 @@ class ProxyView(
         paint.textSize = state.config.textSize
 
         // measure delay text bounds
-        val delayCount = paint.breakText(
+        val delayCount = safeBreakCount(
             state.delayText,
-            false,
-            (width - state.config.layoutPadding * 2 - state.config.contentPadding * 2)
-                .coerceAtLeast(0f),
-            null
+            paint.breakText(
+                state.delayText,
+                false,
+                (width - state.config.layoutPadding * 2 - state.config.contentPadding * 2)
+                    .coerceAtLeast(0f),
+                null
+            )
         )
 
         state.paint.getTextBounds(state.delayText, 0, delayCount, state.rect)
@@ -143,24 +158,34 @@ class ProxyView(
                 )
             .coerceAtLeast(0f)
 
+        // Reserve space so title doesn't overlap manual-selection icon (top-right)
+        val manualIconSize = if (state.isManualSelection) {
+            (state.config.textSize * 1.5f).toInt().coerceIn(18, 28)
+        } else 0
         val manualIconWidth = if (state.isManualSelection) {
-            (state.config.textSize * 1.5f).toInt().coerceIn(18, 28) + state.config.textMargin
+            manualIconSize + state.config.textMargin
         } else 0f
 
-        // measure title text bounds
-        val titleCount = paint.breakText(
+        // measure title text bounds (safe break so emoji/surrogate pairs are not cut)
+        val titleCount = safeBreakCount(
             state.title,
-            false,
-            (mainTextWidth - manualIconWidth).coerceAtLeast(0f),
-            null,
+            paint.breakText(
+                state.title,
+                false,
+                (mainTextWidth - manualIconWidth).coerceAtLeast(0f),
+                null,
+            )
         )
 
-        // measure subtitle text bounds
-        val subtitleCount = paint.breakText(
+        // measure subtitle text bounds (safe break for emoji in group/selector names)
+        val subtitleCount = safeBreakCount(
             state.subtitle,
-            false,
-            mainTextWidth,
-            null,
+            paint.breakText(
+                state.subtitle,
+                false,
+                mainTextWidth,
+                null,
+            )
         )
 
         // text draw measure
@@ -181,23 +206,11 @@ class ProxyView(
         }
         paint.color = state.controls
 
-        // draw title (with optional manual-selection indicator)
+        // draw title; manual-selection icon is drawn at top-right corner
         canvas.apply {
-            var titleX = state.config.layoutPadding + state.config.contentPadding
+            val titleX = state.config.layoutPadding + state.config.contentPadding
             val titleY = state.config.layoutPadding +
                     (height - state.config.layoutPadding * 2) / 3f - textOffset
-
-            if (state.isManualSelection) {
-                val iconSize = (state.config.textSize * 1.5f).toInt().coerceIn(18, 28)
-                context.getDrawableCompat(R.drawable.ic_outline_label)?.let { icon ->
-                    DrawableCompat.setTint(icon.mutate(), state.controls)
-                    val iconLeft = titleX.toInt()
-                    val iconTop = (titleY - iconSize / 2f).toInt()
-                    icon.setBounds(iconLeft, iconTop, iconLeft + iconSize, iconTop + iconSize)
-                    icon.draw(canvas)
-                }
-                titleX += iconSize + state.config.textMargin
-            }
 
             drawText(state.title, 0, titleCount, titleX, titleY, paint)
         }
@@ -209,6 +222,17 @@ class ProxyView(
                     (height - state.config.layoutPadding * 2) / 3f * 2 - textOffset
 
             drawText(state.subtitle, 0, subtitleCount, x, y, paint)
+        }
+
+        // draw manual-selection icon at top-right corner (pin icon), last so it stays on top
+        if (state.isManualSelection && manualIconSize > 0) {
+            context.getDrawableCompat(R.drawable.ic_baseline_place)?.let { icon ->
+                DrawableCompat.setTint(icon.mutate(), state.controls)
+                val iconLeft = (width - state.config.layoutPadding - state.config.contentPadding - manualIconSize).toInt()
+                val iconTop = state.config.layoutPadding.toInt()
+                icon.setBounds(iconLeft, iconTop, iconLeft + manualIconSize, iconTop + manualIconSize)
+                icon.draw(canvas)
+            }
         }
     }
 }

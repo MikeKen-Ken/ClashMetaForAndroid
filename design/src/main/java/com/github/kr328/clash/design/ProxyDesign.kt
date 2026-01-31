@@ -25,9 +25,16 @@ import kotlinx.coroutines.withContext
 class ProxyDesign(
     context: Context,
     overrideMode: TunnelState.Mode?,
-    groupNames: List<String>,
+    private val groupNames: List<String>,
     uiStore: UiStore,
 ) : Design<ProxyDesign.Request>(context) {
+
+    /** Icon for "scroll to current node" floating card. Options: ic_baseline_my_location, ic_baseline_place, ic_baseline_gps_fixed, ic_baseline_swap_vert, ic_baseline_swap_vertical_circle */
+    companion object {
+        @JvmStatic
+        var SCROLL_TO_CURRENT_ICON: Int = R.drawable.ic_baseline_my_location
+    }
+
     sealed class Request {
         object ReloadAll : Request()
         object ReLaunch : Request()
@@ -66,6 +73,9 @@ class ProxyDesign(
         adapter.states[position].urlTesting = false
 
         updateUrlTestButtonStatus()
+        if (position == binding.pagesView.currentItem) {
+            updateCurrentNodeFloatingInfo()
+        }
     }
 
     suspend fun requestRedrawVisible() {
@@ -105,12 +115,14 @@ class ProxyDesign(
         if (groupNames.isEmpty()) {
             binding.emptyView.visibility = View.VISIBLE
 
-            binding.scrollToCurrentView.visibility = View.GONE
+            binding.currentNodeFloatingCard.visibility = View.GONE
             binding.urlTestView.visibility = View.GONE
             binding.tabLayoutView.visibility = View.GONE
             binding.elevationView.visibility = View.GONE
             binding.pagesView.visibility = View.GONE
         } else {
+            binding.currentNodeFloatingCard.visibility = View.VISIBLE
+            binding.currentNodeScrollIcon.setImageResource(SCROLL_TO_CURRENT_ICON)
             binding.pagesView.apply {
                 adapter = ProxyPageAdapter(
                     surface,
@@ -132,6 +144,7 @@ class ProxyDesign(
 
                     override fun onPageSelected(position: Int) {
                         uiStore.proxyLastGroup = groupNames[position]
+                        updateCurrentNodeFloatingInfo()
                     }
                 })
             }
@@ -145,6 +158,7 @@ class ProxyDesign(
             binding.pagesView.post {
                 if (initialPosition > 0)
                     binding.pagesView.setCurrentItem(initialPosition, false)
+                updateCurrentNodeFloatingInfo()
             }
         }
     }
@@ -176,5 +190,28 @@ class ProxyDesign(
             binding.urlTestView.visibility = View.VISIBLE
             binding.urlTestProgressView.visibility = View.GONE
         }
+    }
+
+    private fun updateCurrentNodeFloatingInfo() {
+        val position = binding.pagesView.currentItem
+        if (position < 0 || position >= groupNames.size) return
+        val proxyAdapter = adapter.getProxyAdapter(position)
+        val currentNow = proxyAdapter.states.firstOrNull()?.currentGroupNow ?: run {
+            binding.currentGroupNameText.text = groupNames[position]
+            binding.currentNodeNameText.text = ""
+            binding.currentNodeInfoDelayText.text = ""
+            return
+        }
+        val selectedState = proxyAdapter.states.find { it.proxy.name == currentNow } ?: run {
+            binding.currentGroupNameText.text = groupNames[position]
+            binding.currentNodeNameText.text = currentNow
+            binding.currentNodeInfoDelayText.text = ""
+            return
+        }
+        selectedState.update(true)
+        binding.currentGroupNameText.text = groupNames[position]
+        binding.currentNodeNameText.text = selectedState.title
+        val delayStr = if (selectedState.delayTimeout) "Timeout" else "${selectedState.delayText} ms"
+        binding.currentNodeInfoDelayText.text = "${selectedState.subtitle} · $delayStr"
     }
 }

@@ -106,19 +106,6 @@
                                 android:textSize="12sp" />
                         </com.google.android.material.button.MaterialButtonToggleGroup>
 
-                        <ImageView
-                            android:id="@+id/scroll_to_current_view"
-                            android:layout_width="@dimen/item_tailing_component_size"
-                            android:layout_height="@dimen/item_tailing_component_size"
-                            android:layout_marginStart="@dimen/item_tailing_margin"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:clickable="true"
-                            android:contentDescription="@string/proxy_scroll_to_current_node"
-                            android:focusable="true"
-                            android:onClick="@{() -> self.scrollToCurrentNode()}"
-                            android:padding="@dimen/toolbar_image_action_padding"
-                            android:src="@drawable/ic_baseline_swap_vert" />
-
                         <FrameLayout
                             android:id="@+id/url_test_layout"
                             android:layout_width="wrap_content"
@@ -166,6 +153,77 @@
                 android:background="?android:windowBackground"
                 android:elevation="@dimen/tab_layout_elevation" />
         </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/current_node_floating_card"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="24dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:onClick="@{() -> self.scrollToCurrentNode()}"
+            android:visibility="gone"
+            app:cardBackgroundColor="?attr/colorSurface"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="6dp"
+            app:contentPadding="12dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginEnd="8dp">
+
+                    <TextView
+                        android:id="@+id/current_group_name_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:maxWidth="140dp"
+                        android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+                        android:textColor="?android:attr/textColorSecondary"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/current_node_name_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:maxWidth="140dp"
+                        android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/current_node_info_delay_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+                        android:textColor="?attr/colorControlActivated"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <ImageView
+                    android:id="@+id/current_node_scroll_icon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:contentDescription="@string/proxy_scroll_to_current_node"
+                    android:src="@drawable/ic_baseline_my_location" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </layout>
