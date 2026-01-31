@@ -160,7 +160,7 @@ class ProxyView(
 
         // Reserve space so title doesn't overlap manual-selection icon (top-right)
         val manualIconSize = if (state.isManualSelection) {
-            (state.config.textSize * 2.2f).toInt().coerceIn(24, 40)
+            (state.config.textSize * 2.8f).toInt().coerceIn(32, 52)
         } else 0
         val manualIconWidth = if (state.isManualSelection) {
             manualIconSize + state.config.textMargin
@@ -228,7 +228,8 @@ class ProxyView(
         if (state.isManualSelection && manualIconSize > 0) {
             context.getDrawableCompat(R.drawable.ic_baseline_place)?.let { icon ->
                 DrawableCompat.setTint(icon.mutate(), state.controls)
-                val iconLeft = (width - state.config.layoutPadding - state.config.contentPadding - manualIconSize).toInt()
+                val rightPadding = (state.config.contentPadding - state.config.textMargin).coerceAtLeast(0f)
+                val iconLeft = (width - state.config.layoutPadding - rightPadding - manualIconSize).toInt()
                 val iconTop = state.config.layoutPadding.toInt()
                 icon.setBounds(iconLeft, iconTop, iconLeft + manualIconSize, iconTop + manualIconSize)
                 icon.draw(canvas)
