@@ -89,6 +89,13 @@ class ConnectionsDesign(context: Context) : Design<ConnectionsDesign.Request>(co
 
     private fun toggleSortOrder() {
         sortNewestFirst = !sortNewestFirst
-        lastSnapshot?.let { snapshot -> launch { patchConnections(snapshot) } }
+        lastSnapshot?.let { snapshot ->
+            launch {
+                patchConnections(snapshot)
+                withContext(Dispatchers.Main) {
+                    binding.recyclerList.scrollToPosition(0)
+                }
+            }
+        }
     }
 }
