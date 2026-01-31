@@ -196,6 +196,7 @@
     <string name="more">更多</string>
     <string name="save">保存</string>
     <string name="delay_test">延迟测试</string>
+    <string name="proxy_scroll_to_current_node">跳转到当前节点</string>
     <string name="format_provider_type">%1$s(%2$s)</string>
     <string name="rule">规则</string>
     <string name="http">HTTP</string>

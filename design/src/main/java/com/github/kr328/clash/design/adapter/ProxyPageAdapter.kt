@@ -91,6 +91,8 @@ class ProxyPageAdapter(
         return adapters.size
     }
 
+    fun getProxyAdapter(position: Int): ProxyAdapter = adapters[position]
+
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         this.parent = recyclerView
 

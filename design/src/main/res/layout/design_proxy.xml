@@ -106,6 +106,19 @@
                                 android:textSize="12sp" />
                         </com.google.android.material.button.MaterialButtonToggleGroup>
 
+                        <ImageView
+                            android:id="@+id/scroll_to_current_view"
+                            android:layout_width="@dimen/item_tailing_component_size"
+                            android:layout_height="@dimen/item_tailing_component_size"
+                            android:layout_marginStart="@dimen/item_tailing_margin"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:contentDescription="@string/proxy_scroll_to_current_node"
+                            android:focusable="true"
+                            android:onClick="@{() -> self.scrollToCurrentNode()}"
+                            android:padding="@dimen/toolbar_image_action_padding"
+                            android:src="@drawable/ic_baseline_swap_vert" />
+
                         <FrameLayout
                             android:id="@+id/url_test_layout"
                             android:layout_width="wrap_content"

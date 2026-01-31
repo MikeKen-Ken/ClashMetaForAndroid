@@ -1,5 +1,6 @@
 package com.github.kr328.clash
 
+import com.github.kr328.clash.common.ProxyGroupRefresh
 import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.core.model.TunnelState
@@ -35,6 +36,10 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
 
         while (isActive) {
             select<Unit> {
+                ProxyGroupRefresh.channel.onReceive { groupName ->
+                    val idx = names.indexOf(groupName)
+                    if (idx >= 0) design.requests.send(ProxyDesign.Request.Reload(idx))
+                }
                 events.onReceive {
                     when (it) {
                         Event.ProfileLoaded -> {

@@ -4,6 +4,7 @@ import android.app.Service
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import com.github.kr328.clash.common.ProxyGroupRefresh
 import com.github.kr328.clash.common.compat.getColorCompat
 import com.github.kr328.clash.common.compat.pendingIntentFlags
 import com.github.kr328.clash.common.constants.Components
@@ -42,6 +43,7 @@ class HealthCheckNotificationModule(service: Service) : Module<Unit>(service) {
         Bridge.nativeSubscribeHealthCheck(object : HealthCheckCallback {
             override fun onHealthCheckTriggered(groupName: String) {
                 events.trySend(groupName)
+                ProxyGroupRefresh.notifyGroupChanged(groupName)
             }
         })
         

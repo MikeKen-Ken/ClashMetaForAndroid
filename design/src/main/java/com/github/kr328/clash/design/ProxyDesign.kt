@@ -3,11 +3,13 @@ package com.github.kr328.clash.design
 import android.content.Context
 import android.view.View
 import android.widget.Toast
+import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.github.kr328.clash.core.model.Proxy
 import com.github.kr328.clash.core.model.TunnelState
 import com.github.kr328.clash.design.adapter.ProxyAdapter
 import com.github.kr328.clash.design.adapter.ProxyPageAdapter
+import com.github.kr328.clash.design.component.ProxyPageFactory
 import com.github.kr328.clash.design.component.ProxyViewConfig
 import com.github.kr328.clash.design.databinding.DesignProxyBinding
 import com.github.kr328.clash.design.model.ProxyState
@@ -103,6 +105,7 @@ class ProxyDesign(
         if (groupNames.isEmpty()) {
             binding.emptyView.visibility = View.VISIBLE
 
+            binding.scrollToCurrentView.visibility = View.GONE
             binding.urlTestView.visibility = View.GONE
             binding.tabLayoutView.visibility = View.GONE
             binding.elevationView.visibility = View.GONE
@@ -152,6 +155,17 @@ class ProxyDesign(
         requests.trySend(Request.UrlTest(binding.pagesView.currentItem))
 
         updateUrlTestButtonStatus()
+    }
+
+    fun scrollToCurrentNode() {
+        val position = binding.pagesView.currentItem
+        val proxyAdapter = adapter.getProxyAdapter(position)
+        val currentNow = proxyAdapter.states.firstOrNull()?.currentGroupNow ?: return
+        val index = proxyAdapter.states.indexOfFirst { it.proxy.name == currentNow }
+        if (index < 0) return
+        val innerRv = binding.pagesView.getChildAt(0) as? RecyclerView ?: return
+        val pageHolder = innerRv.findViewHolderForAdapterPosition(position) as? ProxyPageFactory.Holder ?: return
+        pageHolder.recyclerView.smoothScrollToPosition(index)
     }
 
     private fun updateUrlTestButtonStatus() {

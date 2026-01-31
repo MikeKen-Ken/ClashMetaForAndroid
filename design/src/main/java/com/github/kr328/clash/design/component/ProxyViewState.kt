@@ -29,6 +29,9 @@ class ProxyViewState(
     private var selected: Boolean = false
     /** True when this node is the current one AND was manually selected (show manual icon). */
     val isManualSelection: Boolean get() = selected && parent.nowIsManual
+
+    /** Current selected node name of this group (for UI e.g. scroll-to-current). */
+    val currentGroupNow: String get() = parent.now
     private var parentNow: String = ""
     private var parentNowIsManual: Boolean = false
     private var linkNow: String? = null

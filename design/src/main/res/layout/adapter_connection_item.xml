@@ -47,7 +47,7 @@
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:text="@{connection.metadata != null ? connection.metadata.host : connection.chains}"
+                android:text="@{connection != null ? (connection.metadata != null ? connection.metadata.host : connection.chains) : &quot;&quot;}"
                 android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
                 android:textSize="15sp" />
 
@@ -81,7 +81,7 @@
                 android:layout_marginTop="2dp"
                 android:ellipsize="end"
                 android:maxLines="2"
-                android:text="@{ruleDisplayText}"
+                android:text="@{ruleDisplayText != null ? ruleDisplayText : &quot;&quot;}"
                 android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
                 android:textColor="?attr/colorControlActivated"
                 android:textSize="11sp"

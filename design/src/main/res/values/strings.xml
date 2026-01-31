@@ -283,6 +283,7 @@
     <string name="more">More</string>
     <string name="save">Save</string>
     <string name="delay_test">Delay Test</string>
+    <string name="proxy_scroll_to_current_node">Jump to current node</string>
 
     <string name="format_provider_type">%1$s(%2$s)</string>
     <string name="rule">Rule</string>
