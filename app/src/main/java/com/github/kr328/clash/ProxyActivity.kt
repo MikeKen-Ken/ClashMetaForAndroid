@@ -44,10 +44,17 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
             design.requests.send(ProxyDesign.Request.ReloadAll)
         }
 
-        // 定时刷新机制：每 3 秒重新拉取数据并更新悬浮信息，确保始终显示正确内容
+        // 定时刷新机制：首次进入时多次拉取数据，之后定期拉取，确保悬浮信息有数据可显示
         launch {
+            // 前 15 秒内每 2 秒拉取一次（覆盖「首次打开、配置未就绪」的情况）
+            repeat(8) {
+                delay(2000)
+                if (!isActive) return@launch
+                design.requests.send(ProxyDesign.Request.ReloadAll)
+            }
+            // 之后每 5 秒拉取一次
             while (isActive) {
-                delay(3000)
+                delay(5000)
                 design.requests.send(ProxyDesign.Request.ReloadAll)
             }
         }
