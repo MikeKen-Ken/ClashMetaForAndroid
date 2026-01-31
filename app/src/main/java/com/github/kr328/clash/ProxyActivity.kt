@@ -34,6 +34,12 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
 
         design.requests.send(ProxyDesign.Request.ReloadAll)
 
+        // 延迟再刷新一次，确保配置加载和选择恢复后能获取到正确数据
+        launch {
+            delay(500)
+            design.requests.send(ProxyDesign.Request.ReloadAll)
+        }
+
         while (isActive) {
             select<Unit> {
                 ProxyGroupRefresh.channel.onReceive { groupName ->
@@ -42,7 +48,7 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                 }
                 events.onReceive {
                     when (it) {
-                        Event.ProfileLoaded -> {
+                        Event.ProfileLoaded, Event.ClashStart, Event.ServiceRecreated -> {
                             val newNames = withClash {
                                 queryProxyGroupNames(uiStore.proxyExcludeNotSelectable)
                             }
@@ -51,6 +57,9 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                 startActivity(ProxyActivity::class.intent)
 
                                 finish()
+                            } else {
+                                // 代理组名称没变，但选择可能已恢复，重新加载所有数据
+                                design.requests.send(ProxyDesign.Request.ReloadAll)
                             }
                         }
                         else -> Unit
