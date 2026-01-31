@@ -160,7 +160,7 @@ class ProxyView(
 
         // Reserve space so title doesn't overlap manual-selection icon (top-right)
         val manualIconSize = if (state.isManualSelection) {
-            (state.config.textSize * 1.5f).toInt().coerceIn(18, 28)
+            (state.config.textSize * 2.2f).toInt().coerceIn(24, 40)
         } else 0
         val manualIconWidth = if (state.isManualSelection) {
             manualIconSize + state.config.textMargin

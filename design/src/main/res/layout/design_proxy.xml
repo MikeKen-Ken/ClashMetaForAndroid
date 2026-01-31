@@ -162,6 +162,7 @@
             android:layout_marginEnd="16dp"
             android:layout_marginBottom="24dp"
             android:clickable="true"
+            android:contentDescription="@string/proxy_scroll_to_current_node"
             android:focusable="true"
             android:onClick="@{() -> self.scrollToCurrentNode()}"
             android:visibility="gone"
@@ -173,55 +174,41 @@
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:orientation="vertical">
 
-                <LinearLayout
+                <TextView
+                    android:id="@+id/current_group_name_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_marginEnd="8dp">
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:maxWidth="180dp"
+                    android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:textSize="11sp" />
 
-                    <TextView
-                        android:id="@+id/current_group_name_text"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:ellipsize="end"
-                        android:maxLines="1"
-                        android:maxWidth="140dp"
-                        android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-                        android:textColor="?android:attr/textColorSecondary"
-                        android:textSize="11sp" />
+                <TextView
+                    android:id="@+id/current_node_name_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:maxWidth="180dp"
+                    android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+                    android:textSize="14sp" />
 
-                    <TextView
-                        android:id="@+id/current_node_name_text"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:ellipsize="end"
-                        android:maxLines="1"
-                        android:maxWidth="140dp"
-                        android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
-                        android:textSize="14sp" />
-
-                    <TextView
-                        android:id="@+id/current_node_info_delay_text"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:ellipsize="end"
-                        android:maxLines="1"
-                        android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-                        android:textColor="?attr/colorControlActivated"
-                        android:textSize="11sp" />
-                </LinearLayout>
-
-                <ImageView
-                    android:id="@+id/current_node_scroll_icon"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription="@string/proxy_scroll_to_current_node"
-                    android:src="@drawable/ic_baseline_my_location" />
+                <TextView
+                    android:id="@+id/current_node_info_delay_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:maxWidth="180dp"
+                    android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+                    android:textColor="?attr/colorControlActivated"
+                    android:textSize="11sp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

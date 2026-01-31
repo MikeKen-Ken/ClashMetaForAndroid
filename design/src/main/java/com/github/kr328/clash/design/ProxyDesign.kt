@@ -29,12 +29,6 @@ class ProxyDesign(
     uiStore: UiStore,
 ) : Design<ProxyDesign.Request>(context) {
 
-    /** Icon for "scroll to current node" floating card. Options: ic_baseline_my_location, ic_baseline_place, ic_baseline_gps_fixed, ic_baseline_swap_vert, ic_baseline_swap_vertical_circle */
-    companion object {
-        @JvmStatic
-        var SCROLL_TO_CURRENT_ICON: Int = R.drawable.ic_baseline_my_location
-    }
-
     sealed class Request {
         object ReloadAll : Request()
         object ReLaunch : Request()
@@ -122,7 +116,6 @@ class ProxyDesign(
             binding.pagesView.visibility = View.GONE
         } else {
             binding.currentNodeFloatingCard.visibility = View.VISIBLE
-            binding.currentNodeScrollIcon.setImageResource(SCROLL_TO_CURRENT_ICON)
             binding.pagesView.apply {
                 adapter = ProxyPageAdapter(
                     surface,
