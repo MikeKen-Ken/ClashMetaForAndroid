@@ -170,15 +170,16 @@ class ProxyView(
 
         paint.textSize = state.config.textSize
         paint.isAntiAlias = true
-        paint.color = state.controls
 
-        // draw delay
+        // draw delay (red "T" when timeout, otherwise normal color)
         canvas.apply {
+            paint.color = if (state.delayTimeout) state.config.delayTimeoutColor else state.controls
             val x = width - state.config.layoutPadding - state.config.contentPadding - delayWidth
             val y = height / 2f - textOffset
 
             drawText(state.delayText, 0, delayCount, x, y, paint)
         }
+        paint.color = state.controls
 
         // draw title (with optional manual-selection indicator)
         canvas.apply {

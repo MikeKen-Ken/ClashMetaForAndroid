@@ -17,6 +17,7 @@ class ProxyViewConfig(val context: Context, var proxyLine: Int) {
     val selectedBackground = context.resolveThemedColor(com.google.android.material.R.attr.colorPrimary)
 
     val unselectedControl = context.resolveThemedColor(com.google.android.material.R.attr.colorOnSurface)
+    val delayTimeoutColor = Color.RED
     val unselectedBackground: Int
         get() = if (proxyLine==1) Color.TRANSPARENT else colorSurface
 

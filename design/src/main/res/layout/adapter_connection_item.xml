@@ -71,7 +71,7 @@
                 android:maxLines="1"
                 android:text="@{trafficDisplayText != null ? trafficDisplayText : &quot;&quot;}"
                 android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textColor="?android:attr/textColorSecondary"
                 android:textSize="12sp" />
 
             <TextView
