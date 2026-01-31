@@ -35,7 +35,6 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
         design.requests.send(ProxyDesign.Request.ReloadAll)
 
         // 多次延迟刷新，确保配置加载和选择恢复后能获取到正确数据
-        // 配置加载可能需要一些时间，所以分多次刷新
         launch {
             delay(300)
             design.requests.send(ProxyDesign.Request.ReloadAll)
@@ -43,6 +42,14 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
             design.requests.send(ProxyDesign.Request.ReloadAll)
             delay(1500)
             design.requests.send(ProxyDesign.Request.ReloadAll)
+        }
+
+        // 定时刷新机制，每 3 秒刷新一次悬浮信息，确保始终显示正确内容
+        launch {
+            while (isActive) {
+                delay(3000)
+                design.refreshFloatingInfo()
+            }
         }
 
         while (isActive) {

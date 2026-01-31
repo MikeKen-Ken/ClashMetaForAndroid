@@ -82,6 +82,12 @@ class ProxyDesign(
         }
     }
 
+    suspend fun refreshFloatingInfo() {
+        withContext(Dispatchers.Main) {
+            updateCurrentNodeFloatingInfo()
+        }
+    }
+
     suspend fun showModeSwitchTips() {
         withContext(Dispatchers.Main) {
             Toast.makeText(context, R.string.mode_switch_tips, Toast.LENGTH_LONG).show()
