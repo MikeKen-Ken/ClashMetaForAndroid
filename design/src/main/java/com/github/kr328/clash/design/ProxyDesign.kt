@@ -69,8 +69,10 @@ class ProxyDesign(
             adapter.states[position].urlTesting = false
 
             updateUrlTestButtonStatus()
-            // 始终尝试更新悬浮信息
-            updateCurrentNodeFloatingInfo()
+            // 只有当更新的是当前页时才更新悬浮信息
+            if (position == binding.pagesView.currentItem) {
+                updateCurrentNodeFloatingInfo()
+            }
         }
     }
 
@@ -190,7 +192,13 @@ class ProxyDesign(
 
     private fun updateCurrentNodeFloatingInfo() {
         val position = binding.pagesView.currentItem
-        if (position < 0 || position >= groupNames.size) return
+        if (position < 0 || position >= groupNames.size) {
+            // 无效的 position，清空显示
+            binding.currentGroupNameText.text = ""
+            binding.currentNodeNameText.text = context.getString(R.string.loading)
+            binding.currentNodeInfoDelayText.text = ""
+            return
+        }
         val proxyAdapter = adapter.getProxyAdapter(position)
         binding.currentGroupNameText.text = groupNames[position]
         // 如果 states 为空，说明数据还在加载中，显示加载提示
@@ -213,8 +221,19 @@ class ProxyDesign(
             return
         }
         selectedState.update(true)
-        binding.currentNodeNameText.text = selectedState.title
-        val delayStr = if (selectedState.delayTimeout) "Timeout" else "${selectedState.delayText} ms"
-        binding.currentNodeInfoDelayText.text = "${selectedState.subtitle} · $delayStr"
+        // 确保 title 不为空
+        binding.currentNodeNameText.text = selectedState.title.ifEmpty { selectedState.proxy.name }
+        val delayStr = when {
+            selectedState.delayTimeout -> "Timeout"
+            selectedState.delayText.isEmpty() -> ""
+            else -> "${selectedState.delayText} ms"
+        }
+        val infoText = when {
+            selectedState.subtitle.isEmpty() && delayStr.isEmpty() -> ""
+            selectedState.subtitle.isEmpty() -> delayStr
+            delayStr.isEmpty() -> selectedState.subtitle
+            else -> "${selectedState.subtitle} · $delayStr"
+        }
+        binding.currentNodeInfoDelayText.text = infoText
     }
 }

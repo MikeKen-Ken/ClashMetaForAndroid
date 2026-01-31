@@ -34,9 +34,14 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
 
         design.requests.send(ProxyDesign.Request.ReloadAll)
 
-        // 延迟再刷新一次，确保配置加载和选择恢复后能获取到正确数据
+        // 多次延迟刷新，确保配置加载和选择恢复后能获取到正确数据
+        // 配置加载可能需要一些时间，所以分多次刷新
         launch {
-            delay(500)
+            delay(300)
+            design.requests.send(ProxyDesign.Request.ReloadAll)
+            delay(700)
+            design.requests.send(ProxyDesign.Request.ReloadAll)
+            delay(1500)
             design.requests.send(ProxyDesign.Request.ReloadAll)
         }
 
@@ -48,6 +53,11 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                 }
                 events.onReceive {
                     when (it) {
+                        Event.ActivityStart -> {
+                            // 每次 activity 恢复到前台时刷新数据
+                            // 这样即使错过了 ProfileLoaded 事件也能获取最新数据
+                            design.requests.send(ProxyDesign.Request.ReloadAll)
+                        }
                         Event.ProfileLoaded, Event.ClashStart, Event.ServiceRecreated -> {
                             val newNames = withClash {
                                 queryProxyGroupNames(uiStore.proxyExcludeNotSelectable)

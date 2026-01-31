@@ -26,7 +26,7 @@ class ProxyViewState(
     var background: Int = config.unselectedBackground
     var controls: Int = config.unselectedControl
 
-    private var delay: Int = 0
+    private var delay: Int = Int.MIN_VALUE  // 使用不可能的值确保第一次 update() 时 delayText 被设置
     private var selected: Boolean = false
     /** True when this node is the current one AND was manually selected (show manual icon). */
     val isManualSelection: Boolean get() = selected && parent.nowIsManual
