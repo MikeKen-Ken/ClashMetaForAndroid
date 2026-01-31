@@ -64,12 +64,14 @@ class ProxyDesign(
     ) {
         adapter.updateAdapter(position, proxies, selectable, parent, links)
 
-        adapter.states[position].urlTesting = false
+        // 确保在主线程更新 UI
+        withContext(Dispatchers.Main) {
+            adapter.states[position].urlTesting = false
 
-        updateUrlTestButtonStatus()
-        // 始终尝试更新悬浮信息，内部会判断当前页
-        // 避免因 currentItem 设置时序问题导致悬浮信息不更新
-        updateCurrentNodeFloatingInfo()
+            updateUrlTestButtonStatus()
+            // 始终尝试更新悬浮信息
+            updateCurrentNodeFloatingInfo()
+        }
     }
 
     suspend fun requestRedrawVisible() {
