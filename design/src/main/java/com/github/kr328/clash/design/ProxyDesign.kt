@@ -67,9 +67,9 @@ class ProxyDesign(
         adapter.states[position].urlTesting = false
 
         updateUrlTestButtonStatus()
-        if (position == binding.pagesView.currentItem) {
-            updateCurrentNodeFloatingInfo()
-        }
+        // 始终尝试更新悬浮信息，内部会判断当前页
+        // 避免因 currentItem 设置时序问题导致悬浮信息不更新
+        updateCurrentNodeFloatingInfo()
     }
 
     suspend fun requestRedrawVisible() {
@@ -190,27 +190,27 @@ class ProxyDesign(
         val position = binding.pagesView.currentItem
         if (position < 0 || position >= groupNames.size) return
         val proxyAdapter = adapter.getProxyAdapter(position)
+        binding.currentGroupNameText.text = groupNames[position]
         // 如果 states 为空，说明数据还在加载中，显示加载提示
         if (proxyAdapter.states.isEmpty()) {
-            binding.currentGroupNameText.text = groupNames[position]
             binding.currentNodeNameText.text = context.getString(R.string.loading)
             binding.currentNodeInfoDelayText.text = ""
             return
         }
-        val currentNow = proxyAdapter.states.firstOrNull()?.currentGroupNow ?: run {
-            binding.currentGroupNameText.text = groupNames[position]
-            binding.currentNodeNameText.text = ""
+        val currentNow = proxyAdapter.states.firstOrNull()?.currentGroupNow
+        // 如果 currentNow 无效（空、"?" 或找不到对应节点），尝试显示实际选中的节点
+        if (currentNow.isNullOrEmpty() || currentNow == "?") {
+            binding.currentNodeNameText.text = context.getString(R.string.loading)
             binding.currentNodeInfoDelayText.text = ""
             return
         }
         val selectedState = proxyAdapter.states.find { it.proxy.name == currentNow } ?: run {
-            binding.currentGroupNameText.text = groupNames[position]
+            // 如果找不到对应节点，可能是嵌套代理组，直接显示名称
             binding.currentNodeNameText.text = currentNow
             binding.currentNodeInfoDelayText.text = ""
             return
         }
         selectedState.update(true)
-        binding.currentGroupNameText.text = groupNames[position]
         binding.currentNodeNameText.text = selectedState.title
         val delayStr = if (selectedState.delayTimeout) "Timeout" else "${selectedState.delayText} ms"
         binding.currentNodeInfoDelayText.text = "${selectedState.subtitle} · $delayStr"
