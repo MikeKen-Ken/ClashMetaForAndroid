@@ -44,11 +44,11 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
             design.requests.send(ProxyDesign.Request.ReloadAll)
         }
 
-        // 定时刷新机制，每 3 秒刷新一次悬浮信息，确保始终显示正确内容
+        // 定时刷新机制：每 3 秒重新拉取数据并更新悬浮信息，确保始终显示正确内容
         launch {
             while (isActive) {
                 delay(3000)
-                design.refreshFloatingInfo()
+                design.requests.send(ProxyDesign.Request.ReloadAll)
             }
         }
 

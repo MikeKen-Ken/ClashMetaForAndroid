@@ -69,10 +69,8 @@ class ProxyDesign(
             adapter.states[position].urlTesting = false
 
             updateUrlTestButtonStatus()
-            // 只有当更新的是当前页时才更新悬浮信息
-            if (position == binding.pagesView.currentItem) {
-                updateCurrentNodeFloatingInfo()
-            }
+            // 每次数据更新后都刷新悬浮信息（内部按当前页显示）
+            updateCurrentNodeFloatingInfo()
         }
     }
 
