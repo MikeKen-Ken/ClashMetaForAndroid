@@ -89,6 +89,13 @@ class ProxyDesign(
 
         binding.activityBarLayout.applyFrom(context)
 
+        // 先设置初始选中状态，再添加监听器，避免初始化时触发 tips
+        when (overrideMode) {
+            TunnelState.Mode.Rule -> binding.modeToggleGroup.check(R.id.rule_mode_btn)
+            TunnelState.Mode.Global -> binding.modeToggleGroup.check(R.id.global_mode_btn)
+            TunnelState.Mode.Direct -> binding.modeToggleGroup.check(R.id.direct_mode_btn)
+            else -> binding.modeToggleGroup.clearChecked()
+        }
         binding.modeToggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
             val mode = when {
                 !isChecked -> null
@@ -98,12 +105,6 @@ class ProxyDesign(
                 else -> return@addOnButtonCheckedListener
             }
             requests.trySend(Request.PatchMode(mode))
-        }
-        when (overrideMode) {
-            TunnelState.Mode.Rule -> binding.modeToggleGroup.check(R.id.rule_mode_btn)
-            TunnelState.Mode.Global -> binding.modeToggleGroup.check(R.id.global_mode_btn)
-            TunnelState.Mode.Direct -> binding.modeToggleGroup.check(R.id.direct_mode_btn)
-            else -> binding.modeToggleGroup.clearChecked()
         }
 
         if (groupNames.isEmpty()) {
@@ -189,6 +190,13 @@ class ProxyDesign(
         val position = binding.pagesView.currentItem
         if (position < 0 || position >= groupNames.size) return
         val proxyAdapter = adapter.getProxyAdapter(position)
+        // 如果 states 为空，说明数据还在加载中，显示加载提示
+        if (proxyAdapter.states.isEmpty()) {
+            binding.currentGroupNameText.text = groupNames[position]
+            binding.currentNodeNameText.text = context.getString(R.string.loading)
+            binding.currentNodeInfoDelayText.text = ""
+            return
+        }
         val currentNow = proxyAdapter.states.firstOrNull()?.currentGroupNow ?: run {
             binding.currentGroupNameText.text = groupNames[position]
             binding.currentNodeNameText.text = ""
