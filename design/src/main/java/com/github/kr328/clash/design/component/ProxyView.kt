@@ -144,7 +144,7 @@ class ProxyView(
             .coerceAtLeast(0f)
 
         val manualIconWidth = if (state.isManualSelection) {
-            (state.config.textSize * 1.1f).toInt().coerceIn(12, 20) + state.config.textMargin
+            (state.config.textSize * 1.5f).toInt().coerceIn(18, 28) + state.config.textMargin
         } else 0f
 
         // measure title text bounds
@@ -187,7 +187,7 @@ class ProxyView(
                     (height - state.config.layoutPadding * 2) / 3f - textOffset
 
             if (state.isManualSelection) {
-                val iconSize = (state.config.textSize * 1.1f).toInt().coerceIn(12, 20)
+                val iconSize = (state.config.textSize * 1.5f).toInt().coerceIn(18, 28)
                 context.getDrawableCompat(R.drawable.ic_outline_label)?.let { icon ->
                     DrawableCompat.setTint(icon.mutate(), state.controls)
                     val iconLeft = titleX.toInt()

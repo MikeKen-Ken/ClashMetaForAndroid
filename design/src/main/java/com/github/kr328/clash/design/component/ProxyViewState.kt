@@ -27,8 +27,8 @@ class ProxyViewState(
 
     private var delay: Int = 0
     private var selected: Boolean = false
-    /** True when this node is the manually selected one (only then we show as selected). */
-    val isManualSelection: Boolean get() = selected
+    /** True when this node is the current one AND was manually selected (show manual icon). */
+    val isManualSelection: Boolean get() = selected && parent.nowIsManual
     private var parentNow: String = ""
     private var parentNowIsManual: Boolean = false
     private var linkNow: String? = null
@@ -67,7 +67,8 @@ class ProxyViewState(
         if (parentNow !== parent.now || parentNowIsManual != parent.nowIsManual) {
             parentNow = parent.now
             parentNowIsManual = parent.nowIsManual
-            selected = parent.nowIsManual && proxy.name == parent.now
+            // 始终高亮 core 的「当前节点」；仅当该节点为手动选择时显示手动标志
+            selected = proxy.name == parent.now
         }
 
         controls = if (selected) config.selectedControl else config.unselectedControl
