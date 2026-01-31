@@ -15,6 +15,9 @@
         <variable
             name="startTimeDisplayText"
             type="String" />
+        <variable
+            name="networkDisplayText"
+            type="String" />
     </data>
 
     <LinearLayout
@@ -46,14 +49,33 @@
             android:orientation="vertical"
             android:minHeight="44dp">
 
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:text="@{connection != null ? (connection.metadata != null ? connection.metadata.host : connection.chains) : &quot;&quot;}"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
-                android:textSize="15sp" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="@{connection != null ? (connection.metadata != null ? connection.metadata.host : connection.chains) : &quot;&quot;}"
+                    android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/network_view"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="@{networkDisplayText != null ? networkDisplayText : &quot;&quot;}"
+                    android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+                    android:textColor="?attr/colorControlActivated"
+                    android:textSize="12sp"
+                    android:visibility="@{networkDisplayText != null &amp;&amp; networkDisplayText.length() > 0 ? View.VISIBLE : View.GONE}" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/start_time_view"

@@ -33,6 +33,7 @@ class ConnectionAdapter(
         val item = displayItems[position]
         val conn = item.connection
         holder.binding.connection = conn
+        holder.binding.networkDisplayText = conn.metadata?.network?.takeIf { it.isNotEmpty() }?.uppercase()
         holder.binding.trafficDisplayText = item.trafficDisplayText
         holder.binding.trafficDisplayView.visibility = View.VISIBLE
         holder.binding.startTimeDisplayText = item.startTimeDisplayText

@@ -16,7 +16,11 @@ import kotlinx.coroutines.withContext
 class LogsActivity : BaseActivity<LogsDesign>() {
 
     override suspend fun main() {
-        val initialLogLevel = withClash { queryOverride(Clash.OverrideSlot.Session).logLevel } ?: LogMessage.Level.Info
+        val initialLogLevel = withClash {
+            queryOverride(Clash.OverrideSlot.Session).logLevel
+                ?: queryOverride(Clash.OverrideSlot.Persist).logLevel
+                ?: LogMessage.Level.Info
+        }
         val design = LogsDesign(this, initialLogLevel)
 
         setContentDesign(design)
@@ -39,9 +43,12 @@ class LogsActivity : BaseActivity<LogsDesign>() {
                     when (it) {
                         is LogsDesign.Request.ChangeLogLevel -> {
                             withClash {
-                                val o = queryOverride(Clash.OverrideSlot.Session)
-                                o.logLevel = it.level
-                                patchOverride(Clash.OverrideSlot.Session, o)
+                                val session = queryOverride(Clash.OverrideSlot.Session)
+                                session.logLevel = it.level
+                                patchOverride(Clash.OverrideSlot.Session, session)
+                                val persist = queryOverride(Clash.OverrideSlot.Persist)
+                                persist.logLevel = it.level
+                                patchOverride(Clash.OverrideSlot.Persist, persist)
                             }
                         }
                         LogsDesign.Request.StartLogcat -> {
