@@ -199,12 +199,18 @@ class ProxyDesign(
     private fun updateCurrentNodeFloatingInfo() {
         val position = binding.pagesView.currentItem
         if (position < 0 || position >= groupNames.size) {
-            // 无效的 position，清空显示
+            // 无效的 position，清空显示并隐藏
             binding.currentGroupNameText.text = ""
             binding.currentNodeNameText.text = context.getString(R.string.loading)
             binding.currentNodeInfoDelayText.text = ""
+            binding.currentNodeFloatingCard.visibility = View.GONE
             return
         }
+
+        if (binding.currentNodeFloatingCard.visibility != View.VISIBLE) {
+            binding.currentNodeFloatingCard.visibility = View.VISIBLE
+        }
+
         val proxyAdapter = adapter.getProxyAdapter(position)
         binding.currentGroupNameText.text = groupNames[position]
         // 如果 states 为空，说明数据还在加载中，显示加载提示

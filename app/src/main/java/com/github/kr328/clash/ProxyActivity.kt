@@ -17,8 +17,24 @@ import kotlinx.coroutines.sync.withPermit
 
 class ProxyActivity : BaseActivity<ProxyDesign>() {
     override suspend fun main() {
-        val mode = withClash { queryOverride(Clash.OverrideSlot.Session).mode }
-        val names = withClash { queryProxyGroupNames(uiStore.proxyExcludeNotSelectable) }
+        var mode = withClash { queryOverride(Clash.OverrideSlot.Session).mode }
+        var names = withClash { queryProxyGroupNames(uiStore.proxyExcludeNotSelectable) }
+
+        if (names.isEmpty()) {
+            while (isActive && names.isEmpty()) {
+                delay(1000)
+                names = withClash { queryProxyGroupNames(uiStore.proxyExcludeNotSelectable) }
+            }
+
+            if (isActive && names.isNotEmpty()) {
+                startActivity(ProxyActivity::class.intent)
+
+                finish()
+
+                return
+            }
+        }
+
         val states = List(names.size) { ProxyState("?", false) }
         val unorderedStates = names.indices.map { names[it] to states[it] }.toMap()
         val reloadLock = Semaphore(3)
