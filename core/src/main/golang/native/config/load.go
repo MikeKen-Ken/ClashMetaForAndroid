@@ -1,11 +1,13 @@
 package config
 
 import (
+	"encoding/json"
 	"os"
 	P "path"
 	"runtime"
 
 	"cfa/native/app"
+	"cfa/native/tunnel"
 
 	"github.com/metacubex/mihomo/config"
 	"github.com/metacubex/mihomo/hub"
@@ -59,11 +61,28 @@ func Load(path string) error {
 	// like hub.Parse()
 	hub.ApplyConfig(cfg)
 
+	applyProxySelectionsFromOverride()
+
 	app.ApplySubtitlePattern(rawCfg.ClashForAndroid.UiSubtitlePattern)
 
 	runtime.GC()
 
 	return nil
+}
+
+type persistProxySelections struct {
+	ProxySelections map[string]string `json:"proxy-selections"`
+}
+
+func applyProxySelectionsFromOverride() {
+	raw := ReadOverride(OverrideSlotPersist)
+	var o persistProxySelections
+	if err := json.Unmarshal([]byte(raw), &o); err != nil || o.ProxySelections == nil {
+		return
+	}
+	for group, name := range o.ProxySelections {
+		tunnel.PatchSelector(group, name)
+	}
 }
 
 func LoadDefault() {

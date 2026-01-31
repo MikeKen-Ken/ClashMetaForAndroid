@@ -5,7 +5,9 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
 import android.view.View
+import androidx.core.graphics.drawable.DrawableCompat
 import com.github.kr328.clash.common.compat.getDrawableCompat
+import com.github.kr328.clash.design.R
 import com.github.kr328.clash.design.store.UiStore
 
 class ProxyView(
@@ -141,11 +143,15 @@ class ProxyView(
                 )
             .coerceAtLeast(0f)
 
+        val manualIconWidth = if (state.isManualSelection) {
+            (state.config.textSize * 1.1f).toInt().coerceIn(12, 20) + state.config.textMargin
+        } else 0f
+
         // measure title text bounds
         val titleCount = paint.breakText(
             state.title,
             false,
-            mainTextWidth,
+            (mainTextWidth - manualIconWidth).coerceAtLeast(0f),
             null,
         )
 
@@ -174,13 +180,25 @@ class ProxyView(
             drawText(state.delayText, 0, delayCount, x, y, paint)
         }
 
-        // draw title
+        // draw title (with optional manual-selection indicator)
         canvas.apply {
-            val x = state.config.layoutPadding + state.config.contentPadding
-            val y = state.config.layoutPadding +
+            var titleX = state.config.layoutPadding + state.config.contentPadding
+            val titleY = state.config.layoutPadding +
                     (height - state.config.layoutPadding * 2) / 3f - textOffset
 
-            drawText(state.title, 0, titleCount, x, y, paint)
+            if (state.isManualSelection) {
+                val iconSize = (state.config.textSize * 1.1f).toInt().coerceIn(12, 20)
+                context.getDrawableCompat(R.drawable.ic_outline_label)?.let { icon ->
+                    DrawableCompat.setTint(icon.mutate(), state.controls)
+                    val iconLeft = titleX.toInt()
+                    val iconTop = (titleY - iconSize / 2f).toInt()
+                    icon.setBounds(iconLeft, iconTop, iconLeft + iconSize, iconTop + iconSize)
+                    icon.draw(canvas)
+                }
+                titleX += iconSize + state.config.textMargin
+            }
+
+            drawText(state.title, 0, titleCount, titleX, titleY, paint)
         }
 
         // draw subtitle

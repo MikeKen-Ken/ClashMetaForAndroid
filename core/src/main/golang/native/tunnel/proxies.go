@@ -30,9 +30,10 @@ type Proxy struct {
 }
 
 type ProxyGroup struct {
-	Type    string   `json:"type"`
-	Now     string   `json:"now"`
-	Proxies []*Proxy `json:"proxies"`
+	Type       string   `json:"type"`
+	Now        string   `json:"now"`
+	NowIsManual bool    `json:"now-is-manual"`
+	Proxies    []*Proxy `json:"proxies"`
 }
 
 type sortableProxyList struct {
@@ -120,10 +121,16 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 	default:
 	}
 
+	nowIsManual := false
+	if manualable, ok := g.(outboundgroup.NowIsManualAble); ok {
+		nowIsManual = manualable.NowIsManual()
+	}
+
 	return &ProxyGroup{
-		Type:    g.Type().String(),
-		Now:     g.Now(),
-		Proxies: proxies,
+		Type:        g.Type().String(),
+		Now:         g.Now(),
+		NowIsManual: nowIsManual,
+		Proxies:     proxies,
 	}
 }
 

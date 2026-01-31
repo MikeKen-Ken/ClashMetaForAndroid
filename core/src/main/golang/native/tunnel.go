@@ -91,6 +91,11 @@ func patchSelector(selector, name C.c_string) C.int {
 	return 0
 }
 
+//export clearAllManualSelections
+func clearAllManualSelections() {
+	tunnel.ClearAllManualSelections()
+}
+
 //export queryProviders
 func queryProviders() *C.char {
 	return marshalJson(tunnel.QueryProviders())

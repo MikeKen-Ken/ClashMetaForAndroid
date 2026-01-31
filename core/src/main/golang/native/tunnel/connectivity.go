@@ -52,3 +52,17 @@ func HealthCheckAll() {
 		}(g)
 	}
 }
+
+// ClearAllManualSelections clears manual selection on all groups (Selector/Fallback).
+// Call when proxy stops or restarts so no node is shown as "current" until user selects again.
+func ClearAllManualSelections() {
+	for _, name := range QueryProxyGroupNames(false) {
+		p := tunnel.Proxies()[name]
+		if p == nil {
+			continue
+		}
+		if clearable, ok := p.Adapter().(outboundgroup.ClearManualSelectionAble); ok {
+			clearable.ClearManualSelection()
+		}
+	}
+}

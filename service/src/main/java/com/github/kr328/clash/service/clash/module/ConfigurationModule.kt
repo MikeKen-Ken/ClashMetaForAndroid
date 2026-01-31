@@ -55,6 +55,13 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                 val active = ImportedDao().queryByUUID(current)
                     ?: throw NullPointerException("No profile selected")
 
+                // Write current profile's proxy selections to persist override so native
+                // can apply them immediately after Load() (no race with UI).
+                val selections = SelectionDao().querySelections(active.uuid)
+                val override = Clash.queryOverride(Clash.OverrideSlot.Persist)
+                override.proxySelections = selections.associate { it.proxy to it.selected }
+                Clash.patchOverride(Clash.OverrideSlot.Persist, override)
+
                 Clash.load(service.importedDir.resolve(active.uuid.toString())).await()
 
                 val remove = SelectionDao().querySelections(active.uuid)

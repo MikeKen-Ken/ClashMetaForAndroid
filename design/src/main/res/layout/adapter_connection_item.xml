@@ -8,6 +8,9 @@
         <variable
             name="ruleDisplayText"
             type="String" />
+        <variable
+            name="trafficDisplayText"
+            type="String" />
     </data>
 
     <LinearLayout
@@ -57,6 +60,18 @@
                 android:maxLines="1"
                 android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
                 android:textColor="?attr/colorControlActivated"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/traffic_display_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="@{trafficDisplayText}"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:textSize="12sp" />
 
             <TextView

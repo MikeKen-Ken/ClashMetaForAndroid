@@ -77,7 +77,10 @@ class ClashManager(private val context: Context) : IClashManager,
     }
 
     override suspend fun healthCheck(group: String) {
-        return Clash.healthCheck(group).await()
+        Clash.healthCheck(group).await()
+        store.activeProfile?.let { uuid ->
+            SelectionDao().removeSelected(uuid, group)
+        }
     }
 
     override suspend fun updateProvider(type: Provider.Type, name: String) {

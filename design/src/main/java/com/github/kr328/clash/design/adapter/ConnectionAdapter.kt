@@ -11,16 +11,17 @@ import com.github.kr328.clash.design.util.layoutInflater
 class ConnectionAdapter(
     private val context: Context,
     private val onClose: (Connection) -> Unit,
+    private val onCopy: ((Connection, String) -> Unit)? = null,
 ) : RecyclerView.Adapter<ConnectionAdapter.Holder>() {
     class Holder(val binding: AdapterConnectionItemBinding) : RecyclerView.ViewHolder(binding.root)
 
-    var connections: List<Connection> = emptyList()
+    var displayItems: List<ConnectionDisplayItem> = emptyList()
 
     init {
         setHasStableIds(true)
     }
 
-    override fun getItemId(position: Int): Long = connections[position].id.hashCode().toLong()
+    override fun getItemId(position: Int): Long = displayItems[position].connection.id.hashCode().toLong()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
         return Holder(
@@ -29,8 +30,11 @@ class ConnectionAdapter(
     }
 
     override fun onBindViewHolder(holder: Holder, position: Int) {
-        val conn = connections[position]
+        val item = displayItems[position]
+        val conn = item.connection
         holder.binding.connection = conn
+        holder.binding.trafficDisplayText = item.trafficDisplayText
+        holder.binding.trafficDisplayView.visibility = View.VISIBLE
         val ruleText = formatRuleDisplay(conn)
         holder.binding.ruleDisplayText = ruleText
         holder.binding.ruleDisplayView.visibility = if (ruleText.isNotEmpty()) View.VISIBLE else View.GONE
@@ -50,19 +54,31 @@ class ConnectionAdapter(
             iconView.visibility = View.GONE
         }
         holder.binding.closeView.setOnClickListener { onClose(conn) }
+        holder.binding.root.setOnLongClickListener {
+            onCopy?.invoke(conn, formatRuleDisplay(conn))
+            true
+        }
     }
 
-    override fun getItemCount(): Int = connections.size
+    override fun getItemCount(): Int = displayItems.size
 
     private fun formatRuleDisplay(conn: Connection): String {
         return buildString {
             append(conn.chains)
             if (conn.rule.isNotEmpty()) {
                 append(" --> [")
-                append(conn.rule)
+                append(ruleDisplayName(conn))
                 if (conn.ruleDetail.isNotEmpty()) append(",").append(conn.ruleDetail)
                 append("]")
             }
         }
+    }
+
+    /** For RuleSet, show rulePayload (e.g. proxy, cn) instead of generic "RuleSet". */
+    private fun ruleDisplayName(conn: Connection): String {
+        if (conn.rule.equals("RuleSet", ignoreCase = true) && conn.rulePayload.isNotEmpty()) {
+            return conn.rulePayload
+        }
+        return conn.rule
     }
 }

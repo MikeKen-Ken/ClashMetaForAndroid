@@ -214,6 +214,13 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativePatchSelector(JNIEnv *env, 
 }
 
 JNIEXPORT void JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeClearAllManualSelections(JNIEnv *env, jobject thiz) {
+    TRACE_METHOD();
+
+    clearAllManualSelections();
+}
+
+JNIEXPORT void JNICALL
 Java_com_github_kr328_clash_core_bridge_Bridge_nativeLoad(JNIEnv *env, jobject thiz,
                                                           jobject completable, jstring path) {
     TRACE_METHOD();

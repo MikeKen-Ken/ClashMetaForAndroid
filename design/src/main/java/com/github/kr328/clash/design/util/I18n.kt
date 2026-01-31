@@ -74,6 +74,11 @@ fun Long.toBytesString(): String {
     }
 }
 
+/** Format bytes per second as e.g. "123 KiB/s". */
+fun Long.toSpeedString(): String {
+    return toBytesString() + "/s"
+}
+
 fun Double.toProgress(): Int {
     return this.toInt()
 }

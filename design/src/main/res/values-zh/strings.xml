@@ -62,6 +62,7 @@
     <string name="profiles">配置</string>
     <string name="properties">参数</string>
     <string name="connections">连接</string>
+    <string name="connections_sort_order">按时间排序</string>
     <string name="proxy">代理</string>
     <string name="recently">近期</string>
     <string name="route_system_traffic">自动路由系统流量</string>

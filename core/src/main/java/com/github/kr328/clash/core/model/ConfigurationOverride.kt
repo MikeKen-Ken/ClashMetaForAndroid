@@ -79,6 +79,10 @@ data class ConfigurationOverride(
 
     @SerialName("geox-url")
     val geoxurl: GeoXUrl = GeoXUrl(),
+
+    /** Proxy group name -> selected node name; applied after config load so selection persists. */
+    @SerialName("proxy-selections")
+    var proxySelections: Map<String, String>? = null,
 ) : Parcelable {
     @Serializable
     data class Dns(

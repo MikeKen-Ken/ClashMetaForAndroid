@@ -27,7 +27,10 @@ class ProxyViewState(
 
     private var delay: Int = 0
     private var selected: Boolean = false
+    /** True when this node is the manually selected one (only then we show as selected). */
+    val isManualSelection: Boolean get() = selected
     private var parentNow: String = ""
+    private var parentNowIsManual: Boolean = false
     private var linkNow: String? = null
 
     private var lastFrameTime = System.currentTimeMillis()
@@ -61,9 +64,10 @@ class ProxyViewState(
             delayText = if (proxy.delay in 0..Short.MAX_VALUE) proxy.delay.toString() else ""
         }
 
-        if (parentNow !== parent.now) {
+        if (parentNow !== parent.now || parentNowIsManual != parent.nowIsManual) {
             parentNow = parent.now
-            selected = proxy.name == parent.now
+            parentNowIsManual = parent.nowIsManual
+            selected = parent.nowIsManual && proxy.name == parent.now
         }
 
         controls = if (selected) config.selectedControl else config.unselectedControl

@@ -4,6 +4,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import com.github.kr328.clash.common.util.createListFromParcelSlice
 import com.github.kr328.clash.common.util.writeToParcelSlice
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -11,6 +12,7 @@ data class ProxyGroup(
     val type: Proxy.Type,
     val proxies: List<Proxy>,
     val now: String,
+    @SerialName("now-is-manual") val nowIsManual: Boolean = false,
 ) : Parcelable {
     class SliceProxyList(data: List<Proxy>) : List<Proxy> by data, Parcelable {
         constructor(parcel: Parcel) : this(Proxy.createListFromParcelSlice(parcel, 0, 50))
@@ -38,12 +40,14 @@ data class ProxyGroup(
         Proxy.Type.values()[parcel.readInt()],
         SliceProxyList(parcel),
         parcel.readString()!!,
+        parcel.readByte() != 0.toByte(),
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeInt(type.ordinal)
         SliceProxyList(proxies).writeToParcel(parcel, 0)
         parcel.writeString(now)
+        parcel.writeByte((if (nowIsManual) 1 else 0).toByte())
     }
 
     override fun describeContents(): Int {

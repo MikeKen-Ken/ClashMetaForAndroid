@@ -131,6 +131,10 @@ object Clash {
         return Bridge.nativePatchSelector(selector, name)
     }
 
+    fun clearAllManualSelections() {
+        Bridge.nativeClearAllManualSelections()
+    }
+
     fun fetchAndValid(
         path: File,
         url: String,
