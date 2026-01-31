@@ -15,6 +15,7 @@ import com.github.kr328.clash.design.util.applyLinearAdapter
 import com.github.kr328.clash.design.util.layoutInflater
 import com.github.kr328.clash.design.util.patchDataSet
 import com.github.kr328.clash.design.util.root
+import com.github.kr328.clash.design.util.formatConnectionStartTime
 import com.github.kr328.clash.design.util.toBytesString
 import com.github.kr328.clash.design.util.toSpeedString
 import com.github.kr328.clash.design.ui.ToastDuration
@@ -67,7 +68,8 @@ class ConnectionsDesign(context: Context) : Design<ConnectionsDesign.Request>(co
                 ((conn.download - prev.second) / intervalSecClamped).toLong().coerceAtLeast(0)
             } else 0L
             val trafficLine = "↓ ${conn.download.toBytesString()} (${downloadSpeedBps.toSpeedString()})"
-            ConnectionDisplayItem(conn, trafficLine)
+            val startTimeText = conn.start.formatConnectionStartTime()
+            ConnectionDisplayItem(conn, trafficLine, startTimeText)
         }
 
         previousTraffic = snapshot.connections.associate { it.id to (it.upload to it.download) }

@@ -35,6 +35,7 @@ class ConnectionAdapter(
         holder.binding.connection = conn
         holder.binding.trafficDisplayText = item.trafficDisplayText
         holder.binding.trafficDisplayView.visibility = View.VISIBLE
+        holder.binding.startTimeDisplayText = item.startTimeDisplayText
         val ruleText = formatRuleDisplay(conn)
         holder.binding.ruleDisplayText = ruleText
         holder.binding.ruleDisplayView.visibility = if (ruleText.isNotEmpty()) View.VISIBLE else View.GONE

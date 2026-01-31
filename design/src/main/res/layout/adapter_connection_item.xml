@@ -2,6 +2,7 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <data>
+        <import type="android.view.View" />
         <variable
             name="connection"
             type="com.github.kr328.clash.core.model.Connection" />
@@ -10,6 +11,9 @@
             type="String" />
         <variable
             name="trafficDisplayText"
+            type="String" />
+        <variable
+            name="startTimeDisplayText"
             type="String" />
     </data>
 
@@ -50,6 +54,19 @@
                 android:text="@{connection != null ? (connection.metadata != null ? connection.metadata.host : connection.chains) : &quot;&quot;}"
                 android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
                 android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/start_time_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="@{startTimeDisplayText != null ? startTimeDisplayText : &quot;&quot;}"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="12sp"
+                android:visibility="@{startTimeDisplayText != null &amp;&amp; startTimeDisplayText.length() > 0 ? View.VISIBLE : View.GONE}" />
 
             <TextView
                 android:id="@+id/process_view"

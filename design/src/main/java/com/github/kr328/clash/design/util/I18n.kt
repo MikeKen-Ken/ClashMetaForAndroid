@@ -86,3 +86,15 @@ fun Long.toDateStr(): String {
     val simpleDateFormat =SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     return simpleDateFormat.format(Date(this))
 }
+
+/** Format connection start time (RFC3339) for display, e.g. "10:30:00" or "01-31 10:30". Returns "" if parse fails. */
+fun String.formatConnectionStartTime(): String {
+    if (isEmpty()) return ""
+    val normalized = if (endsWith("Z")) dropLast(1) + "+00:00" else this
+    return try {
+        val parsed = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ROOT).parse(normalized)
+        if (parsed != null) SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(parsed) else ""
+    } catch (_: Exception) {
+        ""
+    }
+}
