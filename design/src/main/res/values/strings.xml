@@ -73,6 +73,7 @@
     <string name="edit">Edit</string>
     <string name="delete">Delete</string>
     <string name="export">Export</string>
+    <string name="copy">Copy</string>
     <string name="import_">Import</string>
     <string name="properties">Properties</string>
     <string name="duplicate">Duplicate</string>

@@ -17,6 +17,7 @@ class DebugDesign(context: Context) : Design<DebugDesign.Request>(context) {
 
     sealed class Request {
         object Clear : Request()
+        object Copy : Request()
     }
 
     private val binding = DesignDebugBinding
@@ -47,5 +48,9 @@ class DebugDesign(context: Context) : Design<DebugDesign.Request>(context) {
 
     fun requestClear() {
         requests.trySend(Request.Clear)
+    }
+
+    fun requestCopy() {
+        requests.trySend(Request.Copy)
     }
 }
