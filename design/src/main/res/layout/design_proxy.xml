@@ -164,7 +164,7 @@
             android:clickable="true"
             android:contentDescription="@string/proxy_scroll_to_current_node"
             android:focusable="true"
-            android:onClick="@{() -> self.scrollToCurrentNode()}"
+            android:onClick="@{() -> self.onFloatingCardClick()}"
             android:visibility="gone"
             app:cardBackgroundColor="?attr/colorSurface"
             app:cardCornerRadius="12dp"

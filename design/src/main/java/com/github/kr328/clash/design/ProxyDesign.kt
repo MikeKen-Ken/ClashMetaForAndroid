@@ -174,6 +174,17 @@ class ProxyDesign(
         updateUrlTestButtonStatus()
     }
 
+    /**
+     * 悬浮卡片点击：先请求当前页节点数据刷新悬浮信息，再滚动到当前节点
+     */
+    fun onFloatingCardClick() {
+        val position = binding.pagesView.currentItem
+        if (position in groupNames.indices) {
+            requests.trySend(Request.Reload(position))
+        }
+        scrollToCurrentNode()
+    }
+
     fun scrollToCurrentNode() {
         val position = binding.pagesView.currentItem
         val proxyAdapter = adapter.getProxyAdapter(position)
