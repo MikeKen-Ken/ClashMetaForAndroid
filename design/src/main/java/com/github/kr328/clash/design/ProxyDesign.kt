@@ -1,6 +1,7 @@
 package com.github.kr328.clash.design
 
 import android.content.Context
+import android.os.Looper
 import android.view.View
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
@@ -28,6 +29,9 @@ class ProxyDesign(
     private val groupNames: List<String>,
     uiStore: UiStore,
 ) : Design<ProxyDesign.Request>(context) {
+    private var floatingRetryCount = 0
+    private val floatingRetryMax = 3
+    private val floatingRetryDelayMs = 200L
 
     sealed class Request {
         object ReloadAll : Request()
@@ -192,12 +196,17 @@ class ProxyDesign(
     }
 
     fun updateCurrentNodeFloatingInfo() {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            binding.root.post { updateCurrentNodeFloatingInfo() }
+            return
+        }
         val position = binding.pagesView.currentItem
         if (position < 0 || position >= groupNames.size) {
             // 无效的 position，清空显示
             binding.currentGroupNameText.text = ""
             binding.currentNodeNameText.text = context.getString(R.string.loading)
             binding.currentNodeInfoDelayText.text = ""
+            floatingRetryCount = 0
             return
         }
         val proxyAdapter = adapter.getProxyAdapter(position)
@@ -206,6 +215,7 @@ class ProxyDesign(
         if (proxyAdapter.states.isEmpty()) {
             binding.currentNodeNameText.text = context.getString(R.string.loading)
             binding.currentNodeInfoDelayText.text = ""
+            scheduleFloatingRetry()
             return
         }
         val currentNow = proxyAdapter.states.firstOrNull()?.currentGroupNow
@@ -213,15 +223,18 @@ class ProxyDesign(
         if (currentNow.isNullOrEmpty() || currentNow == "?") {
             binding.currentNodeNameText.text = context.getString(R.string.loading)
             binding.currentNodeInfoDelayText.text = ""
+            scheduleFloatingRetry()
             return
         }
         val selectedState = proxyAdapter.states.find { it.proxy.name == currentNow } ?: run {
             // 如果找不到对应节点，可能是嵌套代理组，直接显示名称
             binding.currentNodeNameText.text = currentNow
             binding.currentNodeInfoDelayText.text = ""
+            floatingRetryCount = 0
             return
         }
         selectedState.update(true)
+        floatingRetryCount = 0
         // 确保 title 不为空
         binding.currentNodeNameText.text = selectedState.title.ifEmpty { selectedState.proxy.name }
         val delayStr = when {
@@ -236,5 +249,11 @@ class ProxyDesign(
             else -> "${selectedState.subtitle} · $delayStr"
         }
         binding.currentNodeInfoDelayText.text = infoText
+    }
+
+    private fun scheduleFloatingRetry() {
+        if (floatingRetryCount >= floatingRetryMax) return
+        floatingRetryCount += 1
+        binding.root.postDelayed({ updateCurrentNodeFloatingInfo() }, floatingRetryDelayMs)
     }
 }
