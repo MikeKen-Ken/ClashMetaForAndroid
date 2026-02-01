@@ -234,18 +234,22 @@ class ProxyDesign(
         binding.currentGroupNameText.text = groupNames[position]
         val statesSize = proxyAdapter.states.size
         if (proxyAdapter.states.isEmpty()) {
-            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: EXIT states.isEmpty, group=${groupNames[position]}, scheduleRetry")
+            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: EXIT states.isEmpty, group=${groupNames[position]}, request Reload(position) + scheduleRetry")
             binding.currentNodeNameText.text = context.getString(R.string.loading)
             binding.currentNodeInfoDelayText.text = ""
+            // 当前页数据未加载：主动请求该页 Reload，Reload 完成后 updateGroup 会再次刷新悬浮信息
+            requests.trySend(Request.Reload(position))
             scheduleFloatingRetry()
             return
         }
         val currentNow = proxyAdapter.states.firstOrNull()?.currentGroupNow
         DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: states.size=$statesSize, currentNow=\"$currentNow\", proxyNames=${proxyAdapter.states.take(5).map { it.proxy.name }}")
         if (currentNow.isNullOrEmpty() || currentNow == "?") {
-            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: EXIT currentNow invalid (empty or \"?\"), scheduleRetry")
+            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: EXIT currentNow invalid (empty or \"?\"), request Reload(position) + scheduleRetry")
             binding.currentNodeNameText.text = context.getString(R.string.loading)
             binding.currentNodeInfoDelayText.text = ""
+            // 当前页的 state.now 尚未从 core 同步：主动请求该页 Reload
+            requests.trySend(Request.Reload(position))
             scheduleFloatingRetry()
             return
         }
