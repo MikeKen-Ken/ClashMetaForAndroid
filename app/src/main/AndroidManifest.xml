@@ -143,6 +143,11 @@
             android:exported="false"
             android:label="@string/logcat" />
         <activity
+            android:name=".DebugActivity"
+            android:configChanges="uiMode"
+            android:exported="false"
+            android:label="@string/debug" />
+        <activity
             android:name=".SettingsActivity"
             android:configChanges="uiMode"
             android:exported="false"

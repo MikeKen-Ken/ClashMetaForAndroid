@@ -68,6 +68,8 @@ class MainActivity : BaseActivity<MainDesign>() {
                                 startActivity(LogsActivity::class.intent)
                             }
                         }
+                        MainDesign.Request.OpenDebug ->
+                            startActivity(DebugActivity::class.intent)
                         MainDesign.Request.OpenNetwork ->
                             startActivity(NetworkSettingsActivity::class.intent)
                         MainDesign.Request.OpenApp ->

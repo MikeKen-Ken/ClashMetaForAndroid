@@ -46,6 +46,7 @@
     <string name="invalid_url">無效的 URL</string>
     <string name="logcat">Logcat</string>
     <string name="logs">日誌</string>
+    <string name="debug">調試</string>
     <string name="mode">模式</string>
     <string name="name">名稱</string>
     <string name="network">網絡</string>

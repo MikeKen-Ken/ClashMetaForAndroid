@@ -3,6 +3,7 @@ package com.github.kr328.clash.design
 import android.content.Context
 import android.os.Looper
 import android.view.View
+import com.github.kr328.clash.common.log.DebugLog
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
@@ -29,6 +30,11 @@ class ProxyDesign(
     private val groupNames: List<String>,
     uiStore: UiStore,
 ) : Design<ProxyDesign.Request>(context) {
+
+    companion object {
+        private const val TAG_FLOATING = "ProxyFloating"
+    }
+
     private var floatingRetryCount = 0
     private val floatingRetryMax = 3
     private val floatingRetryDelayMs = 200L
@@ -74,8 +80,9 @@ class ProxyDesign(
             adapter.states[position].urlTesting = false
 
             updateUrlTestButtonStatus()
-            // 只有当更新的是当前页时才更新悬浮信息
-            if (position == binding.pagesView.currentItem) {
+            val currentItem = binding.pagesView.currentItem
+            DebugLog.d(TAG_FLOATING, "updateGroup: position=$position currentItem=$currentItem match=${position == currentItem}")
+            if (position == currentItem) {
                 updateCurrentNodeFloatingInfo()
             }
         }
@@ -179,6 +186,7 @@ class ProxyDesign(
      */
     fun onFloatingCardClick() {
         val position = binding.pagesView.currentItem
+        DebugLog.d(TAG_FLOATING, "onFloatingCardClick: position=$position, groupNames.size=${groupNames.size}, currentGroup=${if (position in groupNames.indices) groupNames[position] else "invalid"}")
         if (position in groupNames.indices) {
             requests.trySend(Request.Reload(position))
         }
@@ -208,12 +216,14 @@ class ProxyDesign(
 
     fun updateCurrentNodeFloatingInfo() {
         if (Looper.myLooper() != Looper.getMainLooper()) {
+            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: not main thread, post to main")
             binding.root.post { updateCurrentNodeFloatingInfo() }
             return
         }
         val position = binding.pagesView.currentItem
+        DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: position=$position, groupNames.size=${groupNames.size}")
         if (position < 0 || position >= groupNames.size) {
-            // 无效的 position，清空显示
+            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: EXIT position invalid")
             binding.currentGroupNameText.text = ""
             binding.currentNodeNameText.text = context.getString(R.string.loading)
             binding.currentNodeInfoDelayText.text = ""
@@ -222,23 +232,26 @@ class ProxyDesign(
         }
         val proxyAdapter = adapter.getProxyAdapter(position)
         binding.currentGroupNameText.text = groupNames[position]
-        // 如果 states 为空，说明数据还在加载中，显示加载提示
+        val statesSize = proxyAdapter.states.size
         if (proxyAdapter.states.isEmpty()) {
+            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: EXIT states.isEmpty, group=${groupNames[position]}, scheduleRetry")
             binding.currentNodeNameText.text = context.getString(R.string.loading)
             binding.currentNodeInfoDelayText.text = ""
             scheduleFloatingRetry()
             return
         }
         val currentNow = proxyAdapter.states.firstOrNull()?.currentGroupNow
-        // 如果 currentNow 无效（空、"?" 或找不到对应节点），尝试显示实际选中的节点
+        DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: states.size=$statesSize, currentNow=\"$currentNow\", proxyNames=${proxyAdapter.states.take(5).map { it.proxy.name }}")
         if (currentNow.isNullOrEmpty() || currentNow == "?") {
+            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: EXIT currentNow invalid (empty or \"?\"), scheduleRetry")
             binding.currentNodeNameText.text = context.getString(R.string.loading)
             binding.currentNodeInfoDelayText.text = ""
             scheduleFloatingRetry()
             return
         }
-        val selectedState = proxyAdapter.states.find { it.proxy.name == currentNow } ?: run {
-            // 如果找不到对应节点，可能是嵌套代理组，直接显示名称
+        val selectedState = proxyAdapter.states.find { it.proxy.name == currentNow }
+        if (selectedState == null) {
+            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: EXIT no proxy name match currentNow=\"$currentNow\", show name only")
             binding.currentNodeNameText.text = currentNow
             binding.currentNodeInfoDelayText.text = ""
             floatingRetryCount = 0
@@ -246,8 +259,8 @@ class ProxyDesign(
         }
         selectedState.update(true)
         floatingRetryCount = 0
-        // 确保 title 不为空
-        binding.currentNodeNameText.text = selectedState.title.ifEmpty { selectedState.proxy.name }
+        val title = selectedState.title.ifEmpty { selectedState.proxy.name }
+        binding.currentNodeNameText.text = title
         val delayStr = when {
             selectedState.delayTimeout -> "Timeout"
             selectedState.delayText.isEmpty() -> ""
@@ -260,6 +273,7 @@ class ProxyDesign(
             else -> "${selectedState.subtitle} · $delayStr"
         }
         binding.currentNodeInfoDelayText.text = infoText
+        DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: OK title=\"$title\" infoText=\"$infoText\"")
     }
 
     private fun scheduleFloatingRetry() {

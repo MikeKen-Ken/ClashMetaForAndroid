@@ -13,6 +13,7 @@
     <string name="not_selected">未選択</string>
     <string name="format_profile_activated">%sがアクティベートされました</string>
     <string name="logs">ログ</string>
+    <string name="debug">デバッグ</string>
     <string name="settings">設定</string>
     <string name="help">ヘルプ</string>
     <string name="about">アプリについて</string>

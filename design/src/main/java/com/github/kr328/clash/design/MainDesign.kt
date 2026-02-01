@@ -21,6 +21,7 @@ class MainDesign(context: Context) : Design<MainDesign.Request>(context) {
         OpenProfiles,
         OpenProviders,
         OpenLogs,
+        OpenDebug,
         OpenNetwork,
         OpenApp,
         OpenAbout,
