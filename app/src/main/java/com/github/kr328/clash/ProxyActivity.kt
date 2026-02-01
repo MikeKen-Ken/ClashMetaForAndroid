@@ -17,24 +17,8 @@ import kotlinx.coroutines.sync.withPermit
 
 class ProxyActivity : BaseActivity<ProxyDesign>() {
     override suspend fun main() {
-        var mode = withClash { queryOverride(Clash.OverrideSlot.Session).mode }
-        var names = withClash { queryProxyGroupNames(uiStore.proxyExcludeNotSelectable) }
-
-        if (names.isEmpty()) {
-            while (isActive && names.isEmpty()) {
-                delay(1000)
-                names = withClash { queryProxyGroupNames(uiStore.proxyExcludeNotSelectable) }
-            }
-
-            if (isActive && names.isNotEmpty()) {
-                startActivity(ProxyActivity::class.intent)
-
-                finish()
-
-                return
-            }
-        }
-
+        val mode = withClash { queryOverride(Clash.OverrideSlot.Session).mode }
+        val names = withClash { queryProxyGroupNames(uiStore.proxyExcludeNotSelectable) }
         val states = List(names.size) { ProxyState("?", false) }
         val unorderedStates = names.indices.map { names[it] to states[it] }.toMap()
         val reloadLock = Semaphore(3)
@@ -50,29 +34,14 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
 
         design.requests.send(ProxyDesign.Request.ReloadAll)
 
-        // 多次延迟刷新，确保配置加载和选择恢复后能获取到正确数据
+        // 多次延迟刷新悬浮信息，确保配置加载和选择恢复后能获取到正确数据
         launch {
             delay(300)
-            design.requests.send(ProxyDesign.Request.ReloadAll)
+            design.requests.send(ProxyDesign.Request.ReloadFloating)
             delay(700)
-            design.requests.send(ProxyDesign.Request.ReloadAll)
+            design.requests.send(ProxyDesign.Request.ReloadFloating)
             delay(1500)
-            design.requests.send(ProxyDesign.Request.ReloadAll)
-        }
-
-        // 定时刷新机制：首次进入时多次拉取数据，之后定期拉取，确保悬浮信息有数据可显示
-        launch {
-            // 前 15 秒内每 2 秒拉取一次（覆盖「首次打开、配置未就绪」的情况）
-            repeat(8) {
-                delay(2000)
-                if (!isActive) return@launch
-                design.requests.send(ProxyDesign.Request.ReloadAll)
-            }
-            // 之后每 5 秒拉取一次
-            while (isActive) {
-                delay(5000)
-                design.requests.send(ProxyDesign.Request.ReloadAll)
-            }
+            design.requests.send(ProxyDesign.Request.ReloadFloating)
         }
 
         while (isActive) {
@@ -85,7 +54,6 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                     when (it) {
                         Event.ActivityStart -> {
                             // 每次 activity 恢复到前台时刷新数据
-                            // 这样即使错过了 ProfileLoaded 事件也能获取最新数据
                             design.requests.send(ProxyDesign.Request.ReloadAll)
                         }
                         Event.ProfileLoaded, Event.ClashStart, Event.ServiceRecreated -> {
@@ -107,6 +75,9 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                 }
                 design.requests.onReceive {
                     when (it) {
+                        ProxyDesign.Request.ReloadFloating -> {
+                            design.updateCurrentNodeFloatingInfo()
+                        }
                         ProxyDesign.Request.ReLaunch -> {
                             startActivity(ProxyActivity::class.intent)
 
