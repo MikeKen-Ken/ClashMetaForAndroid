@@ -149,7 +149,6 @@
     <string name="log_level">Mức nhật ký</string>
     <string name="logcat">Nhật ký</string>
     <string name="logs">Nhật ký</string>
-    <string name="debug">Gỡ lỗi</string>
     <string name="mapping">IP thực với ánh xạ miền</string>
     <string name="mixed_port">Cổng Mixed</string>
     <string name="mode">Chế độ</string>

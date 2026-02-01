@@ -13,7 +13,6 @@
     <string name="not_selected">선택되지 않음</string>
     <string name="format_profile_activated">%s 활성화됨</string>
     <string name="logs">로그</string>
-    <string name="debug">디버그</string>
     <string name="settings">설정</string>
     <string name="help">도움</string>
     <string name="about">정보</string>
