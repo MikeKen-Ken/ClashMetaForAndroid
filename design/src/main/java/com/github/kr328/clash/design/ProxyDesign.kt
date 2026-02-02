@@ -278,24 +278,52 @@ class ProxyDesign(
         }
         binding.currentNodeInfoDelayText.text = infoText
         val card = binding.currentNodeFloatingCard
+        DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: BEFORE card visibility=${card.visibility} elevation=${card.elevation} translationZ=${card.translationZ} isAttachedToWindow=${card.isAttachedToWindow}")
         card.visibility = View.VISIBLE
+        val elevationDp = 24f
+        val newElevation = elevationDp * context.resources.displayMetrics.density
+        card.elevation = newElevation
+        card.stateListAnimator = null
+        DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: AFTER set card visibility=${card.visibility} elevation=${card.elevation}")
+        DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: OK title=\"$title\" infoText=\"$infoText\"")
         card.post {
             val vis = card.visibility
             val w = card.width
             val h = card.height
             val shown = card.isShown
             val alpha = card.alpha
+            val elev = card.elevation
+            val tz = card.translationZ
+            val attached = card.isAttachedToWindow
+            val loc = IntArray(2)
+            card.getLocationOnScreen(loc)
+            val screenL = loc[0]
+            val screenT = loc[1]
+            val root = binding.root
+            val rootW = root.width
+            val rootH = root.height
             var p: View? = card.parent as? View
-            val parentVis = buildString {
+            val parentChain = buildString {
                 while (p != null) {
+                    append(p.javaClass.simpleName)
+                    append("(v=")
                     append(p.visibility)
-                    append(",")
+                    append(",elev=")
+                    append(p.elevation)
+                    append(");")
                     p = p.parent as? View
                 }
             }
-            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: OK title=\"$title\" infoText=\"$infoText\" | card: visibility=$vis width=$w height=$h isShown=$shown alpha=$alpha parentVis=[$parentVis]")
+            val siblings = (card.parent as? android.view.ViewGroup)?.let { group ->
+                (0 until group.childCount).map { i ->
+                    val c = group.getChildAt(i)
+                    "${c.javaClass.simpleName}(v=${c.visibility},elev=${c.elevation})"
+                }.joinToString(",")
+            } ?: "noParent"
+            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: POST card visibility=$vis size=${w}x${h} isShown=$shown alpha=$alpha elevation=$elev translationZ=$tz isAttached=$attached locationOnScreen=($screenL,$screenT) rootSize=${rootW}x${rootH}")
+            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: POST parentChain=[$parentChain]")
+            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: POST siblings=[$siblings]")
         }
-        DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: OK title=\"$title\" infoText=\"$infoText\"")
     }
 
     private fun scheduleFloatingRetry() {
