@@ -277,10 +277,23 @@ class ProxyDesign(
             else -> "${selectedState.subtitle} · $delayStr"
         }
         binding.currentNodeInfoDelayText.text = infoText
-        // 确保悬浮卡片可见
-        if (binding.currentNodeFloatingCard.visibility != View.VISIBLE) {
-            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: setting card VISIBLE (was ${binding.currentNodeFloatingCard.visibility})")
-            binding.currentNodeFloatingCard.visibility = View.VISIBLE
+        val card = binding.currentNodeFloatingCard
+        card.visibility = View.VISIBLE
+        card.post {
+            val vis = card.visibility
+            val w = card.width
+            val h = card.height
+            val shown = card.isShown
+            val alpha = card.alpha
+            var p: View? = card.parent as? View
+            val parentVis = buildString {
+                while (p != null) {
+                    append(p.visibility)
+                    append(",")
+                    p = p.parent as? View
+                }
+            }
+            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: OK title=\"$title\" infoText=\"$infoText\" | card: visibility=$vis width=$w height=$h isShown=$shown alpha=$alpha parentVis=[$parentVis]")
         }
         DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: OK title=\"$title\" infoText=\"$infoText\"")
     }
