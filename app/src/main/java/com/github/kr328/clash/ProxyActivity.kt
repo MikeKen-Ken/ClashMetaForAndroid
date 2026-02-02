@@ -1,7 +1,6 @@
 package com.github.kr328.clash
 
 import com.github.kr328.clash.common.ProxyGroupRefresh
-import com.github.kr328.clash.common.log.DebugLog
 import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.core.model.TunnelState
@@ -35,16 +34,6 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
 
         design.requests.send(ProxyDesign.Request.ReloadAll)
 
-        // 多次延迟刷新悬浮信息，确保配置加载和选择恢复后能获取到正确数据
-        launch {
-            delay(300)
-            design.requests.send(ProxyDesign.Request.ReloadFloating)
-            delay(700)
-            design.requests.send(ProxyDesign.Request.ReloadFloating)
-            delay(1500)
-            design.requests.send(ProxyDesign.Request.ReloadFloating)
-        }
-
         while (isActive) {
             select<Unit> {
                 ProxyGroupRefresh.channel.onReceive { groupName ->
@@ -76,9 +65,6 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                 }
                 design.requests.onReceive {
                     when (it) {
-                        ProxyDesign.Request.ReloadFloating -> {
-                            design.updateCurrentNodeFloatingInfo()
-                        }
                         ProxyDesign.Request.ReLaunch -> {
                             startActivity(ProxyActivity::class.intent)
 
@@ -105,11 +91,8 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                     }
                                 }
                                 val state = states[it.index]
-                                val groupName = names[it.index]
-                                DebugLog.d("ProxyFloating", "Reload done index=${it.index} groupName=\"$groupName\" group.now=\"${group.now}\" state.now before=\"${state.now}\"")
                                 state.now = group.now
                                 state.nowIsManual = group.nowIsManual
-                                DebugLog.d("ProxyFloating", "Reload done state.now after=\"${state.now}\" proxies.size=${group.proxies.size}")
 
                                 design.updateGroup(
                                     it.index,

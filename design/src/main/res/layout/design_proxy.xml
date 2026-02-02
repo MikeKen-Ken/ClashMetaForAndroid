@@ -154,63 +154,17 @@
                 android:elevation="@dimen/tab_layout_elevation" />
         </LinearLayout>
 
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/current_node_floating_card"
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/scroll_to_current_fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
             android:layout_marginEnd="16dp"
-            android:layout_marginBottom="56dp"
-            android:clickable="true"
+            android:layout_marginBottom="16dp"
             android:contentDescription="@string/proxy_scroll_to_current_node"
-            android:focusable="true"
-            android:onClick="@{() -> self.onFloatingCardClick()}"
+            android:onClick="@{() -> self.onScrollToCurrentClick()}"
             android:visibility="gone"
-            app:cardBackgroundColor="?attr/colorSurface"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="6dp"
-            app:contentPadding="12dp">
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/current_group_name_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:ellipsize="end"
-                    android:maxLines="1"
-                    android:maxWidth="180dp"
-                    android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-                    android:textColor="?android:attr/textColorSecondary"
-                    android:textSize="11sp" />
-
-                <TextView
-                    android:id="@+id/current_node_name_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:ellipsize="end"
-                    android:maxLines="1"
-                    android:maxWidth="180dp"
-                    android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/current_node_info_delay_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:ellipsize="end"
-                    android:maxLines="1"
-                    android:maxWidth="180dp"
-                    android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-                    android:textColor="?attr/colorControlActivated"
-                    android:textSize="11sp" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+            app:srcCompat="@drawable/ic_baseline_my_location" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </layout>
