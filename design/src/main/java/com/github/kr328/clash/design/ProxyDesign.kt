@@ -2,6 +2,7 @@ package com.github.kr328.clash.design
 
 import android.content.Context
 import android.os.Looper
+import android.graphics.Rect
 import android.view.View
 import com.github.kr328.clash.common.log.DebugLog
 import android.widget.Toast
@@ -295,13 +296,25 @@ class ProxyDesign(
             val elev = card.elevation
             val tz = card.translationZ
             val attached = card.isAttachedToWindow
+            val x = card.x
+            val y = card.y
+            val tx = card.translationX
+            val ty = card.translationY
             val loc = IntArray(2)
             card.getLocationOnScreen(loc)
             val screenL = loc[0]
             val screenT = loc[1]
+            val globalRect = Rect()
+            val hasGlobalRect = card.getGlobalVisibleRect(globalRect)
+            val windowRect = Rect()
+            card.getWindowVisibleDisplayFrame(windowRect)
             val root = binding.root
             val rootW = root.width
             val rootH = root.height
+            val bgColor = card.cardBackgroundColor?.defaultColor
+            val nameColor = binding.currentNodeNameText.currentTextColor
+            val infoColor = binding.currentNodeInfoDelayText.currentTextColor
+            val groupColor = binding.currentGroupNameText.currentTextColor
             var p: View? = card.parent as? View
             val parentChain = buildString {
                 while (p != null) {
@@ -320,7 +333,9 @@ class ProxyDesign(
                     "${c.javaClass.simpleName}(v=${c.visibility},elev=${c.elevation})"
                 }.joinToString(",")
             } ?: "noParent"
-            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: POST card visibility=$vis size=${w}x${h} isShown=$shown alpha=$alpha elevation=$elev translationZ=$tz isAttached=$attached locationOnScreen=($screenL,$screenT) rootSize=${rootW}x${rootH}")
+            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: POST card visibility=$vis size=${w}x${h} isShown=$shown alpha=$alpha elevation=$elev translationZ=$tz isAttached=$attached x=$x y=$y tx=$tx ty=$ty")
+            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: POST locationOnScreen=($screenL,$screenT) globalRect=$globalRect hasGlobalRect=$hasGlobalRect windowRect=$windowRect rootSize=${rootW}x${rootH}")
+            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: POST colors bg=${bgColor?.let { Integer.toHexString(it) }} name=${Integer.toHexString(nameColor)} info=${Integer.toHexString(infoColor)} group=${Integer.toHexString(groupColor)}")
             DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: POST parentChain=[$parentChain]")
             DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: POST siblings=[$siblings]")
         }
