@@ -72,7 +72,7 @@ class ProxyDesign(
 
     suspend fun requestRedrawVisible() {
         withContext(Dispatchers.Main) {
-            adapter.requestRedrawVisible()
+            adapter.requestRedrawVisible(binding.pagesView.currentItem)
         }
     }
 

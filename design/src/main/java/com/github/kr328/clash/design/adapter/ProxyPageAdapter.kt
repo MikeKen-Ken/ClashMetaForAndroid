@@ -1,6 +1,7 @@
 package com.github.kr328.clash.design.adapter
 
 import android.view.ViewGroup
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.github.kr328.clash.core.model.Proxy
 import com.github.kr328.clash.design.R
@@ -46,13 +47,15 @@ class ProxyPageAdapter(
                 this.swapDataSet(this::states, states, false)
             }
 
-            requestRedrawVisible()
+            requestRedrawVisible(position)
         }
     }
 
-    fun requestRedrawVisible() {
-        factory.fromRoot(parent?.firstVisibleView ?: return)
-            .recyclerView.invalidateChildren()
+    fun requestRedrawVisible(currentItem: Int) {
+        val rv = parent ?: return
+        val mgr = rv.layoutManager as? LinearLayoutManager ?: return
+        val pageView = mgr.findViewByPosition(currentItem) ?: return
+        factory.fromRoot(pageView).recyclerView.invalidateChildren()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProxyPageFactory.Holder {

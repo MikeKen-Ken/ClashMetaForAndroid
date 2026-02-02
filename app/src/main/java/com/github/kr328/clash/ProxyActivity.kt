@@ -72,6 +72,7 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                         }
                         ProxyDesign.Request.ReloadAll -> {
                             launch {
+                                if (names.isEmpty()) return@launch
                                 val priority =
                                     names.indexOf(uiStore.proxyLastGroup).let { if (it >= 0) it else 0 }
                                 design.requests.send(ProxyDesign.Request.Reload(priority))
@@ -85,6 +86,7 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                         }
                         is ProxyDesign.Request.Reload -> {
                             launch {
+                                if (it.index !in names.indices) return@launch
                                 val group = reloadLock.withPermit {
                                     withClash {
                                         queryProxyGroup(names[it.index], uiStore.proxySort)
