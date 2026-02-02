@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Looper
 import android.graphics.Rect
 import android.view.View
-import android.view.ViewTreeObserver
 import com.github.kr328.clash.common.log.DebugLog
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
@@ -280,91 +279,97 @@ class ProxyDesign(
         }
         binding.currentNodeInfoDelayText.text = infoText
         val card = binding.currentNodeFloatingCard
-        DebugLog.d(
-            TAG_FLOATING,
-            "updateCurrentNodeFloatingInfo: BEFORE card visibility=${card.visibility} elevation=${card.elevation} translationZ=${card.translationZ} z=${card.z} " +
-                "isAttachedToWindow=${card.isAttachedToWindow} isLaidOut=${card.isLaidOut} scale=${card.scaleX},${card.scaleY} rotation=${card.rotation}"
-        )
+        try {
+            DebugLog.d(
+                TAG_FLOATING,
+                "updateCurrentNodeFloatingInfo: BEFORE card visibility=${card.visibility} elevation=${card.elevation} translationZ=${card.translationZ} z=${card.z} " +
+                    "isAttachedToWindow=${card.isAttachedToWindow} isLaidOut=${card.isLaidOut} scale=${card.scaleX},${card.scaleY} rotation=${card.rotation}"
+            )
+        } catch (e: Exception) {
+            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: BEFORE error: ${e.message}")
+        }
         card.visibility = View.VISIBLE
         val elevationDp = 24f
         val newElevation = elevationDp * context.resources.displayMetrics.density
         card.elevation = newElevation
         card.stateListAnimator = null
-        DebugLog.d(
-            TAG_FLOATING,
-            "updateCurrentNodeFloatingInfo: AFTER set card visibility=${card.visibility} elevation=${card.elevation} z=${card.z}"
-        )
-        DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: OK title=\"$title\" infoText=\"$infoText\"")
-        val drawListener = object : ViewTreeObserver.OnDrawListener {
-            override fun onDraw() {
-                DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: DRAW card drawn once")
-                card.viewTreeObserver.removeOnDrawListener(this)
-            }
+        try {
+            DebugLog.d(
+                TAG_FLOATING,
+                "updateCurrentNodeFloatingInfo: AFTER set card visibility=${card.visibility} elevation=${card.elevation} z=${card.z}"
+            )
+        } catch (e: Exception) {
+            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: AFTER error: ${e.message}")
         }
-        card.viewTreeObserver.addOnDrawListener(drawListener)
+        DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: OK title=\"$title\" infoText=\"$infoText\"")
         card.post {
-            val vis = card.visibility
-            val w = card.width
-            val h = card.height
-            val shown = card.isShown
-            val alpha = card.alpha
-            val elev = card.elevation
-            val tz = card.translationZ
-            val z = card.z
-            val attached = card.isAttachedToWindow
-            val x = card.x
-            val y = card.y
-            val tx = card.translationX
-            val ty = card.translationY
-            val scaleX = card.scaleX
-            val scaleY = card.scaleY
-            val rotation = card.rotation
-            val clipToOutline = card.clipToOutline
-            val loc = IntArray(2)
-            card.getLocationOnScreen(loc)
-            val screenL = loc[0]
-            val screenT = loc[1]
-            val globalRect = Rect()
-            val hasGlobalRect = card.getGlobalVisibleRect(globalRect)
-            val windowRect = Rect()
-            card.getWindowVisibleDisplayFrame(windowRect)
-            val root = binding.root
-            val rootW = root.width
-            val rootH = root.height
-            val bgColor = card.cardBackgroundColor?.defaultColor
-            val nameColor = binding.currentNodeNameText.currentTextColor
-            val infoColor = binding.currentNodeInfoDelayText.currentTextColor
-            val groupColor = binding.currentGroupNameText.currentTextColor
-            val indexInParent = (card.parent as? android.view.ViewGroup)?.indexOfChild(card)
-            var p: View? = card.parent as? View
-            val parentChain = buildString {
-                while (p != null) {
-                    append(p.javaClass.simpleName)
-                    append("(v=")
-                    append(p.visibility)
-                    append(",elev=")
-                    append(p.elevation)
-                    if (p is android.view.ViewGroup) {
-                        append(",clipChildren=")
-                        append(p.clipChildren)
-                        append(",clipToPadding=")
-                        append(p.clipToPadding)
+            try {
+                val vis = card.visibility
+                val w = card.width
+                val h = card.height
+                val shown = card.isShown
+                val alpha = card.alpha
+                val elev = card.elevation
+                val tz = card.translationZ
+                val z = card.z
+                val attached = card.isAttachedToWindow
+                val x = card.x
+                val y = card.y
+                val tx = card.translationX
+                val ty = card.translationY
+                val scaleX = card.scaleX
+                val scaleY = card.scaleY
+                val rotation = card.rotation
+                val clipToOutline = card.clipToOutline
+                val loc = IntArray(2)
+                card.getLocationOnScreen(loc)
+                val screenL = loc[0]
+                val screenT = loc[1]
+                val globalRect = Rect()
+                val hasGlobalRect = card.getGlobalVisibleRect(globalRect)
+                val windowRect = Rect()
+                card.getWindowVisibleDisplayFrame(windowRect)
+                val root = binding.root
+                val rootW = root.width
+                val rootH = root.height
+                val bgColor = card.cardBackgroundColor?.defaultColor
+                val nameColor = binding.currentNodeNameText.currentTextColor
+                val infoColor = binding.currentNodeInfoDelayText.currentTextColor
+                val groupColor = binding.currentGroupNameText.currentTextColor
+                val indexInParent = (card.parent as? android.view.ViewGroup)?.indexOfChild(card)
+                var p: View? = card.parent as? View
+                val parentChain = buildString {
+                    while (p != null) {
+                        append(p.javaClass.simpleName)
+                        append("(v=")
+                        append(p.visibility)
+                        append(",elev=")
+                        append(p.elevation)
+                        if (p is android.view.ViewGroup) {
+                            append(",clipChildren=")
+                            append(p.clipChildren)
+                            append(",clipToPadding=")
+                            append(p.clipToPadding)
+                        }
+                        append(");")
+                        p = p.parent as? View
                     }
-                    append(");")
-                    p = p.parent as? View
                 }
+                val siblings = (card.parent as? android.view.ViewGroup)?.let { group ->
+                    (0 until group.childCount).map { i ->
+                        val c = group.getChildAt(i)
+                        "${c.javaClass.simpleName}(i=$i,v=${c.visibility},elev=${c.elevation},z=${c.z})"
+                    }.joinToString(",")
+                } ?: "noParent"
+                DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: POST card visibility=$vis size=${w}x${h} isShown=$shown alpha=$alpha elevation=$elev translationZ=$tz z=$z isAttached=$attached x=$x y=$y tx=$tx ty=$ty scale=$scaleX,$scaleY rotation=$rotation clipToOutline=$clipToOutline indexInParent=$indexInParent")
+                DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: POST locationOnScreen=($screenL,$screenT) globalRect=$globalRect hasGlobalRect=$hasGlobalRect windowRect=$windowRect rootSize=${rootW}x${rootH}")
+                DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: POST colors bg=${bgColor?.let { Integer.toHexString(it) }} name=${Integer.toHexString(nameColor)} info=${Integer.toHexString(infoColor)} group=${Integer.toHexString(groupColor)}")
+                DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: POST parentChain=[$parentChain]")
+                DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: POST siblings=[$siblings]")
+            } catch (e: Exception) {
+                DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: POST error: ${e.message}")
+                e.printStackTrace()
             }
-            val siblings = (card.parent as? android.view.ViewGroup)?.let { group ->
-                (0 until group.childCount).map { i ->
-                    val c = group.getChildAt(i)
-                    "${c.javaClass.simpleName}(i=$i,v=${c.visibility},elev=${c.elevation},z=${c.z})"
-                }.joinToString(",")
-            } ?: "noParent"
-            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: POST card visibility=$vis size=${w}x${h} isShown=$shown alpha=$alpha elevation=$elev translationZ=$tz z=$z isAttached=$attached x=$x y=$y tx=$tx ty=$ty scale=$scaleX,$scaleY rotation=$rotation clipToOutline=$clipToOutline indexInParent=$indexInParent")
-            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: POST locationOnScreen=($screenL,$screenT) globalRect=$globalRect hasGlobalRect=$hasGlobalRect windowRect=$windowRect rootSize=${rootW}x${rootH}")
-            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: POST colors bg=${bgColor?.let { Integer.toHexString(it) }} name=${Integer.toHexString(nameColor)} info=${Integer.toHexString(infoColor)} group=${Integer.toHexString(groupColor)}")
-            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: POST parentChain=[$parentChain]")
-            DebugLog.d(TAG_FLOATING, "updateCurrentNodeFloatingInfo: POST siblings=[$siblings]")
         }
     }
 
