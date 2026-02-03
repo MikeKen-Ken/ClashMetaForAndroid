@@ -140,12 +140,9 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                     )
                                 }
                                 reloadGroup()
-                                // 选择后连续 5s 轮询，仅刷新当前选中节点所在组（不触发全量 ReloadAll）
-                                for (i in 1..5) {
-                                    delay(1000L)
-                                    if (idx !in names.indices) return@launch
-                                    reloadGroup()
-                                }
+                                // 选择后 3.5s 时查询一次，仅刷新当前选中节点所在组
+                                delay(3500L)
+                                if (idx in names.indices) reloadGroup()
                             }
                         }
                         is ProxyDesign.Request.UrlTest -> {
