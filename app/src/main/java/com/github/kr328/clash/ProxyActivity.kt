@@ -119,23 +119,33 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
 
                             // 切换节点后重新拉取该组数据，使界面上的延迟等字段与 core 同步更新
                             launch {
-                                val group = reloadLock.withPermit {
-                                    withClash {
-                                        queryProxyGroup(names[it.index], uiStore.proxySort)
+                                val idx = it.index
+                                fun reloadGroup() {
+                                    val g = reloadLock.withPermit {
+                                        withClash {
+                                            queryProxyGroup(names[idx], uiStore.proxySort)
+                                        }
                                     }
+                                    val st = states[idx]
+                                    st.now = g.now
+                                    st.nowIsManual = g.nowIsManual
+                                    design.updateGroup(
+                                        idx,
+                                        g.proxies,
+                                        g.type == Proxy.Type.Selector ||
+                                            g.type == Proxy.Type.Fallback ||
+                                            g.type == Proxy.Type.URLTest,
+                                        st,
+                                        unorderedStates
+                                    )
                                 }
-                                val state = states[it.index]
-                                state.now = group.now
-                                state.nowIsManual = group.nowIsManual
-                                design.updateGroup(
-                                    it.index,
-                                    group.proxies,
-                                    group.type == Proxy.Type.Selector ||
-                                        group.type == Proxy.Type.Fallback ||
-                                        group.type == Proxy.Type.URLTest,
-                                    state,
-                                    unorderedStates
-                                )
+                                reloadGroup()
+                                // 选择后连续 5s 轮询刷新该组，使测速/健康检测结果能及时更新到 UI
+                                for (i in 1..5) {
+                                    delay(1000L)
+                                    if (idx !in names.indices) return@launch
+                                    reloadGroup()
+                                }
                             }
                         }
                         is ProxyDesign.Request.UrlTest -> {

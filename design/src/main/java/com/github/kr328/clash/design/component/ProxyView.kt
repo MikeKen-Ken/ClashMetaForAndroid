@@ -158,12 +158,8 @@ class ProxyView(
                 )
             .coerceAtLeast(0f)
 
-        // Reserve space so title doesn't overlap manual-selection icon (top-right)
-        val manualIconSize = if (state.isManualSelection) {
-            (state.config.textSize * 2.8f).toInt().coerceIn(32, 52)
-        } else 0
         val manualIconWidth = if (state.isManualSelection) {
-            manualIconSize + state.config.textMargin
+            (state.config.textSize * 1.5f).toInt().coerceIn(18, 28) + state.config.textMargin
         } else 0f
 
         // measure title text bounds (safe break so emoji/surrogate pairs are not cut)
@@ -206,11 +202,23 @@ class ProxyView(
         }
         paint.color = state.controls
 
-        // draw title; manual-selection icon is drawn at top-right corner
+        // draw title (with optional manual-selection indicator)
         canvas.apply {
-            val titleX = state.config.layoutPadding + state.config.contentPadding
+            var titleX = state.config.layoutPadding + state.config.contentPadding
             val titleY = state.config.layoutPadding +
                     (height - state.config.layoutPadding * 2) / 3f - textOffset
+
+            if (state.isManualSelection) {
+                val iconSize = (state.config.textSize * 1.5f).toInt().coerceIn(18, 28)
+                context.getDrawableCompat(R.drawable.ic_outline_label)?.let { icon ->
+                    DrawableCompat.setTint(icon.mutate(), state.controls)
+                    val iconLeft = titleX.toInt()
+                    val iconTop = (titleY - iconSize / 2f).toInt()
+                    icon.setBounds(iconLeft, iconTop, iconLeft + iconSize, iconTop + iconSize)
+                    icon.draw(canvas)
+                }
+                titleX += iconSize + state.config.textMargin
+            }
 
             drawText(state.title, 0, titleCount, titleX, titleY, paint)
         }
@@ -222,18 +230,6 @@ class ProxyView(
                     (height - state.config.layoutPadding * 2) / 3f * 2 - textOffset
 
             drawText(state.subtitle, 0, subtitleCount, x, y, paint)
-        }
-
-        // draw manual-selection icon at top-right corner (pin icon), last so it stays on top
-        if (state.isManualSelection && manualIconSize > 0) {
-            context.getDrawableCompat(R.drawable.ic_baseline_place)?.let { icon ->
-                DrawableCompat.setTint(icon.mutate(), state.controls)
-                val rightPadding = (state.config.contentPadding - state.config.textMargin).coerceAtLeast(0f)
-                val iconLeft = (width - state.config.layoutPadding - rightPadding - manualIconSize).toInt()
-                val iconTop = state.config.layoutPadding.toInt()
-                icon.setBounds(iconLeft, iconTop, iconLeft + manualIconSize, iconTop + manualIconSize)
-                icon.draw(canvas)
-            }
         }
     }
 }
