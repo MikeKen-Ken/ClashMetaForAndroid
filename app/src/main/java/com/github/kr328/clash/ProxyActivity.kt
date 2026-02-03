@@ -120,7 +120,7 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                             // 切换节点后重新拉取该组数据，使界面上的延迟等字段与 core 同步更新
                             launch {
                                 val idx = it.index
-                                fun reloadGroup() {
+                                suspend fun reloadGroup() {
                                     val g = reloadLock.withPermit {
                                         withClash {
                                             queryProxyGroup(names[idx], uiStore.proxySort)
