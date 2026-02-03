@@ -140,7 +140,7 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                     )
                                 }
                                 reloadGroup()
-                                // 选择后连续 5s 轮询刷新该组，使测速/健康检测结果能及时更新到 UI
+                                // 选择后连续 5s 轮询，仅刷新当前选中节点所在组（不触发全量 ReloadAll）
                                 for (i in 1..5) {
                                     delay(1000L)
                                     if (idx !in names.indices) return@launch
