@@ -14,11 +14,27 @@ import (
 	"github.com/metacubex/mihomo/config"
 	C "github.com/metacubex/mihomo/constant"
 	"github.com/metacubex/mihomo/log"
+	T "github.com/metacubex/mihomo/tunnel"
+)
+
+var (
+	directNameservers = []string{
+		"https://dns.alidns.com/dns-query",
+		"https://120.53.53.53/dns-query",
+		"tls://119.29.29.29:853",
+	}
+	globalNameservers = []string{
+		"https://1.1.1.1/dns-query",
+		"https://8.8.8.8/dns-query",
+		"https://9.9.9.9/dns-query",
+		"tls://1.0.0.1:853",
+	}
 )
 
 var processors = []processor{
 	patchExternalController, // must before patchOverride, so we only apply ExternalController in Override settings
 	patchOverride,
+	patchDirectGlobalMode, // after patchOverride: force rule mode + override rules/dns when session mode is direct/global
 	patchGeneral,
 	patchProfile,
 	patchDns,
@@ -38,6 +54,28 @@ func patchOverride(cfg *config.RawConfig, _ string) error {
 		log.Warnln("Apply session override: %s", err.Error())
 	}
 
+	return nil
+}
+
+// patchDirectGlobalMode: when session mode is direct/global, force mode=rule and override rules + dns
+// so that traffic uses MATCH,⬆️ or MATCH,🔀 (same behavior as desktop).
+func patchDirectGlobalMode(cfg *config.RawConfig, _ string) error {
+	switch cfg.Mode {
+	case T.Direct:
+		cfg.Mode = T.Rule
+		cfg.Rule = []string{"MATCH,⬆️"}
+		cfg.DNS.NameServer = append([]string(nil), directNameservers...)
+		cfg.DNS.NameServerPolicy = nil
+		log.Infoln("Applied direct mode overrides (rules + dns)")
+	case T.Global:
+		cfg.Mode = T.Rule
+		cfg.Rule = []string{"MATCH,🔀"}
+		cfg.DNS.NameServer = append([]string(nil), globalNameservers...)
+		cfg.DNS.NameServerPolicy = nil
+		log.Infoln("Applied global mode overrides (rules + dns)")
+	default:
+		// rule or other: no override
+	}
 	return nil
 }
 

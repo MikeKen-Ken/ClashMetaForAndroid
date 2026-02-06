@@ -4,6 +4,7 @@ import android.content.Context
 import com.github.kr328.clash.common.store.Store
 import com.github.kr328.clash.common.store.asStoreProvider
 import com.github.kr328.clash.core.model.ProxySort
+import com.github.kr328.clash.core.model.TunnelState
 import com.github.kr328.clash.design.model.AppInfoSort
 import com.github.kr328.clash.design.model.DarkMode
 
@@ -49,6 +50,13 @@ class UiStore(context: Context) {
     var proxyLastGroup: String by store.string(
         key = "proxy_last_group",
         defaultValue = ""
+    )
+
+    /** 前端自己记录代理页模式（规则/全局/直连），用于按钮选中状态，与电脑端一致不依赖 core 返回的 mode */
+    var proxyUiMode: TunnelState.Mode by store.enum(
+        key = "proxy_ui_mode",
+        defaultValue = TunnelState.Mode.Rule,
+        values = TunnelState.Mode.values()
     )
 
     var accessControlSort: AppInfoSort by store.enum(

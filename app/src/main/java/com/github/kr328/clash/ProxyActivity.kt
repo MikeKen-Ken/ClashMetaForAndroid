@@ -17,7 +17,8 @@ import kotlinx.coroutines.sync.withPermit
 
 class ProxyActivity : BaseActivity<ProxyDesign>() {
     override suspend fun main() {
-        val mode = withClash { queryOverride(Clash.OverrideSlot.Session).mode }
+        // 与电脑端一致：按钮状态用前端记录的 proxyUiMode，不依赖 core 返回的 mode
+        val mode = uiStore.proxyUiMode
         val names = withClash { queryProxyGroupNames(uiStore.proxyExcludeNotSelectable) }
         val states = List(names.size) { ProxyState("?", false) }
         val unorderedStates = names.indices.map { names[it] to states[it] }.toMap()
@@ -156,6 +157,7 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                         }
                         is ProxyDesign.Request.PatchMode -> {
                             design.showModeSwitchTips()
+                            it.mode?.let { m -> uiStore.proxyUiMode = m }
 
                             withClash {
                                 val o = queryOverride(Clash.OverrideSlot.Session)
