@@ -114,7 +114,7 @@ func closeConnection(id C.c_string) C.int {
 	return 0
 }
 
-//export closeAllConnections
+//export closeAllConnectionsExported
 func closeAllConnectionsExported() {
 	closeAllConnections()
 }
