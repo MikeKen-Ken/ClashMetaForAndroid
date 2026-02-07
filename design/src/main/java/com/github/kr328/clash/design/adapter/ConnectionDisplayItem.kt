@@ -1,6 +1,7 @@
 package com.github.kr328.clash.design.adapter
 
 import com.github.kr328.clash.core.model.Connection
+import kotlinx.serialization.Serializable
 
 /**
  * Connection with precomputed traffic display text (download/upload amount and speed)
@@ -14,7 +15,8 @@ data class ConnectionDisplayItem(
     val isClosed: Boolean = false,
 )
 
-/** Closed connection with timestamp for retention filtering */
+/** Closed connection with timestamp for retention filtering; serializable for persistence */
+@Serializable
 data class ClosedEntry(
     val connection: Connection,
     val closedAt: Long,

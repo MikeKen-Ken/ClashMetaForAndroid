@@ -2,10 +2,12 @@ plugins {
     kotlin("android")
     kotlin("kapt")
     id("com.android.library")
+    id("kotlinx-serialization")
 }
 
 dependencies {
     implementation(project(":common"))
+    implementation(libs.kotlin.serialization.json)
     implementation(project(":core"))
     implementation(project(":service"))
 

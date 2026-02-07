@@ -11,6 +11,7 @@ import com.github.kr328.clash.design.adapter.ClosedEntry
 import com.github.kr328.clash.design.adapter.ConnectionAdapter
 import com.github.kr328.clash.design.adapter.ConnectionDisplayItem
 import com.github.kr328.clash.design.databinding.DesignConnectionsBinding
+import com.github.kr328.clash.design.store.ClosedConnectionsStorage
 import com.github.kr328.clash.design.store.UiStore
 import com.github.kr328.clash.design.util.applyFrom
 import com.github.kr328.clash.design.util.applyLinearAdapter
@@ -58,7 +59,7 @@ class ConnectionsDesign(
     private var previousTraffic: Map<String, Pair<Long, Long>> = emptyMap()
     private var previousTimeMs: Long = 0
 
-    /** Closed connections with timestamp; trimmed by retention on each patch */
+    /** Closed connections with timestamp; trimmed by retention on each patch; persisted so reopening the screen restores the list */
     private val closedEntries = mutableListOf<ClosedEntry>()
     var showActiveTab: Boolean = true
         set(value) {
@@ -105,6 +106,7 @@ class ConnectionsDesign(
 
         val retentionMs = retentionHours * 3600 * 1000L
         closedEntries.removeAll { nowMs - it.closedAt > retentionMs }
+        launch { ClosedConnectionsStorage.save(context, closedEntries) }
 
         lastSnapshot = snapshot
         val intervalSec = if (previousTimeMs > 0) (nowMs - previousTimeMs) / 1000.0 else 1.0
@@ -190,6 +192,7 @@ class ConnectionsDesign(
 
     fun clearClosedConnections() {
         closedEntries.clear()
+        launch { ClosedConnectionsStorage.save(context, closedEntries) }
         if (!showActiveTab) launch { refreshDisplayItems() }
     }
 
@@ -230,6 +233,14 @@ class ConnectionsDesign(
         binding.mergeByDomainButton?.text = context.getString(
             if (mergeByDomain) R.string.connections_cancel_merge else R.string.connections_merge_by_domain
         )
+        launch {
+            val loaded = ClosedConnectionsStorage.load(context)
+            val retentionMs = retentionHours * 3600 * 1000L
+            val nowMs = System.currentTimeMillis()
+            closedEntries.clear()
+            closedEntries.addAll(loaded.filter { nowMs - it.closedAt <= retentionMs })
+            if (!showActiveTab) refreshDisplayItems()
+        }
     }
 
     private fun setupRetentionSpinner() {
