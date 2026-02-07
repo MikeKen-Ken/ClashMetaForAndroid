@@ -156,15 +156,21 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                             }
                         }
                         is ProxyDesign.Request.PatchMode -> {
-                            design.showModeSwitchTips()
+                            // 规则模式 = 恢复用户配置（清除会话覆盖）；全局/直连 = 写入会话覆盖并提示“只在当前会话生效”
+                            if (it.mode == TunnelState.Mode.Global || it.mode == TunnelState.Mode.Direct) {
+                                design.showModeSwitchTips()
+                            }
                             it.mode?.let { m -> uiStore.proxyUiMode = m }
 
                             withClash {
-                                val o = queryOverride(Clash.OverrideSlot.Session)
-
-                                o.mode = it.mode
-
-                                patchOverride(Clash.OverrideSlot.Session, o)
+                                if (it.mode == TunnelState.Mode.Rule || it.mode == null) {
+                                    // 规则模式：清除会话 override，恢复用户 profile 的配置（mode/rules/dns 等）
+                                    clearOverride(Clash.OverrideSlot.Session)
+                                } else {
+                                    val o = queryOverride(Clash.OverrideSlot.Session)
+                                    o.mode = it.mode
+                                    patchOverride(Clash.OverrideSlot.Session, o)
+                                }
                                 // 切换模式后关闭所有连接，让流量按新规则重建
                                 closeAllConnections()
                             }
