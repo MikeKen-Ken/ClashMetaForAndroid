@@ -114,6 +114,11 @@ func closeConnection(id C.c_string) C.int {
 	return 0
 }
 
+//export closeAllConnections
+func closeAllConnectionsExported() {
+	closeAllConnections()
+}
+
 //export updateProvider
 func updateProvider(completable unsafe.Pointer, pType C.c_string, name C.c_string) {
 	go func(pType, name string) {

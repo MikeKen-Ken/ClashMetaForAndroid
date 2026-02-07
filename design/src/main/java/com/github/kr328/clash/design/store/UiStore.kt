@@ -75,6 +75,12 @@ class UiStore(context: Context) {
         defaultValue = false,
     )
 
+    /** 已关闭连接保留时间（小时），可选 1、3、8、24，默认 8 */
+    var connectionsClosedRetentionHours: Int by store.int(
+        key = "connections_closed_retention_hours",
+        defaultValue = 8,
+    )
+
     companion object {
         private const val PREFERENCE_NAME = "ui"
     }

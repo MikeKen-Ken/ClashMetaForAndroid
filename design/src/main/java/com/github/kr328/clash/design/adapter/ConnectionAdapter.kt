@@ -55,6 +55,7 @@ class ConnectionAdapter(
         } else {
             iconView.visibility = View.GONE
         }
+        holder.binding.closeView.visibility = if (item.isClosed) View.GONE else View.VISIBLE
         holder.binding.closeView.setOnClickListener { onClose(conn) }
         holder.binding.root.setOnLongClickListener {
             onCopy?.invoke(conn, formatRuleDisplay(conn))

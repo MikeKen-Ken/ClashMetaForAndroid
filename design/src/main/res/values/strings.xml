@@ -11,6 +11,15 @@
 
     <string name="connections">Connections</string>
     <string name="connections_sort_order">Sort by time</string>
+    <string name="connections_active">Active</string>
+    <string name="connections_closed">Closed</string>
+    <string name="connections_retention_1h">1 hour</string>
+    <string name="connections_retention_3h">3 hours</string>
+    <string name="connections_retention_8h">8 hours</string>
+    <string name="connections_retention_24h">24 hours</string>
+    <string name="connections_merge_by_domain">Merge by domain</string>
+    <string name="connections_cancel_merge">Cancel merge</string>
+    <string name="connections_clear_closed">Clear</string>
     <string name="proxy">Proxy</string>
     <string name="proxy_rule">Rule</string>
     <string name="proxy_global">Global</string>

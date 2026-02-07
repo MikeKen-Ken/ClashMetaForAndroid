@@ -76,6 +76,10 @@ class ClashManager(private val context: Context) : IClashManager,
         return Clash.closeConnection(id)
     }
 
+    override fun closeAllConnections() {
+        Clash.closeAllConnections()
+    }
+
     override suspend fun healthCheck(group: String) {
         Clash.healthCheck(group).await()
         store.activeProfile?.let { uuid ->

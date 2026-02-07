@@ -24,6 +24,7 @@ interface IClashManager {
 
     fun queryConnections(): ConnectionsSnapshot
     fun closeConnection(id: String): Boolean
+    fun closeAllConnections()
 
     fun setLogObserver(observer: ILogObserver?)
 }

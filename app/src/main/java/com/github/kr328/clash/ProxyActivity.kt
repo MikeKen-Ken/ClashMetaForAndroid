@@ -165,6 +165,8 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                 o.mode = it.mode
 
                                 patchOverride(Clash.OverrideSlot.Session, o)
+                                // 切换模式后关闭所有连接，让流量按新规则重建
+                                closeAllConnections()
                             }
                         }
                     }

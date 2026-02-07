@@ -53,14 +53,69 @@
                 </RelativeLayout>
             </com.github.kr328.clash.design.view.ActivityBarLayout>
 
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:orientation="horizontal"
                 android:paddingVertical="@dimen/item_padding_vertical"
                 android:paddingStart="@dimen/item_tailing_margin"
                 android:paddingEnd="@dimen/item_tailing_margin"
-                android:text="@string/connections"
-                android:textColor="?attr/colorControlActivated" />
+                android:gravity="center_vertical">
+
+                <Button
+                    android:id="@+id/tab_active_button"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/connections_active"
+                    android:onClick="@{() -> self.onTabActiveClick()}" />
+
+                <Button
+                    android:id="@+id/tab_closed_button"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/connections_closed"
+                    android:onClick="@{() -> self.onTabClosedClick()}" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/closed_toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingStart="@dimen/item_tailing_margin"
+                android:paddingEnd="@dimen/item_tailing_margin"
+                android:paddingBottom="8dp"
+                android:gravity="center_vertical"
+                android:visibility="gone"
+                android:background="?attr/colorSurface">
+
+                <Spinner
+                    android:id="@+id/retention_spinner"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="80dp" />
+
+                <Button
+                    android:id="@+id/merge_by_domain_button"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/connections_merge_by_domain"
+                    android:onClick="@{() -> self.onMergeByDomainClick()}" />
+
+                <Button
+                    android:id="@+id/clear_closed_button"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/connections_clear_closed"
+                    android:onClick="@{() -> self.onClearClosedClick()}" />
+            </LinearLayout>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recycler_list"

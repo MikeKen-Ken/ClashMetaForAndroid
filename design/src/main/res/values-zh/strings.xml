@@ -64,6 +64,15 @@
     <string name="properties">参数</string>
     <string name="connections">连接</string>
     <string name="connections_sort_order">按时间排序</string>
+    <string name="connections_active">活跃</string>
+    <string name="connections_closed">已关闭</string>
+    <string name="connections_retention_1h">1 小时</string>
+    <string name="connections_retention_3h">3 小时</string>
+    <string name="connections_retention_8h">8 小时</string>
+    <string name="connections_retention_24h">24 小时</string>
+    <string name="connections_merge_by_domain">按域名合并</string>
+    <string name="connections_cancel_merge">取消合并</string>
+    <string name="connections_clear_closed">清除</string>
     <string name="proxy">代理</string>
     <string name="recently">近期</string>
     <string name="route_system_traffic">自动路由系统流量</string>

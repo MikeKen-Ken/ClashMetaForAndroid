@@ -84,3 +84,16 @@ func closeConnectionByID(id string) bool {
 	_ = c.Close()
 	return true
 }
+
+// closeAllConnections closes every tracked connection so traffic is re-established with the latest rules (e.g. after mode switch).
+func closeAllConnections() {
+	snap := queryConnectionsSnapshot()
+	if snap == nil {
+		return
+	}
+	for _, conn := range snap.Connections {
+		if conn.Id != "" {
+			closeConnectionByID(conn.Id)
+		}
+	}
+}

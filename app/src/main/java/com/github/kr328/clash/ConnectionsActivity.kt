@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 
 class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
     override suspend fun main() {
-        val design = ConnectionsDesign(this)
+        val design = ConnectionsDesign(this, uiStore)
         setContentDesign(design)
 
         refreshConnections(design)
@@ -31,6 +31,9 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
                         is ConnectionsDesign.Request.CloseConnection -> {
                             withClash { closeConnection(it.connection.id) }
                             launch { refreshConnections(design) }
+                        }
+                        ConnectionsDesign.Request.ClearClosedConnections -> {
+                            design.clearClosedConnections()
                         }
                     }
                 }

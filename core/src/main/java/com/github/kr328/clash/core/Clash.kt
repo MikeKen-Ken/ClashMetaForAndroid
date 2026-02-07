@@ -231,6 +231,10 @@ object Clash {
         return Bridge.nativeCloseConnection(id)
     }
 
+    fun closeAllConnections() {
+        Bridge.nativeCloseAllConnections()
+    }
+
     fun subscribeLogcat(): ReceiveChannel<LogMessage> {
         return Channel<LogMessage>(32).apply {
             Bridge.nativeSubscribeLogcat(object : LogcatInterface {
