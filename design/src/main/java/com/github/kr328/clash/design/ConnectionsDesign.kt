@@ -11,7 +11,7 @@ import com.github.kr328.clash.design.adapter.ClosedEntry
 import com.github.kr328.clash.design.adapter.ConnectionAdapter
 import com.github.kr328.clash.design.adapter.ConnectionDisplayItem
 import com.github.kr328.clash.design.databinding.DesignConnectionsBinding
-import com.github.kr328.clash.design.store.ClosedConnectionsStorage
+import com.github.kr328.clash.design.store.LastConnectionsSnapshotStorage
 import com.github.kr328.clash.design.store.UiStore
 import com.github.kr328.clash.design.util.applyFrom
 import com.github.kr328.clash.design.util.applyLinearAdapter
@@ -35,6 +35,8 @@ class ConnectionsDesign(
     sealed class Request {
         data class CloseConnection(val connection: Connection) : Request()
         object ClearClosedConnections : Request()
+        object CloseAllConnections : Request()
+        object CloseConnectionsExcludingDirect : Request()
     }
 
     private val binding = DesignConnectionsBinding
@@ -59,7 +61,7 @@ class ConnectionsDesign(
     private var previousTraffic: Map<String, Pair<Long, Long>> = emptyMap()
     private var previousTimeMs: Long = 0
 
-    /** Closed connections with timestamp; trimmed by retention on each patch; persisted so reopening the screen restores the list */
+    /** 当前会话的已关闭连接（带时间戳、按保留时长裁剪），不落盘，仅内存 */
     private val closedEntries = mutableListOf<ClosedEntry>()
     var showActiveTab: Boolean = true
         set(value) {
@@ -93,8 +95,12 @@ class ConnectionsDesign(
         get() = binding.root
 
     suspend fun patchConnections(snapshot: ConnectionsSnapshot) {
-        val previous = lastSnapshot
+        var previous = lastSnapshot
         val nowMs = System.currentTimeMillis()
+
+        if (previous == null) {
+            previous = LastConnectionsSnapshotStorage.load(context)
+        }
 
         if (previous != null) {
             val previousIds = previous.connections.map { it.id }.toSet()
@@ -106,9 +112,10 @@ class ConnectionsDesign(
 
         val retentionMs = retentionHours * 3600 * 1000L
         closedEntries.removeAll { nowMs - it.closedAt > retentionMs }
-        launch { ClosedConnectionsStorage.save(context, closedEntries) }
+        // 已关闭列表不再每次 patch 写盘，改为在离开连接页时由 Activity.onStop 统一持久化，避免每秒一次大 JSON 写入
 
         lastSnapshot = snapshot
+        // 不在每次 patch 时写盘，避免每秒一次大 JSON 写入；仅在离开连接页时由 Activity.onStop 调用 persistLastSnapshot()
         val intervalSec = if (previousTimeMs > 0) (nowMs - previousTimeMs) / 1000.0 else 1.0
         val intervalSecClamped = if (intervalSec < 0.5) 1.0 else intervalSec
 
@@ -192,7 +199,6 @@ class ConnectionsDesign(
 
     fun clearClosedConnections() {
         closedEntries.clear()
-        launch { ClosedConnectionsStorage.save(context, closedEntries) }
         if (!showActiveTab) launch { refreshDisplayItems() }
     }
 
@@ -217,10 +223,24 @@ class ConnectionsDesign(
         requests.trySend(Request.ClearClosedConnections)
     }
 
+    fun onCloseAllConnectionsClick() {
+        requests.trySend(Request.CloseAllConnections)
+    }
+
+    fun onCloseConnectionsExcludingDirectClick() {
+        requests.trySend(Request.CloseConnectionsExcludingDirect)
+    }
+
+    /** 在离开连接页时调用，仅持久化当前活跃快照（供返回时计算「因模式切换被关掉的连接」），已关闭列表不再写盘以省电。 */
+    suspend fun persistState() {
+        lastSnapshot?.let { LastConnectionsSnapshotStorage.save(context, it) }
+    }
+
     private fun updateTabAndToolbarVisibility() {
         binding.tabActiveButton?.isSelected = showActiveTab
         binding.tabClosedButton?.isSelected = !showActiveTab
         binding.closedToolbar?.visibility = if (showActiveTab) View.GONE else View.VISIBLE
+        binding.activeToolbar?.visibility = if (showActiveTab) View.VISIBLE else View.GONE
     }
 
     init {
@@ -233,14 +253,6 @@ class ConnectionsDesign(
         binding.mergeByDomainButton?.text = context.getString(
             if (mergeByDomain) R.string.connections_cancel_merge else R.string.connections_merge_by_domain
         )
-        launch {
-            val loaded = ClosedConnectionsStorage.load(context)
-            val retentionMs = retentionHours * 3600 * 1000L
-            val nowMs = System.currentTimeMillis()
-            closedEntries.clear()
-            closedEntries.addAll(loaded.filter { nowMs - it.closedAt <= retentionMs })
-            if (!showActiveTab) refreshDisplayItems()
-        }
     }
 
     private fun setupRetentionSpinner() {

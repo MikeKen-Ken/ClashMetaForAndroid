@@ -81,6 +81,35 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/active_toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingStart="@dimen/item_tailing_margin"
+                android:paddingEnd="@dimen/item_tailing_margin"
+                android:paddingBottom="8dp"
+                android:gravity="center_vertical"
+                android:background="?attr/colorSurface">
+
+                <Button
+                    android:id="@+id/close_all_button"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/connections_close_all"
+                    android:onClick="@{() -> self.onCloseAllConnectionsClick()}" />
+
+                <Button
+                    android:id="@+id/close_non_direct_button"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/connections_close_non_direct"
+                    android:onClick="@{() -> self.onCloseConnectionsExcludingDirectClick()}" />
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/closed_toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

@@ -235,6 +235,15 @@ object Clash {
         Bridge.nativeCloseAllConnections()
     }
 
+    fun closeConnectionsExcludingDirect() {
+        val snapshot = queryConnections()
+        for (conn in snapshot.connections) {
+            if (!conn.chains.contains("DIRECT")) {
+                closeConnection(conn.id)
+            }
+        }
+    }
+
     fun subscribeLogcat(): ReceiveChannel<LogMessage> {
         return Channel<LogMessage>(32).apply {
             Bridge.nativeSubscribeLogcat(object : LogcatInterface {

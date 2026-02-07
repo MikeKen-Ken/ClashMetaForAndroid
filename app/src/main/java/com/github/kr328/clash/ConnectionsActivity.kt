@@ -10,6 +10,14 @@ import kotlinx.coroutines.selects.select
 import java.util.concurrent.TimeUnit
 
 class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
+
+    override fun onStop() {
+        (design as? ConnectionsDesign)?.let { d ->
+            launch { d.persistState() }
+        }
+        super.onStop()
+    }
+
     override suspend fun main() {
         val design = ConnectionsDesign(this, uiStore)
         setContentDesign(design)
@@ -34,6 +42,14 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
                         }
                         ConnectionsDesign.Request.ClearClosedConnections -> {
                             design.clearClosedConnections()
+                        }
+                        ConnectionsDesign.Request.CloseAllConnections -> {
+                            withClash { closeAllConnections() }
+                            launch { refreshConnections(design) }
+                        }
+                        ConnectionsDesign.Request.CloseConnectionsExcludingDirect -> {
+                            withClash { closeConnectionsExcludingDirect() }
+                            launch { refreshConnections(design) }
                         }
                     }
                 }

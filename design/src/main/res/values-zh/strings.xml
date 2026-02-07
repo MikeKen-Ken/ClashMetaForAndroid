@@ -73,6 +73,8 @@
     <string name="connections_merge_by_domain">按域名合并</string>
     <string name="connections_cancel_merge">取消合并</string>
     <string name="connections_clear_closed">清除</string>
+    <string name="connections_close_all">关闭所有连接</string>
+    <string name="connections_close_non_direct">关闭非直连连接</string>
     <string name="proxy">代理</string>
     <string name="recently">近期</string>
     <string name="route_system_traffic">自动路由系统流量</string>
