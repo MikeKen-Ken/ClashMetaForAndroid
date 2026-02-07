@@ -4,7 +4,7 @@ import android.content.Context
 import com.github.kr328.clash.design.adapter.ClosedEntry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.builtins.list
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -25,7 +25,7 @@ object ClosedConnectionsStorage {
             if (!f.exists()) return@withContext emptyList()
             val text = f.readText()
             if (text.isBlank()) return@withContext emptyList()
-            json.decodeFromString(list(ClosedEntry.serializer()), text)
+            json.decodeFromString(ListSerializer(ClosedEntry.serializer()), text)
         } catch (_: Throwable) {
             emptyList()
         }
@@ -38,7 +38,7 @@ object ClosedConnectionsStorage {
                 if (f.exists()) f.delete()
                 return@withContext
             }
-            f.writeText(json.encodeToString(list(ClosedEntry.serializer()), entries))
+            f.writeText(json.encodeToString(ListSerializer(ClosedEntry.serializer()), entries))
         } catch (_: Throwable) { }
     }
 }
