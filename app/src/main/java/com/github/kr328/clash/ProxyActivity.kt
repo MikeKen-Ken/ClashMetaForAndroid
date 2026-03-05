@@ -150,6 +150,7 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                             launch {
                                 withClash {
                                     healthCheck(names[it.index])
+                                    closeConnectionsExcludingDirect()
                                 }
 
                                 design.requests.send(ProxyDesign.Request.ReloadAll)
