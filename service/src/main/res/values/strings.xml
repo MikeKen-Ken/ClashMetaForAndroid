@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="PluralsCandidate">
     <!-- from https://github.com/shadowsocks/shadowsocks-android/blob/master/core/src/main/res/values/strings.xml -->
-    <string name="clash_notification_content" translatable="false">"%1$s↑\t%2$s↓"</string>
+    <string name="clash_notification_content" translatable="false">"%1$s↓\t%2$s↑"</string>
 
     <string name="clash_service_status_channel">Clash Status</string>
     <string name="profile_service_status">Profile Service Status</string>
