@@ -53,7 +53,7 @@ class DynamicNotificationModule(service: Service) : Module<Unit>(service) {
             .setContentText(
                 service.getString(
                     R.string.clash_notification_content,
-                    uploaded, downloaded
+                    downloaded, uploaded
                 )
             )
             .setSubText(null)
