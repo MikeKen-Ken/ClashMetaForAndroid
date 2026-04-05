@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import com.github.kr328.clash.common.log.Log
+import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.service.clash.clashRuntime
 import com.github.kr328.clash.service.clash.module.*
 import com.github.kr328.clash.service.store.ServiceStore
