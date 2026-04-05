@@ -95,6 +95,9 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
         StatusProvider.serviceRunning = true
 
+        // Reset traffic statistics when starting TunService
+        Clash.reset()
+
         StaticNotificationModule.createNotificationChannel(this)
         StaticNotificationModule.notifyLoadingNotification(this)
         HealthCheckNotificationModule.createNotificationChannel(this)

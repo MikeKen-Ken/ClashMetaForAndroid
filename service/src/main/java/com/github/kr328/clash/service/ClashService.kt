@@ -75,6 +75,9 @@ class ClashService : BaseService() {
 
         StatusProvider.serviceRunning = true
 
+        // Reset traffic statistics when starting ClashService
+        Clash.reset()
+
         StaticNotificationModule.createNotificationChannel(this)
         StaticNotificationModule.notifyLoadingNotification(this)
         HealthCheckNotificationModule.createNotificationChannel(this)
