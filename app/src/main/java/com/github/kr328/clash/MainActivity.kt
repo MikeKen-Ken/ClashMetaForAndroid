@@ -90,14 +90,12 @@ class MainActivity : BaseActivity<MainDesign>() {
     private suspend fun MainDesign.fetch() {
         setClashRunning(clashRunning)
 
-        val state = withClash {
-            queryTunnelState()
-        }
         val providers = withClash {
             queryProviders()
         }
 
-        setMode(state.mode)
+        // 全局/直连在 core 侧通过规则覆盖实现，tunnel 查询到的 mode 恒为 rule；与代理页一致使用 UiStore
+        setMode(uiStore.proxyUiMode)
         setHasProviders(providers.isNotEmpty())
 
         withProfile {
