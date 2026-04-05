@@ -3,6 +3,7 @@ package com.github.kr328.clash.service.store
 import android.content.Context
 import com.github.kr328.clash.common.store.Store
 import com.github.kr328.clash.common.store.asStoreProvider
+import com.github.kr328.clash.core.model.TunnelState
 import com.github.kr328.clash.service.PreferenceProvider
 import com.github.kr328.clash.service.model.AccessControlMode
 import java.util.*
@@ -65,4 +66,18 @@ class ServiceStore(context: Context) {
         key = "dynamic_notification",
         defaultValue = true
     )
+
+    /**
+     * 与 VPN 同进程持久化，供配置加载前恢复 Session 的 mode（主进程 UiStore 在 :background 下不可靠）。
+     * 空串表示尚未写入，由 ConfigurationModule 从主进程 ui 偏好迁移一次。
+     */
+    var persistedProxyUiMode: String by store.string(
+        key = "persisted_proxy_ui_mode",
+        defaultValue = "",
+    )
+
+    fun persistedProxyModeOrDefault(): TunnelState.Mode {
+        if (persistedProxyUiMode.isEmpty()) return TunnelState.Mode.Rule
+        return TunnelState.Mode.values().find { it.name == persistedProxyUiMode } ?: TunnelState.Mode.Rule
+    }
 }

@@ -1,7 +1,6 @@
 package com.github.kr328.clash.design.store
 
 import android.content.Context
-import com.github.kr328.clash.common.constants.UiPreferences
 import com.github.kr328.clash.common.store.Store
 import com.github.kr328.clash.common.store.asStoreProvider
 import com.github.kr328.clash.core.model.ProxySort
@@ -12,7 +11,7 @@ import com.github.kr328.clash.design.model.DarkMode
 class UiStore(context: Context) {
     private val store = Store(
         context
-            .getSharedPreferences(UiPreferences.PREFERENCE_NAME, Context.MODE_PRIVATE)
+            .getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE)
             .asStoreProvider()
     )
 
@@ -55,7 +54,7 @@ class UiStore(context: Context) {
 
     /** 前端自己记录代理页模式（规则/全局/直连），用于按钮选中状态，与电脑端一致不依赖 core 返回的 mode */
     var proxyUiMode: TunnelState.Mode by store.enum(
-        key = UiPreferences.KEY_PROXY_UI_MODE,
+        key = "proxy_ui_mode",
         defaultValue = TunnelState.Mode.Rule,
         values = TunnelState.Mode.values()
     )
@@ -82,4 +81,7 @@ class UiStore(context: Context) {
         defaultValue = 8,
     )
 
+    companion object {
+        private const val PREFERENCE_NAME = "ui"
+    }
 }

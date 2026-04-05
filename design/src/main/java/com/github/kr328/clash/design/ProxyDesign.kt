@@ -53,6 +53,8 @@ class ProxyDesign(
             adapter.states[binding.pagesView.currentItem].urlTesting = value
         }
 
+    private var suppressModeToggleEmit: Boolean = false
+
     override val root: View = binding.root
 
     suspend fun updateGroup(
@@ -82,6 +84,23 @@ class ProxyDesign(
         }
     }
 
+    /** VPN 重启或从主进程恢复后，与 [com.github.kr328.clash.design.store.UiStore.proxyUiMode] 对齐模式按钮，不触发 PatchMode。 */
+    suspend fun syncModeToggle(mode: TunnelState.Mode) {
+        withContext(Dispatchers.Main) {
+            suppressModeToggleEmit = true
+            try {
+                when (mode) {
+                    TunnelState.Mode.Rule -> binding.modeToggleGroup.check(R.id.rule_mode_btn)
+                    TunnelState.Mode.Global -> binding.modeToggleGroup.check(R.id.global_mode_btn)
+                    TunnelState.Mode.Direct -> binding.modeToggleGroup.check(R.id.direct_mode_btn)
+                    else -> binding.modeToggleGroup.clearChecked()
+                }
+            } finally {
+                suppressModeToggleEmit = false
+            }
+        }
+    }
+
     init {
         binding.self = this
 
@@ -95,6 +114,7 @@ class ProxyDesign(
             else -> binding.modeToggleGroup.clearChecked()
         }
         binding.modeToggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (suppressModeToggleEmit) return@addOnButtonCheckedListener
             val mode = when {
                 !isChecked -> null
                 checkedId == R.id.rule_mode_btn -> TunnelState.Mode.Rule

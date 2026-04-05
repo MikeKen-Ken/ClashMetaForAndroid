@@ -61,6 +61,10 @@ class ClashManager(private val context: Context) : IClashManager,
     override fun patchOverride(slot: Clash.OverrideSlot, configuration: ConfigurationOverride) {
         Clash.patchOverride(slot, configuration)
 
+        if (slot == Clash.OverrideSlot.Session) {
+            configuration.mode?.let { store.persistedProxyUiMode = it.name }
+        }
+
         context.sendOverrideChanged()
     }
 

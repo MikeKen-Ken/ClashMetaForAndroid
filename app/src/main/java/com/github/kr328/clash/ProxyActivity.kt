@@ -46,6 +46,7 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                         Event.ActivityStart -> {
                             // 每次 activity 恢复到前台时刷新数据
                             design.requests.send(ProxyDesign.Request.ReloadAll)
+                            launch { design.syncModeToggle(uiStore.proxyUiMode) }
                         }
                         Event.ProfileLoaded, Event.ClashStart, Event.ServiceRecreated -> {
                             val newNames = withClash {
@@ -59,6 +60,7 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                             } else {
                                 // 代理组名称没变，但选择可能已恢复，重新加载所有数据
                                 design.requests.send(ProxyDesign.Request.ReloadAll)
+                                launch { design.syncModeToggle(uiStore.proxyUiMode) }
                             }
                         }
                         else -> Unit

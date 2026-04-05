@@ -3,12 +3,10 @@ package com.github.kr328.clash.service.clash.module
 import android.app.Service
 import android.content.Context
 import com.github.kr328.clash.common.constants.Intents
-import com.github.kr328.clash.common.constants.UiPreferences
 import com.github.kr328.clash.common.log.Log
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.core.model.TunnelState
 import com.github.kr328.clash.service.StatusProvider
-import com.github.kr328.clash.service.data.Imported
 import com.github.kr328.clash.service.data.ImportedDao
 import com.github.kr328.clash.service.data.SelectionDao
 import com.github.kr328.clash.service.store.ServiceStore
@@ -66,12 +64,18 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                 override.proxySelections = selections.associate { it.proxy to it.selected }
                 Clash.patchOverride(Clash.OverrideSlot.Persist, override)
 
+                migratePersistedProxyModeIfNeeded(service, store)
+                val session = Clash.queryOverride(Clash.OverrideSlot.Session)
+                session.mode = store.persistedProxyModeOrDefault()
+                Clash.patchOverride(Clash.OverrideSlot.Session, session)
+
                 Clash.load(service.importedDir.resolve(active.uuid.toString())).await()
 
-                syncSelectorsFromDb(active.uuid)
+                val remove = SelectionDao().querySelections(active.uuid)
+                    .filterNot { Clash.patchSelector(it.proxy, it.selected) }
+                    .map { it.proxy }
 
-                // ClashRuntime clears session override on each start; mode lives only in UiStore prefs.
-                reloadIfSavedProxyModeNonRule(active)
+                SelectionDao().removeSelections(active.uuid, remove)
 
                 StatusProvider.currentProfile = active.name
 
@@ -83,34 +87,21 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
             }
         }
     }
+}
 
-    private suspend fun syncSelectorsFromDb(profileUuid: UUID) {
-        val remove = SelectionDao().querySelections(profileUuid)
-            .filterNot { Clash.patchSelector(it.proxy, it.selected) }
-            .map { it.proxy }
+private const val UI_PREF_NAME = "ui"
+private const val UI_PREF_KEY_PROXY_MODE = "proxy_ui_mode"
 
-        SelectionDao().removeSelections(profileUuid, remove)
-    }
+/** 首次将主进程 UiStore 中的模式迁入 service 偏好（与 UiStore 的 key 保持一致）。 */
+private fun migratePersistedProxyModeIfNeeded(context: Context, store: ServiceStore) {
+    if (store.persistedProxyUiMode.isNotEmpty()) return
+    val mode = readProxyUiModeFromMainProcessPreferences(context) ?: TunnelState.Mode.Rule
+    store.persistedProxyUiMode = mode.name
+}
 
-    private fun readSavedProxyUiMode(): TunnelState.Mode {
-        val prefs = service.applicationContext.getSharedPreferences(
-            UiPreferences.PREFERENCE_NAME,
-            Context.MODE_PRIVATE,
-        )
-        val name = prefs.getString(UiPreferences.KEY_PROXY_UI_MODE, TunnelState.Mode.Rule.name)
-            ?: TunnelState.Mode.Rule.name
-        return TunnelState.Mode.values().find { it.name == name } ?: TunnelState.Mode.Rule
-    }
-
-    private suspend fun reloadIfSavedProxyModeNonRule(active: Imported) {
-        val mode = readSavedProxyUiMode()
-        if (mode == TunnelState.Mode.Rule) return
-
-        val session = Clash.queryOverride(Clash.OverrideSlot.Session)
-        session.mode = mode
-        Clash.patchOverride(Clash.OverrideSlot.Session, session)
-
-        Clash.load(service.importedDir.resolve(active.uuid.toString())).await()
-        syncSelectorsFromDb(active.uuid)
-    }
+@Suppress("DEPRECATION")
+private fun readProxyUiModeFromMainProcessPreferences(context: Context): TunnelState.Mode? {
+    val prefs = context.applicationContext.getSharedPreferences(UI_PREF_NAME, Context.MODE_MULTI_PROCESS)
+    val name = prefs.getString(UI_PREF_KEY_PROXY_MODE, null) ?: return null
+    return TunnelState.Mode.values().find { it.name == name }
 }
