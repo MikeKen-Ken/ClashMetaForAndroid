@@ -25,6 +25,7 @@ import kotlinx.coroutines.withContext
 class ProxyDesign(
     context: Context,
     overrideMode: TunnelState.Mode?,
+    proxyAdsBlock: Boolean,
     private val groupNames: List<String>,
     private val uiStore: UiStore,
 ) : Design<ProxyDesign.Request>(context) {
@@ -34,6 +35,7 @@ class ProxyDesign(
         object ReLaunch : Request()
 
         data class PatchMode(val mode: TunnelState.Mode?) : Request()
+        data class PatchAdsBlock(val enabled: Boolean) : Request()
         data class Reload(val index: Int) : Request()
         data class Select(val index: Int, val name: String) : Request()
         data class UrlTest(val index: Int) : Request()
@@ -146,6 +148,21 @@ class ProxyDesign(
             uiStore.proxyDelayTestTimeoutMs = timeoutMs
         }
 
+        if (proxyAdsBlock) {
+            binding.adsToggleGroup.check(R.id.ads_on_btn)
+        } else {
+            binding.adsToggleGroup.check(R.id.ads_off_btn)
+        }
+        binding.adsToggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            val enabled = when (checkedId) {
+                R.id.ads_on_btn -> true
+                R.id.ads_off_btn -> false
+                else -> return@addOnButtonCheckedListener
+            }
+            requests.trySend(Request.PatchAdsBlock(enabled))
+        }
+
         // 初始化并发数选择按钮组：根据持久化的偏好恢复选中状态
         when (uiStore.proxyDelayTestConcurrency) {
             10 -> binding.concurrencyToggleGroup.check(R.id.concurrency_10_btn)
@@ -172,6 +189,7 @@ class ProxyDesign(
             binding.scrollToCurrentFab.visibility = View.GONE
             binding.urlTestView.visibility = View.GONE
             binding.timeoutScrollView.visibility = View.GONE
+            binding.adsScrollView.visibility = View.GONE
             binding.concurrencyScrollView.visibility = View.GONE
             binding.tabLayoutView.visibility = View.GONE
             binding.elevationView.visibility = View.GONE

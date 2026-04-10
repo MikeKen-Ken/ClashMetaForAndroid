@@ -19,6 +19,11 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
     override suspend fun main() {
         // 与电脑端一致：按钮状态用前端记录的 proxyUiMode，不依赖 core 返回的 mode
         val mode = uiStore.proxyUiMode
+        val proxyAdsBlock = withClash {
+            queryOverride(Clash.OverrideSlot.Session).proxyAdsBlock
+                ?: queryOverride(Clash.OverrideSlot.Persist).proxyAdsBlock
+                ?: true
+        }
         val names = withClash { queryProxyGroupNames(uiStore.proxyExcludeNotSelectable) }
         val states = List(names.size) { ProxyState("?", false) }
         val unorderedStates = names.indices.map { names[it] to states[it] }.toMap()
@@ -27,6 +32,7 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
         val design = ProxyDesign(
             this,
             mode,
+            proxyAdsBlock,
             names,
             uiStore
         )
@@ -169,6 +175,13 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                 patchOverride(Clash.OverrideSlot.Session, o)
                                 // 切换模式后关闭所有连接，让流量按新规则重建
                                 closeAllConnections()
+                            }
+                        }
+                        is ProxyDesign.Request.PatchAdsBlock -> {
+                            withClash {
+                                val o = queryOverride(Clash.OverrideSlot.Session)
+                                o.proxyAdsBlock = it.enabled
+                                patchOverride(Clash.OverrideSlot.Session, o)
                             }
                         }
                     }

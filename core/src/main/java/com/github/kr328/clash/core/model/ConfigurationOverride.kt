@@ -83,6 +83,9 @@ data class ConfigurationOverride(
     /** Proxy group name -> selected node name; applied after config load so selection persists. */
     @SerialName("proxy-selections")
     var proxySelections: Map<String, String>? = null,
+
+    @SerialName("proxy-ads-block")
+    var proxyAdsBlock: Boolean? = null,
 ) : Parcelable {
     @Serializable
     data class Dns(

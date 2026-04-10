@@ -306,6 +306,8 @@
     <string name="concurrency_30">×30</string>
     <string name="concurrency_40">×40</string>
     <string name="concurrency_50">×50</string>
+    <string name="proxy_ads_on">广告</string>
+    <string name="proxy_ads_off">无广告</string>
 
     <string name="format_provider_type">%1$s(%2$s)</string>
     <string name="rule">Rule</string>
