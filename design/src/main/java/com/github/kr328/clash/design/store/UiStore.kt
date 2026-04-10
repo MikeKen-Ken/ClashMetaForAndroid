@@ -81,6 +81,12 @@ class UiStore(context: Context) {
         defaultValue = 8,
     )
 
+    /** 延迟测速超时时间（毫秒），可选 250、500、1000、3000、5000，默认 5000 */
+    var proxyDelayTestTimeoutMs: Int by store.int(
+        key = "proxy_delay_test_timeout_ms",
+        defaultValue = 5000,
+    )
+
     companion object {
         private const val PREFERENCE_NAME = "ui"
     }

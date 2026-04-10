@@ -26,7 +26,7 @@ class ProxyDesign(
     context: Context,
     overrideMode: TunnelState.Mode?,
     private val groupNames: List<String>,
-    uiStore: UiStore,
+    private val uiStore: UiStore,
 ) : Design<ProxyDesign.Request>(context) {
 
     sealed class Request {
@@ -125,10 +125,32 @@ class ProxyDesign(
             requests.trySend(Request.PatchMode(mode))
         }
 
+        // 初始化超时选择按钮组：根据持久化的偏好恢复选中状态
+        when (uiStore.proxyDelayTestTimeoutMs) {
+            250 -> binding.timeoutToggleGroup.check(R.id.timeout_250_btn)
+            500 -> binding.timeoutToggleGroup.check(R.id.timeout_500_btn)
+            1000 -> binding.timeoutToggleGroup.check(R.id.timeout_1000_btn)
+            3000 -> binding.timeoutToggleGroup.check(R.id.timeout_3000_btn)
+            else -> binding.timeoutToggleGroup.check(R.id.timeout_5000_btn)
+        }
+        binding.timeoutToggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            val timeoutMs = when (checkedId) {
+                R.id.timeout_250_btn -> 250
+                R.id.timeout_500_btn -> 500
+                R.id.timeout_1000_btn -> 1000
+                R.id.timeout_3000_btn -> 3000
+                R.id.timeout_5000_btn -> 5000
+                else -> return@addOnButtonCheckedListener
+            }
+            uiStore.proxyDelayTestTimeoutMs = timeoutMs
+        }
+
         if (groupNames.isEmpty()) {
             binding.emptyView.visibility = View.VISIBLE
             binding.scrollToCurrentFab.visibility = View.GONE
             binding.urlTestView.visibility = View.GONE
+            binding.timeoutScrollView.visibility = View.GONE
             binding.tabLayoutView.visibility = View.GONE
             binding.elevationView.visibility = View.GONE
             binding.pagesView.visibility = View.GONE

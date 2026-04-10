@@ -74,6 +74,15 @@ func healthCheck(completable unsafe.Pointer, name C.c_string) {
 	}(C.GoString(name))
 }
 
+//export healthCheckWithTimeout
+func healthCheckWithTimeout(completable unsafe.Pointer, name C.c_string, timeoutMs C.int) {
+	go func(name string, timeout int) {
+		tunnel.HealthCheckWithTimeout(name, timeout)
+
+		C.complete(completable, nil)
+	}(C.GoString(name), int(timeoutMs))
+}
+
 //export healthCheckAll
 func healthCheckAll() {
 	tunnel.HealthCheckAll()
