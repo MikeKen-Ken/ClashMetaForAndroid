@@ -149,15 +149,15 @@ class ProxyDesign(
         }
 
         if (proxyAdsBlock) {
-            binding.adsToggleGroup.check(R.id.ads_on_btn)
-        } else {
             binding.adsToggleGroup.check(R.id.ads_off_btn)
+        } else {
+            binding.adsToggleGroup.check(R.id.ads_on_btn)
         }
         binding.adsToggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
             val enabled = when (checkedId) {
-                R.id.ads_on_btn -> true
-                R.id.ads_off_btn -> false
+                R.id.ads_on_btn -> false
+                R.id.ads_off_btn -> true
                 else -> return@addOnButtonCheckedListener
             }
             requests.trySend(Request.PatchAdsBlock(enabled))
@@ -196,6 +196,23 @@ class ProxyDesign(
             binding.pagesView.visibility = View.GONE
         } else {
             binding.scrollToCurrentFab.visibility = View.VISIBLE
+            binding.pagesView.post {
+                // 顶部工具栏高度在新增一行按钮后变高，给列表增加等高内边距避免被遮挡
+                val topInset =
+                    binding.activityBarLayout.height +
+                        binding.timeoutScrollView.height +
+                        binding.adsScrollView.height +
+                        binding.concurrencyScrollView.height +
+                        binding.tabLayoutView.height +
+                        binding.elevationView.height
+                binding.pagesView.setPadding(
+                    binding.pagesView.paddingLeft,
+                    topInset,
+                    binding.pagesView.paddingRight,
+                    binding.pagesView.paddingBottom
+                )
+                binding.pagesView.clipToPadding = false
+            }
             binding.pagesView.apply {
                 adapter = ProxyPageAdapter(
                     surface,

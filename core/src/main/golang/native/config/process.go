@@ -35,6 +35,7 @@ var processors = []processor{
 	patchExternalController, // must before patchOverride, so we only apply ExternalController in Override settings
 	patchOverride,
 	patchDirectGlobalMode, // after patchOverride: force rule mode + override rules/dns when session mode is direct/global
+	patchProxyAdsBlock,
 	patchGeneral,
 	patchProfile,
 	patchDns,
@@ -45,6 +46,12 @@ var processors = []processor{
 }
 
 type processor func(cfg *config.RawConfig, profileDir string) error
+
+const proxyAdsBlockRule = "RULE-SET,ads,REJECT"
+
+type overrideProxyAdsBlock struct {
+	ProxyAdsBlock *bool `json:"proxy-ads-block"`
+}
 
 func patchOverride(cfg *config.RawConfig, _ string) error {
 	if err := json.NewDecoder(strings.NewReader(ReadOverride(OverrideSlotPersist))).Decode(cfg); err != nil {
@@ -76,6 +83,49 @@ func patchDirectGlobalMode(cfg *config.RawConfig, _ string) error {
 	default:
 		// rule or other: no override
 	}
+	return nil
+}
+
+func patchProxyAdsBlock(cfg *config.RawConfig, _ string) error {
+	enableProxyAdsBlock := true
+
+	var persist overrideProxyAdsBlock
+	if err := json.Unmarshal([]byte(ReadOverride(OverrideSlotPersist)), &persist); err == nil && persist.ProxyAdsBlock != nil {
+		enableProxyAdsBlock = *persist.ProxyAdsBlock
+	}
+
+	var session overrideProxyAdsBlock
+	if err := json.Unmarshal([]byte(ReadOverride(OverrideSlotSession)), &session); err == nil && session.ProxyAdsBlock != nil {
+		enableProxyAdsBlock = *session.ProxyAdsBlock
+	}
+
+	if enableProxyAdsBlock {
+		if _, hasAdsProvider := cfg.RuleProvider["ads"]; hasAdsProvider {
+			exists := false
+			for _, rule := range cfg.Rule {
+				if strings.TrimSpace(rule) == proxyAdsBlockRule {
+					exists = true
+					break
+				}
+			}
+			if !exists {
+				cfg.Rule = append([]string{proxyAdsBlockRule}, cfg.Rule...)
+				log.Infoln("Applied proxy-ads-block override: ads rule added")
+			}
+		}
+		return nil
+	}
+
+	nextRules := make([]string, 0, len(cfg.Rule))
+	for _, rule := range cfg.Rule {
+		if strings.TrimSpace(rule) == proxyAdsBlockRule {
+			continue
+		}
+		nextRules = append(nextRules, rule)
+	}
+	cfg.Rule = nextRules
+	log.Infoln("Applied proxy-ads-block override: ads rule removed")
+
 	return nil
 }
 
