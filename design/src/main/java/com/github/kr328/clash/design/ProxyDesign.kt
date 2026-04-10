@@ -188,6 +188,7 @@ class ProxyDesign(
             binding.emptyView.visibility = View.VISIBLE
             binding.scrollToCurrentFab.visibility = View.GONE
             binding.urlTestView.visibility = View.GONE
+            binding.modeScrollView.visibility = View.GONE
             binding.timeoutScrollView.visibility = View.GONE
             binding.adsScrollView.visibility = View.GONE
             binding.concurrencyScrollView.visibility = View.GONE
@@ -197,21 +198,15 @@ class ProxyDesign(
         } else {
             binding.scrollToCurrentFab.visibility = View.VISIBLE
             binding.pagesView.post {
-                // 顶部工具栏高度在新增一行按钮后变高，给列表增加等高内边距避免被遮挡
+                // 只补新增控制条高度，避免列表下移过多
                 val topInset =
-                    binding.activityBarLayout.height +
-                        binding.timeoutScrollView.height +
-                        binding.adsScrollView.height +
-                        binding.concurrencyScrollView.height +
-                        binding.tabLayoutView.height +
-                        binding.elevationView.height
+                    binding.modeScrollView.height + binding.adsScrollView.height
                 binding.pagesView.setPadding(
                     binding.pagesView.paddingLeft,
                     topInset,
                     binding.pagesView.paddingRight,
                     binding.pagesView.paddingBottom
                 )
-                binding.pagesView.clipToPadding = false
             }
             binding.pagesView.apply {
                 adapter = ProxyPageAdapter(
