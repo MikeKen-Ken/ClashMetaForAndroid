@@ -146,11 +146,33 @@ class ProxyDesign(
             uiStore.proxyDelayTestTimeoutMs = timeoutMs
         }
 
+        // 初始化并发数选择按钮组：根据持久化的偏好恢复选中状态
+        when (uiStore.proxyDelayTestConcurrency) {
+            10 -> binding.concurrencyToggleGroup.check(R.id.concurrency_10_btn)
+            20 -> binding.concurrencyToggleGroup.check(R.id.concurrency_20_btn)
+            40 -> binding.concurrencyToggleGroup.check(R.id.concurrency_40_btn)
+            50 -> binding.concurrencyToggleGroup.check(R.id.concurrency_50_btn)
+            else -> binding.concurrencyToggleGroup.check(R.id.concurrency_30_btn)
+        }
+        binding.concurrencyToggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            val concurrency = when (checkedId) {
+                R.id.concurrency_10_btn -> 10
+                R.id.concurrency_20_btn -> 20
+                R.id.concurrency_30_btn -> 30
+                R.id.concurrency_40_btn -> 40
+                R.id.concurrency_50_btn -> 50
+                else -> return@addOnButtonCheckedListener
+            }
+            uiStore.proxyDelayTestConcurrency = concurrency
+        }
+
         if (groupNames.isEmpty()) {
             binding.emptyView.visibility = View.VISIBLE
             binding.scrollToCurrentFab.visibility = View.GONE
             binding.urlTestView.visibility = View.GONE
             binding.timeoutScrollView.visibility = View.GONE
+            binding.concurrencyScrollView.visibility = View.GONE
             binding.tabLayoutView.visibility = View.GONE
             binding.elevationView.visibility = View.GONE
             binding.pagesView.visibility = View.GONE

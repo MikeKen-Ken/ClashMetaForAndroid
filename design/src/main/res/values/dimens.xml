@@ -20,6 +20,11 @@
     <dimen name="tab_layout_height">48dp</dimen>
     <dimen name="tab_layout_elevation">5dp</dimen>
 
+    <!--  Delay Timeout Bar (button 32dp + top/bottom padding 4dp x2) -->
+    <dimen name="delay_timeout_bar_height">40dp</dimen>
+    <!--  Delay Concurrency Bar, same structure as timeout bar -->
+    <dimen name="delay_concurrency_bar_height">40dp</dimen>
+
     <!--  Bottom Sheet  -->
     <dimen name="bottom_sheet_background_padding_top">10dp</dimen>
     <dimen name="bottom_sheet_header_height">5dp</dimen>

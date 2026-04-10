@@ -95,8 +95,8 @@ class ClashManager(private val context: Context) : IClashManager,
         }
     }
 
-    override suspend fun healthCheckWithTimeout(group: String, timeoutMs: Int) {
-        Clash.healthCheckWithTimeout(group, timeoutMs).await()
+    override suspend fun healthCheckWithTimeout(group: String, timeoutMs: Int, concurrency: Int) {
+        Clash.healthCheckWithTimeout(group, timeoutMs, concurrency).await()
         store.activeProfile?.let { uuid ->
             SelectionDao().removeSelected(uuid, group)
         }

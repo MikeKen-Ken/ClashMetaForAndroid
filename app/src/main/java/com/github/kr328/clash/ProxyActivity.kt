@@ -151,7 +151,7 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                         is ProxyDesign.Request.UrlTest -> {
                             launch {
                                 withClash {
-                                    healthCheckWithTimeout(names[it.index], uiStore.proxyDelayTestTimeoutMs)
+                                    healthCheckWithTimeout(names[it.index], uiStore.proxyDelayTestTimeoutMs, uiStore.proxyDelayTestConcurrency)
                                     closeConnectionsExcludingDirect()
                                 }
 

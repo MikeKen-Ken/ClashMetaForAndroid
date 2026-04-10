@@ -206,13 +206,14 @@ JNIEXPORT void JNICALL
 Java_com_github_kr328_clash_core_bridge_Bridge_nativeHealthCheckWithTimeout(JNIEnv *env, jobject thiz,
                                                                             jobject completable,
                                                                             jstring name,
-                                                                            jint timeoutMs) {
+                                                                            jint timeoutMs,
+                                                                            jint concurrency) {
     TRACE_METHOD();
 
     jobject _completable = new_global(completable);
     scoped_string _name = get_string(name);
 
-    healthCheckWithTimeout(_completable, _name, (int) timeoutMs);
+    healthCheckWithTimeout(_completable, _name, (int) timeoutMs, (int) concurrency);
 }
 
 JNIEXPORT jboolean JNICALL

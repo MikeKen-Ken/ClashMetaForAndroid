@@ -87,6 +87,12 @@ class UiStore(context: Context) {
         defaultValue = 5000,
     )
 
+    /** 延迟测速并发节点数，可选 10、20、30、40、50，默认 30 */
+    var proxyDelayTestConcurrency: Int by store.int(
+        key = "proxy_delay_test_concurrency",
+        defaultValue = 30,
+    )
+
     companion object {
         private const val PREFERENCE_NAME = "ui"
     }

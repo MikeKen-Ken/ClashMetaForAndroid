@@ -56,8 +56,9 @@ func HealthCheckAll() {
 	}
 }
 
-// HealthCheckWithTimeout 使用自定义超时时间（毫秒）对指定代理组执行健康检查。
-func HealthCheckWithTimeout(name string, timeoutMs int) {
+// HealthCheckWithTimeout 使用自定义超时时间（毫秒）和并发节点数对指定代理组执行健康检查。
+// concurrency 控制同时测速的节点数上限，与原始 errgroup.SetLimit(N) 等价。
+func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) {
 	p := tunnel.Proxies()[name]
 
 	if p == nil {
@@ -77,6 +78,12 @@ func HealthCheckWithTimeout(name string, timeoutMs int) {
 	}
 
 	timeout := time.Duration(timeoutMs) * time.Millisecond
+
+	if concurrency <= 0 {
+		concurrency = 30
+	}
+	sem := make(chan struct{}, concurrency)
+
 	wg := &sync.WaitGroup{}
 
 	for _, pr := range g.Providers() {
@@ -96,8 +103,11 @@ func HealthCheckWithTimeout(name string, timeoutMs int) {
 			for _, px := range proxies {
 				innerWg.Add(1)
 
+				sem <- struct{}{} // 获取令牌，最多 30 个并发
+
 				go func(proxy C.Proxy) {
 					defer innerWg.Done()
+					defer func() { <-sem }() // 释放令牌
 
 					ctx, cancel := context.WithTimeout(context.Background(), timeout)
 					defer cancel()

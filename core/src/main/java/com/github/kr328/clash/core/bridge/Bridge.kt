@@ -27,7 +27,7 @@ object Bridge {
     external fun nativeQueryGroup(name: String, sort: String): String?
     external fun nativeHealthCheck(completable: CompletableDeferred<Unit>, name: String)
     external fun nativeHealthCheckAll()
-    external fun nativeHealthCheckWithTimeout(completable: CompletableDeferred<Unit>, name: String, timeoutMs: Int)
+    external fun nativeHealthCheckWithTimeout(completable: CompletableDeferred<Unit>, name: String, timeoutMs: Int, concurrency: Int)
     external fun nativePatchSelector(selector: String, name: String): Boolean
     external fun nativeClearAllManualSelections()
     external fun nativeFetchAndValid(

@@ -115,6 +115,16 @@ jobs:
         if: success()
         run: ./gradlew --no-daemon --no-build-cache app:assembleMetaRelease
 
+      # 与 pre-release 一致：同一 tag 重跑时 GitHub 上已存在的 Release/资产会导致上传失败，需先删掉再重建
+      - name: Delete existing GitHub release and tag (if any)
+        if: success()
+        uses: dev-drprasad/delete-tag-and-release@v1.1
+        continue-on-error: true
+        with:
+          tag_name: ${{ inputs.release-tag }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          delete_release: true
+
       - name: Tag Repo
         uses: richardsimko/update-tag@v1
         with:
@@ -123,7 +133,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         if: ${{ success() }}
         with:
           tag_name: ${{ inputs.release-tag }}

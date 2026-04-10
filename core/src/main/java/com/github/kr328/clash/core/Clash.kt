@@ -123,9 +123,9 @@ object Clash {
         }
     }
 
-    fun healthCheckWithTimeout(name: String, timeoutMs: Int): CompletableDeferred<Unit> {
+    fun healthCheckWithTimeout(name: String, timeoutMs: Int, concurrency: Int): CompletableDeferred<Unit> {
         return CompletableDeferred<Unit>().apply {
-            Bridge.nativeHealthCheckWithTimeout(this, name, timeoutMs)
+            Bridge.nativeHealthCheckWithTimeout(this, name, timeoutMs, concurrency)
         }
     }
 

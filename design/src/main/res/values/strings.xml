@@ -301,6 +301,11 @@
     <string name="timeout_1000ms">1s</string>
     <string name="timeout_3000ms">3s</string>
     <string name="timeout_5000ms">5s</string>
+    <string name="concurrency_10">×10</string>
+    <string name="concurrency_20">×20</string>
+    <string name="concurrency_30">×30</string>
+    <string name="concurrency_40">×40</string>
+    <string name="concurrency_50">×50</string>
 
     <string name="format_provider_type">%1$s(%2$s)</string>
     <string name="rule">Rule</string>
