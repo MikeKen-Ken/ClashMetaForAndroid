@@ -65,8 +65,12 @@ class ProxyPageAdapter(
         val tabHeight = config.context.getPixels(R.dimen.tab_layout_height)
         val timeoutBarHeight = config.context.getPixels(R.dimen.delay_timeout_bar_height)
         val concurrencyBarHeight = config.context.getPixels(R.dimen.delay_concurrency_bar_height)
+        val listTopGap = config.context.getPixels(R.dimen.proxy_layout_padding)
 
-        holder.recyclerView.bindInsets(surface, toolbarHeight + timeoutBarHeight + concurrencyBarHeight + tabHeight)
+        holder.recyclerView.bindInsets(
+            surface,
+            toolbarHeight + timeoutBarHeight + concurrencyBarHeight + tabHeight + listTopGap,
+        )
         holder.recyclerView.addScrolledToBottomObserver { view, bottom ->
             val position = view.position
             val state = states[position]
