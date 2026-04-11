@@ -184,6 +184,13 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                 patchOverride(Clash.OverrideSlot.Session, o)
                             }
                         }
+                        is ProxyDesign.Request.PatchTimeout -> {
+                            withClash {
+                                val o = queryOverride(Clash.OverrideSlot.Session)
+                                o.proxyDelayTestTimeoutMs = it.timeoutMs
+                                patchOverride(Clash.OverrideSlot.Session, o)
+                            }
+                        }
                     }
                 }
             }

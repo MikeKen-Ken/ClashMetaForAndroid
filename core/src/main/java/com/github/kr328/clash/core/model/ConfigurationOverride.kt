@@ -86,6 +86,9 @@ data class ConfigurationOverride(
 
     @SerialName("proxy-ads-block")
     var proxyAdsBlock: Boolean? = null,
+
+    @SerialName("proxy-delay-test-timeout-ms")
+    var proxyDelayTestTimeoutMs: Int? = null,
 ) : Parcelable {
     @Serializable
     data class Dns(

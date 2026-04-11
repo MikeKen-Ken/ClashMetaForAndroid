@@ -67,6 +67,7 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                 migratePersistedProxyModeIfNeeded(service, store)
                 val session = Clash.queryOverride(Clash.OverrideSlot.Session)
                 session.mode = store.persistedProxyModeOrDefault()
+                session.proxyDelayTestTimeoutMs = readProxyDelayTestTimeoutFromMainProcessPreferences(service)
                 Clash.patchOverride(Clash.OverrideSlot.Session, session)
 
                 Clash.load(service.importedDir.resolve(active.uuid.toString())).await()
@@ -91,6 +92,7 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
 
 private const val UI_PREF_NAME = "ui"
 private const val UI_PREF_KEY_PROXY_MODE = "proxy_ui_mode"
+private const val UI_PREF_KEY_PROXY_DELAY_TEST_TIMEOUT_MS = "proxy_delay_test_timeout_ms"
 
 /** 首次将主进程 UiStore 中的模式迁入 service 偏好（与 UiStore 的 key 保持一致）。 */
 private fun migratePersistedProxyModeIfNeeded(context: Context, store: ServiceStore) {
@@ -104,4 +106,11 @@ private fun readProxyUiModeFromMainProcessPreferences(context: Context): TunnelS
     val prefs = context.applicationContext.getSharedPreferences(UI_PREF_NAME, Context.MODE_MULTI_PROCESS)
     val name = prefs.getString(UI_PREF_KEY_PROXY_MODE, null) ?: return null
     return TunnelState.Mode.values().find { it.name == name }
+}
+
+@Suppress("DEPRECATION")
+private fun readProxyDelayTestTimeoutFromMainProcessPreferences(context: Context): Int? {
+    val prefs = context.applicationContext.getSharedPreferences(UI_PREF_NAME, Context.MODE_MULTI_PROCESS)
+    val timeout = prefs.getInt(UI_PREF_KEY_PROXY_DELAY_TEST_TIMEOUT_MS, 0)
+    return if (timeout > 0) timeout else null
 }

@@ -36,6 +36,7 @@ var processors = []processor{
 	patchOverride,
 	patchDirectGlobalMode, // after patchOverride: force rule mode + override rules/dns when session mode is direct/global
 	patchProxyAdsBlock,
+	patchProxyGroupTimeout,
 	patchGeneral,
 	patchProfile,
 	patchDns,
@@ -126,6 +127,22 @@ func patchProxyAdsBlock(cfg *config.RawConfig, _ string) error {
 	cfg.Rule = nextRules
 	log.Infoln("Applied proxy-ads-block override: ads rule removed")
 
+	return nil
+}
+
+type overrideProxyDelayTestTimeout struct {
+	ProxyDelayTestTimeoutMs *int `json:"proxy-delay-test-timeout-ms"`
+}
+
+func patchProxyGroupTimeout(cfg *config.RawConfig, _ string) error {
+	var session overrideProxyDelayTestTimeout
+	if err := json.Unmarshal([]byte(ReadOverride(OverrideSlotSession)), &session); err == nil && session.ProxyDelayTestTimeoutMs != nil {
+		timeout := *session.ProxyDelayTestTimeoutMs
+		for _, group := range cfg.ProxyGroup {
+			group["timeout"] = timeout
+		}
+		log.Infoln("Applied proxy-delay-test-timeout override: %dms", timeout)
+	}
 	return nil
 }
 
