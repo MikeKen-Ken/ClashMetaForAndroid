@@ -2666,3 +2666,957 @@ Directory: **** (3 files)
 <summary>Tool use: **glob_file_search**</summary>
 
 </details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Continuing the Process**
+
+I'm focused on moving forward with the next stage. I've considered different approaches and I believe I've identified the optimal path to ensure progress toward my goal. My focus now is executing the chosen strategy and seeing how it pans out.
+
+
+**Examining the Target**
+
+I'm now diving into the specifics of the `ConfigurationOverride.kt` file. My plan is to understand its contents thoroughly. I'm focusing on parsing the necessary components of the file to gain a clearer understanding of how it contributes to the overall process.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: core/src/main/java/com/github/kr328/clash/core/model/ConfigurationOverride.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Analyzing Next Actions**
+
+I'm focused on moving forward with the project. I've considered the next steps and how to implement them. The key is to start working, making adjustments where necessary as I go. It's time to take action.
+
+
+**Identifying Relevant Code Sections**
+
+I'm now investigating potential code locations to see where the timeout might be configured. I'm looking at Android app methods and Go core files to understand how this is currently handled. Exploring different parts of the code is crucial for figuring out the best way to implement the feature.
+
+
+**Reviewing Health Checks**
+
+I'm now investigating potential uses of `healthCheck` to understand how timeouts might be implemented in other contexts. This is to ensure I haven't missed a place where the timeout could already be controlled. I am working through the code.
+
+
+**Evaluating Code Usage**
+
+I'm now investigating how `healthCheckWithTimeout` is utilized across the project's Kotlin files. I'm focusing on identifying any other locations, beyond the manual proxy testing, where health checks and timeouts might be applied. I'm seeking all usage locations to ensure a comprehensive understanding of their implementation.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.kt",
+  "pattern": "\\bhealthCheck"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "\\bhealthCheck",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "service/src/main/java/com/github/kr328/clash/service/clash/module/SuspendModule.kt"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/src/main/java/com/github/kr328/clash/ProxyActivity.kt"
+    },
+    {
+      "matchCount": 2,
+      "uri": "service/src/main/java/com/github/kr328/clash/service/remote/IClashManager.kt"
+    },
+    {
+      "matchCount": 4,
+      "uri": "service/src/main/java/com/github/kr328/clash/service/ClashManager.kt"
+    },
+    {
+      "matchCount": 3,
+      "uri": "core/src/main/java/com/github/kr328/clash/core/Clash.kt"
+    }
+  ],
+  "totalFiles": 5,
+  "totalMatches": 11
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Continuing the Process**
+
+I'm focused on moving forward with the next stage. I've considered different approaches and I believe I've identified the optimal path to ensure progress toward my goal. My focus now is executing the plan to achieve the intended results.
+
+
+**Adjusting the Configuration**
+
+I'm now zeroing in on the best method for modifying the configuration to meet the user's requirements. I'm carefully considering how to integrate the new timeout value across the relevant settings to ensure proper functionality. My objective is to make sure the adjustments are implemented correctly.
+
+
+**Pinpointing the Implementation**
+
+I'm now investigating the Go code responsible for parsing the configuration files. I'm focusing on identifying the exact location where proxy group timeouts are initialized. My aim is to determine if I can inject a global timeout override during this parsing stage.
+
+
+**Identifying Override Mechanisms**
+
+I'm now investigating potential methods to override the proxy group timeout setting within the Go core. My focus is on determining where the Android app passes configuration overrides. I'm looking at different configuration processing files.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: core/src/main/golang/native/config/process.go</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Continuing the Process**
+
+I'm focused on moving forward with the next stage. I've considered different approaches and I believe I've identified the optimal path to ensure progress toward my goal. My focus now is executing the plan to achieve the intended results.
+
+
+**Refining the Implementation**
+
+I'm now zeroing in on the specific code modifications needed to implement the changes. I'm focusing on the configuration aspect, ensuring the desired parameters are correctly applied to the proxy groups. My next step will be to confirm the code compiles and functions as expected.
+
+
+**Confirming the Configuration**
+
+I'm verifying that the Android UI setting for proxy delay timeout can be successfully passed down. I'm focusing on the `ConfigurationOverride.kt` file, to add the necessary fields. This is crucial for making the timeout settings configurable from the UI. My next steps involve testing the changes.
+
+
+**Updating the Configuration**
+
+I'm now integrating the UI setting for proxy delay timeout. I've focused on modifying `ConfigurationOverride.kt` to accommodate this parameter. I'm aiming to ensure the setting persists correctly, so it can be utilized when the configuration is loaded.
+
+
+**Integrating the Timeout Value**
+
+I'm evaluating options to ensure that the user-configured timeout value is applied correctly. To make the change effective, I must now decide how to integrate the timeout setting with the live proxy groups. My next step will be to explore how to best update `tunnel.Proxies()` to reflect the new setting.
+
+
+**Updating the Proxy Groups**
+
+I'm now determining how to directly update the timeout settings of the active proxy groups. My objective is to ensure the user's timeout preferences are reflected in real-time. This involves exploring the `tunnel.Proxies()` function to identify the method to modify the timeout values.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: core/src/main/golang/native/tunnel.go</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Continuing the Process**
+
+I'm focused on moving forward with the next stage. I've considered different approaches and I believe I've identified the optimal path to ensure progress toward my goal. My focus now is executing the plan to achieve the intended results.
+
+
+**Identifying the Location**
+
+I'm now searching for the location of a specific function within a designated package. I'm using an appropriate tool to pinpoint its exact location within the files. The goal is to quickly find where the target function is defined.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.go",
+  "pattern": "HealthCheckAll"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "HealthCheckAll",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "core/src/main/golang/native/tunnel/connectivity.go"
+    },
+    {
+      "matchCount": 1,
+      "uri": "core/src/main/golang/native/tunnel.go"
+    }
+  ],
+  "totalFiles": 2,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Analyzing Next Actions**
+
+I'm focused on moving forward with the project. I've considered the next steps and am preparing to begin. The path ahead is now clearer, and I'm ready to proceed, putting the finishing touches on my approach.
+
+
+**Reading the Code**
+
+I'm now diving into the code. I'm focused on inspecting the `HealthCheckAll` function. My main goal now is to understand the code within this function.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: core/src/main/golang/native/tunnel/connectivity.go</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Continuing the Process**
+
+I'm focused on moving forward with the next stage. I've considered different approaches and I believe I've identified the optimal path to ensure progress toward my goal. My focus now is executing the plan to achieve the intended results.
+
+
+**Analyzing Health Check Mechanisms**
+
+I'm now investigating the relationship between the Android app's timeout settings and the core's health check functions. I'm trying to determine how the UI-configured timeouts influence the various speed tests and health checks within the system. The next step is to examine how these timeout values are propagated and utilized across different components.
+
+
+**Identifying Core Configuration Points**
+
+I'm now investigating the configurations used by the core system and how they might be influenced by the Android app's settings. The goal is to ensure the Android app's timeout settings are properly reflected in all relevant health checks. I will try to see how these settings are used to identify the right components.
+
+
+**Determining Implementation Steps**
+
+I'm now identifying the steps needed to implement the changes. I've concluded that I need to add `proxyDelayTestTimeoutMs` to `ConfigurationOverride.kt`. Additionally, I will focus on ensuring the new configuration is applied to all relevant tests, including background checks, to satisfy user requirements.
+
+
+**Implementing Configuration Override**
+
+I am now focused on modifying the configuration to incorporate the user's desired timeout for all tests, including background checks. I'm exploring the best approach to override the existing configurations with the UI-specified value and how this change will affect the overall system's behavior. I will ensure the user-defined value is consistently applied across all relevant testing scenarios.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: service/src/main/java/com/github/kr328/clash/service/clash/module/ConfigurationModule.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Progressing to the Next Stage**
+
+I'm now focused on the next stage. It involves the most efficient way forward, ensuring I'm on the right track before diving in. I'm strategizing how to best approach the upcoming tasks to maintain momentum.
+
+
+**Planning Configuration Updates**
+
+I'm now determining how to best integrate the timeout value into the configuration. My current focus is on adding the new parameter and assessing the impact this will have on the existing structure. I am evaluating where this change will be implemented and how it will be integrated with the system.
+
+
+**Modifying the Core Configuration**
+
+My next step is focused on modifying the core configuration file. I'm evaluating the necessary changes to include the proxy delay test timeout within the core's settings. The goal is to successfully integrate this parameter at the core level.
+
+
+**Assessing Configuration Integration**
+
+I am now focused on integrating the proxy delay test timeout. My current assessment involves determining the most effective method for incorporating this configuration setting, considering various options for the core system. I'm prioritizing direct modification to achieve the desired outcome.
+
+
+**Determining Configuration Location**
+
+I'm now determining where the new timeout parameter should reside within the configuration. This involves assessing the structure and identifying the most suitable location for integration. My next step will focus on incorporating the parameter within the core configuration.
+
+
+**Refining Timeout Integration Strategy**
+
+I'm now contemplating modifications to the core's configuration to integrate the proxy delay test timeout value. I am considering different approaches, including modifying existing global variables within the core to accommodate immediate updates to the timeout. The goal is to ensure prompt and efficient updates.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: core/src/foss/golang/clash/adapter/outboundgroup/urltest.go</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Continuing the Process**
+
+I'm focused on moving forward with the next stage. I've considered different approaches and I believe I've identified the optimal path to ensure progress toward my goal. My focus now is executing the plan to achieve the intended results.
+
+
+**Defining the Modification Strategy**
+
+I'm now determining how to proceed with the configuration modifications. I've pinpointed the relevant file and am evaluating how the Android component interacts with this setting. The key is to ensure the timeout parameter can be adjusted effectively.
+
+
+**Determining Next Actions**
+
+I'm now contemplating how to ensure the background auto-tests use the updated timeout. While immediate application is appealing, a reload might be acceptable, given how other settings behave. I'll need to assess the implications of either approach.
+
+
+**Assessing Implementation Strategy**
+
+I'm now determining how to proceed with the update, considering the different approaches to ensure the setting change is applied as expected. I need to address both immediate and delayed application of the change, specifically for background auto-tests, taking into account how other settings are handled.
+
+
+**Confirming Implementation Strategy**
+
+I'm now carefully examining the existing code to clarify the implementation strategy. I am focusing on how setting updates are handled, particularly concerning the necessity of reloads to activate changes. I'm investigating how the value is written, and whether this can be done immediately.
+
+
+**Analyzing the Proxy Group**
+
+I'm now investigating how to modify the timeout values within the proxy group. I'm reviewing the structure of the configuration to understand how best to access and update these settings, particularly focusing on the format and the location of the timeout parameters.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: core/src/foss/golang/clash/config/config.go</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Analyzing Next Actions**
+
+I'm focused on moving forward with the project. I've considered the next steps and how to implement them. The key is to start working, making adjustments where necessary as I go. It's time to take action.
+
+
+**Verifying Config Loading Order**
+
+I'm now examining the config loading sequence to confirm my approach. I'm checking if the process function is called before or during the parsing of the raw configuration. Determining this order is critical for implementing the planned override.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: core/src/main/golang/native/config/load.go</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Continuing the Process**
+
+I'm focused on moving forward with the next stage. I've considered different approaches and I believe I've identified the optimal path to ensure progress toward my goal. My focus now is executing the chosen strategy and seeing how it pans out.
+
+
+**Refining Implementation Strategy**
+
+I'm now prioritizing the implementation phase. After evaluating several methods, I'm zeroing in on a precise strategy. I'm taking the time to make sure that everything is correct. The next step will require careful execution.
+
+
+**Implementing the Processor**
+
+I'm now focused on the next phase. I've realized that the current approach won't work perfectly. I'm now modifying the code by adding a new processor function. This should help me read the JSON manually, so that I can set proxy timeout. I am checking the current progress.
+
+
+**Revising Implementation Strategy**
+
+I'm now carefully reviewing the previous steps. I've realized that I need to make some key adjustments to the current approach. I'm focusing on ensuring alignment between the Go and Kotlin code to prevent any unexpected behavior. I am aiming to ensure that the code will function as expected.
+
+
+**Implementing New Functionality**
+
+I'm now integrating the new functionality into the system. This involves modifying the codebase to incorporate the new processors and adjusting the data structures to support the required changes. I'm focusing on the interaction between Go and Kotlin components to ensure seamless integration.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: design/src/main/java/com/github/kr328/clash/design/store/UiStore.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Progressing to the Next Stage**
+
+I'm now focused on the next stage. It involves the most efficient way forward, ensuring I'm on the right track before diving in. I'm strategizing how to best approach the upcoming tasks to maintain momentum.
+
+
+**Determining the Right Approach**
+
+I'm now determining how to proceed, keeping the end goal in mind, analyzing the data I have and strategizing the next steps to get closer to the solution. I'm assessing the best way to utilize the available information for a successful outcome.
+
+
+**Initiating Code Modifications**
+
+I'm starting the code adjustments, and will begin by updating the necessary files to accommodate the new configuration parameter. The first step involves modifying the core configuration file to include the new variable. After that, I will then focus on integrating the reading and writing of this value within the service module to link it to the UI preferences.
+
+
+**Refining Code Integration**
+
+I am now focusing on refining the code modifications, and ensuring the new configurations and parameters are correctly implemented across various components. My focus is on thoroughly integrating the update and verifying its functionality. I'm now strategizing how to apply the changes to the system to ensure correct data persistence.
+
+
+**Implementing Configuration Changes**
+
+I am now focused on modifying the code to include the new parameter for proxy delay timeout in the configuration files. This includes updating the core model and the service module to correctly read, write, and utilize the new setting. My primary aim is to establish a seamless integration, making sure the changes are persistent and function as intended across the system.
+
+
+**Executing Configuration Updates**
+
+I'm now putting the configuration changes into effect. This involves updating various components. First, I will begin by modifying the core model and service module files. The goal is to successfully integrate the new timeout parameter into the existing system. I will then ensure the updated configuration is applied to the live proxy groups.
+
+
+**Implementing Core Configuration Update**
+
+I'm now focused on modifying the core configuration file in order to include the new parameter. This will allow the timeout value to be used by the Go backend. I'm taking the necessary steps to ensure the change integrates smoothly, and verifies correctly.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: core/src/main/golang/native/config/process.go</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Analyzing Next Actions**
+
+I'm focused on moving forward with the project. I've considered the next steps and am preparing to begin. The path ahead is now clearer, and I'm ready to proceed, putting the finishing touches on my approach.
+
+
+**Initiating Code Modification**
+
+I'm now setting up the code change by planning the insertion of the new function. I'm focusing on ensuring the change integrates seamlessly, considering its placement within the existing structure. I am making some final refinements to the implementation plan.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: core/src/main/golang/native/config/process.go</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Continuing the Process**
+
+I'm focused on moving forward with the next stage. I've considered different approaches and I believe I've identified the optimal path to ensure progress toward my goal. My focus now is executing the plan to achieve the intended results.
+
+
+**Proceeding with Updates**
+
+I'm now starting to modify the first file on the list. I'm carefully reviewing the file's structure to ensure the changes align with the overall project. I'm preparing to implement the necessary modifications to meet the specified requirements.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: core/src/main/java/com/github/kr328/clash/core/model/ConfigurationOverride.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Analyzing Next Actions**
+
+I'm focused on moving forward with the project. I've considered the next steps and am preparing to begin. The path ahead is now clearer, and I'm ready to proceed, putting the finishing touches on my approach.
+
+
+**Implementing the Next Steps**
+
+I'm now prioritizing direct action on the target file. The strategy is now firmly in place, and I am ensuring that I'm optimizing the actions to be taken. I'm preparing to implement these steps.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: service/src/main/java/com/github/kr328/clash/service/clash/module/ConfigurationModule.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Analyzing Next Actions**
+
+I'm focused on moving forward with the project. I've considered the next steps and how to implement them. The key is to start working, making adjustments where necessary as I go. It's time to take action.
+
+
+**Adding Function Implementation**
+
+I'm now putting together the core logic. My current focus is implementing the function within the specified file. I'll make sure it aligns perfectly with the intended purpose, and then proceed.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: service/src/main/java/com/github/kr328/clash/service/clash/module/ConfigurationModule.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Continuing the Process**
+
+I'm focused on moving forward with the next stage. I've considered different approaches and I believe I've identified the optimal path to ensure progress toward my goal. My focus now is executing the plan to achieve the intended results.
+
+
+**Reviewing the File**
+
+I'm now examining the `ProxyDesign.kt` file. I'm carefully reviewing its contents to fully understand the current structure and identify the specific sections that require modification. This detailed analysis is essential for ensuring I can integrate the necessary changes efficiently.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: design/src/main/java/com/github/kr328/clash/design/ProxyDesign.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Analyzing Next Actions**
+
+I'm focused on moving forward with the project. I've considered the next steps and am preparing to begin. The path ahead is now clearer, and I'm ready to proceed, putting the finishing touches on my approach.
+
+
+**Implementing the Change**
+
+I'm now zeroing in on the specific code modifications required. The necessary additions are pinpointed, and I'm organizing everything to ensure a seamless integration. The focus is on implementing these adjustments precisely where needed to meet the objective.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: design/src/main/java/com/github/kr328/clash/design/ProxyDesign.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Continuing the Process**
+
+I'm focused on moving forward with the next stage. I've considered different approaches and I believe I've identified the optimal path to ensure progress toward my goal. My focus now is executing the plan to achieve the intended results.
+
+
+**Commencing the Edit**
+
+I'm now implementing the update, I'm integrating the specified change within the designated file. I'm taking care to ensure the modification aligns correctly with the existing structure. Following this, I'll proceed with the next step.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: design/src/main/java/com/github/kr328/clash/design/ProxyDesign.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Continuing the Process**
+
+I'm focused on moving forward with the next stage. I've considered different approaches and I believe I've identified the optimal path to ensure progress toward my goal. My focus now is executing the chosen strategy and seeing how it pans out.
+
+
+**Commencing Implementation**
+
+I'm now directing my attention toward implementing the required changes within the specified file. I'm focusing on incorporating the `PatchTimeout` handling effectively, making sure to integrate it appropriately within the existing structure.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: app/src/main/java/com/github/kr328/clash/ProxyActivity.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Advancing the objective**
+
+I am now focused on executing the upcoming steps. I am confident in my approach and anticipate continued progression toward the final goal. I am prepared to begin working with the data.
+
+
+**Preparing the data for processing**
+
+I'm now in the process of ensuring the data is ready for further analysis. The changes have been made and are in place. The next phase will begin soon.
+
+
+**Evaluating Implementation Effects**
+
+I've taken a moment to fully consider the implications of the implemented changes. Specifically, I'm verifying the impact of the timeout adjustments and how they will be applied. I am ensuring that backend processes will use the new timeout settings.
+
+
+**Validating Code Modifications**
+
+I'm now carefully checking the recently made modifications to the codebase. I am focusing on making sure there are no errors. I'm taking a careful approach to ensure a functional implementation.
+
+
+**Finalizing Implementation Checks**
+
+I'm now carefully reviewing my changes, paying close attention to the data types, and imports, and ensuring everything is syntactically sound. I'm verifying the intended override behavior to confirm it aligns with the user's expectations. I am ready to proceed with the next step.
+
+
+**Assessing Code Completeness**
+
+I'm now examining the completed code changes to confirm that everything is functioning as planned. I am carefully reviewing the integration points and dependencies within the system. I'm taking a moment to make sure everything is connected correctly.
+
+
+**Validating the Code Changes**
+
+I am now carefully reviewing the code, focusing on the Go and Kotlin files. I'm double-checking imports, data types, and the overall structure to ensure the modifications function as intended. Specifically, I'm confirming that the timeout override logic is correctly implemented, and the changes are syntactically sound.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "core/src/main/golang/native/config/process.go",
+    "core/src/main/java/com/github/kr328/clash/core/model/ConfigurationOverride.kt",
+    "service/src/main/java/com/github/kr328/clash/service/clash/module/ConfigurationModule.kt",
+    "design/src/main/java/com/github/kr328/clash/design/ProxyDesign.kt",
+    "app/src/main/java/com/github/kr328/clash/ProxyActivity.kt"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "core/src/main/golang/native/config/process.go"
+    },
+    {
+      "relativeWorkspacePath": "core/src/main/java/com/github/kr328/clash/core/model/ConfigurationOverride.kt"
+    },
+    {
+      "relativeWorkspacePath": "service/src/main/java/com/github/kr328/clash/service/clash/module/ConfigurationModule.kt"
+    },
+    {
+      "relativeWorkspacePath": "design/src/main/java/com/github/kr328/clash/design/ProxyDesign.kt"
+    },
+    {
+      "relativeWorkspacePath": "app/src/main/java/com/github/kr328/clash/ProxyActivity.kt"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Advancing the objective**
+
+I am now focused on executing the upcoming steps. I am confident in my approach and anticipate continued progression toward the final goal. I am prepared to begin working with the data.
+
+
+**Confirming Code Changes**
+
+I'm verifying that the specific code modifications have been successfully implemented. My attention is on confirming the successful integration of the changes within the designated files. I'm focusing on validating the current state of the code to ensure it aligns with the intended modifications.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: core/src/main/golang/native/config/process.go</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gemini-3.1-pro)**_
+
+<think><details><summary>Thought Process</summary>
+**Continuing the Process**
+
+I'm focused on moving forward with the next stage. I've considered different approaches and I believe I've identified the optimal path to ensure progress toward my goal. My focus now is executing the plan to achieve the intended results.
+
+
+**Concluding the Implementation**
+
+I'm verifying the completion of the implementation, ensuring all components work together as intended. I'm confirming that the configuration changes are applied correctly, and the new timeout value is used during testing. I'm satisfied that the implementation meets all requirements.
+
+
+**Preparing the Response**
+
+I'm now focusing on synthesizing the final response in the requested format. I am making sure that it accurately reflects all the implemented changes and fulfills the user's needs. The response will be concise and precisely address the problem.
+
+
+</details></think>
+
+_**Agent (gemini-3.1-pro)**_
+
+我已经确认了你提到的问题，并完成了修复。
+
+在 Android 端，虽然我们在 UI 界面（代理页面）设置了自定义的测速超时时间（如 250ms、500ms 等），但之前这个配置 **仅在用户手动点击** 测速（即 `healthCheckWithTimeout` 接口）时才作为参数被调用。而后台定时执行的自动测速（比如 `url-test`、`fallback` 和 `load-balance` 代理组的自动探活测速），则依然使用的是内核在读取 `yaml` 配置文件时解析出来的 `timeout` 属性（默认或者是节点提供商配置的值）。
+
+为了解决这个问题，我修改了跨端配置覆盖机制和 Go 核心中的代理组读取逻辑，使得 Android 端的测速设置能够覆盖全局代理组配置：
+
+1. **核心配置处理 (`core/src/main/golang/native/config/process.go`)：** 
+   新增了一个名为 `patchProxyGroupTimeout` 的配置预处理器。它会在内核加载并解析配置文件时，检查 Android 端是否传来了 `proxy-delay-test-timeout-ms` 的覆盖配置（Session Override）。如果存在，它将遍历配置文件中定义的所有代理组，并强制将每个组的 `timeout` 值修改为用户的 UI 配置值。
+
+2. **跨平台通信 (`ConfigurationOverride.kt` 和 `ConfigurationModule.kt`)：** 
+   将 `proxy-delay-test-timeout-ms` 字段加入了 Android 和 Go 通信的 Override 数据模型中。此外，由于负责配置生效和重载的守护服务 (`ConfigurationModule`) 运行在 `:service` 独立进程中，我通过多进程级别的 `SharedPreferences` 在其重载配置时同步读取并覆盖该项属性，以确保它能在后台测试和软件重启时生效。
+
+3. **UI 实时同步 (`ProxyDesign.kt` 和 `ProxyActivity.kt`)：**
+   当你点击切换延迟时间的按钮时，之前只更新了本地的偏好记录（`uiStore`）。我为其添加了一个 `PatchTimeout` 事件，当该设定被更改时，除了保存到本地，还会立即向后台发出覆写请求，更新 Session 缓存（此覆盖将会在下次后台加载/重载或环境刷新后自动应用于后台测速）。
+
+这样一来，你的自定义测速超时配置不论是在手动测速还是在内核后台的自动健康检测（Auto Health Check）时都将作为最高优选节点组都会统统都会遵循此配置。
