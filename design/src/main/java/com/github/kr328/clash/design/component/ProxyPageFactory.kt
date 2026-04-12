@@ -5,6 +5,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.github.kr328.clash.design.view.VerticalScrollableHost
+import kotlin.math.roundToInt
 
 class ProxyPageFactory(private val config: ProxyViewConfig) {
     class Holder(
@@ -32,6 +33,15 @@ class ProxyPageFactory(private val config: ProxyViewConfig) {
         root.addView(recyclerView)
 
         recyclerView.apply {
+            // 这个 RecyclerView 就是“节点窗口”的滚动区域本体。
+            // 给顶部/底部留白，避免首行/末行贴边看起来发挤。
+            val outerPaddingPx = config.layoutPadding.roundToInt()
+            setPadding(
+                paddingLeft,
+                outerPaddingPx,
+                paddingRight,
+                outerPaddingPx,
+            )
             layoutManager = GridLayoutManager(config.context, 6).apply {
                 spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
                     override fun getSpanSize(position: Int): Int {

@@ -54,7 +54,7 @@ class ServiceStore(context: Context) {
 
     var allowIpv6 by store.boolean(
         key = "allow_ipv6",
-        defaultValue = false
+        defaultValue = true
     )
 
     var tunStackMode by store.string(
