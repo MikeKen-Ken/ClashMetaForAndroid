@@ -52,62 +52,35 @@ jobs:
         run: |
           cd core/src/foss/golang && go mod tidy
 
-      - name: Cache signing keystore
-        id: cache-keystore
-        uses: actions/cache@v4
-        with:
-          path: release.keystore
-          key: signing-keystore-final-v1
-
       - name: Setup fixed signing
+        env:
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: |
-          # 固定的签名参数（不要再更改这些值！）
-          KEYSTORE_PASSWORD="android"
-          KEY_ALIAS="cmfa"
-          KEY_PASSWORD="android"
-          
-          # 检查缓存的 keystore 是否可用
-          NEED_NEW_KEYSTORE=false
+          # MUST 使用仓库中固定的 keystore，NEVER 在 CI 里重新生成
           if [ ! -f release.keystore ]; then
-            echo "No cached keystore found"
-            NEED_NEW_KEYSTORE=true
-          else
-            echo "Found cached keystore, verifying..."
-            if ! keytool -list -keystore release.keystore -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" 2>/dev/null; then
-              echo "Cached keystore is invalid or has wrong password, will regenerate"
-              rm -f release.keystore
-              NEED_NEW_KEYSTORE=true
-            else
-              echo "Cached keystore is valid"
-            fi
+            echo "release.keystore is missing in repository, abort."
+            exit 1
           fi
-          
-          # 只在需要时生成新的 keystore
-          if [ "$NEED_NEW_KEYSTORE" = "true" ]; then
-            echo "Generating new keystore..."
-            keytool -genkeypair \
-              -keystore release.keystore \
-              -alias "$KEY_ALIAS" \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 36500 \
-              -storepass "$KEYSTORE_PASSWORD" \
-              -keypass "$KEY_PASSWORD" \
-              -dname "CN=CMFA, OU=CMFA, O=MetaCubeX, L=Unknown, ST=Unknown, C=US"
-            echo "New keystore generated and will be cached"
+
+          # 必填 secrets 校验，避免写入空值导致签名异常
+          if [ -z "$SIGNING_STORE_PASSWORD" ] || [ -z "$SIGNING_KEY_ALIAS" ] || [ -z "$SIGNING_KEY_PASSWORD" ]; then
+            echo "Signing secrets are missing, abort."
+            exit 1
           fi
-          
-          # 最终验证
-          echo "Final verification..."
-          keytool -list -keystore release.keystore -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS"
-          
-          # 创建 signing.properties
-          echo "keystore.password=$KEYSTORE_PASSWORD" > signing.properties
-          echo "key.alias=$KEY_ALIAS" >> signing.properties
-          echo "key.password=$KEY_PASSWORD" >> signing.properties
-          
-          echo "=== Signing configuration ==="
-          cat signing.properties
+
+          # 验证 alias 与密码是否匹配固定 keystore
+          keytool -list -keystore release.keystore -storepass "$SIGNING_STORE_PASSWORD" -alias "$SIGNING_KEY_ALIAS" >/dev/null
+
+          # 生成 signing.properties 给 Gradle 使用
+          {
+            echo "keystore.password=$SIGNING_STORE_PASSWORD"
+            echo "key.alias=$SIGNING_KEY_ALIAS"
+            echo "key.password=$SIGNING_KEY_PASSWORD"
+          } > signing.properties
+
+          echo "Signing properties generated."
 
       - name: Clean Build
         run: |

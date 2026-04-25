@@ -94,13 +94,29 @@ jobs:
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: |
-          touch signing.properties
-          echo keystore.password="$SIGNING_STORE_PASSWORD" > signing.properties
-          echo key.alias="$SIGNING_KEY_ALIAS" >> signing.properties
-          echo key.password="$SIGNING_KEY_PASSWORD" >> signing.properties
-            
-          echo "cat signing.properties"
-          cat signing.properties
+          # MUST 使用仓库中固定的 keystore，NEVER 在 CI 里重新生成
+          if [ ! -f release.keystore ]; then
+            echo "release.keystore is missing in repository, abort."
+            exit 1
+          fi
+
+          # 必填 secrets 校验，避免写入空值导致签名异常
+          if [ -z "$SIGNING_STORE_PASSWORD" ] || [ -z "$SIGNING_KEY_ALIAS" ] || [ -z "$SIGNING_KEY_PASSWORD" ]; then
+            echo "Signing secrets are missing, abort."
+            exit 1
+          fi
+
+          # 验证 alias 与密码是否匹配固定 keystore
+          keytool -list -keystore release.keystore -storepass "$SIGNING_STORE_PASSWORD" -alias "$SIGNING_KEY_ALIAS" >/dev/null
+
+          # 生成 signing.properties 给 Gradle 使用
+          {
+            echo "keystore.password=$SIGNING_STORE_PASSWORD"
+            echo "key.alias=$SIGNING_KEY_ALIAS"
+            echo "key.password=$SIGNING_KEY_PASSWORD"
+          } > signing.properties
+
+          echo "Signing properties generated."
 
       - name: Clean Build
         run: |
