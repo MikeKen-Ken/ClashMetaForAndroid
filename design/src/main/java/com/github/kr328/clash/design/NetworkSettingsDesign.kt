@@ -20,9 +20,13 @@ class NetworkSettingsDesign(
     uiStore: UiStore,
     srvStore: ServiceStore,
     running: Boolean,
+    allowLan: Boolean,
+    lanAddresses: List<String>,
 ) : Design<NetworkSettingsDesign.Request>(context) {
-    enum class Request {
-        StartAccessControlList
+    sealed class Request {
+        object StartAccessControlList : Request()
+        data class UpdateAllowLan(val enabled: Boolean) : Request()
+        data class CopyLanAddress(val address: String) : Request()
     }
 
     private val binding = DesignSettingsCommonBinding
@@ -40,6 +44,7 @@ class NetworkSettingsDesign(
 
         val screen = preferenceScreen(context) {
             val vpnDependencies: MutableList<Preference> = mutableListOf()
+            var allowLanEnabled = allowLan
 
             val vpn = switch(
                 value = uiStore::enableVpn,
@@ -55,6 +60,54 @@ class NetworkSettingsDesign(
             }
 
             category(R.string.vpn_service_options)
+
+            val lanSwitch = switch(
+                value = ::allowLanEnabled,
+                title = R.string.allow_lan,
+                summary = R.string.allow_lan_summary,
+            ) {
+                listener = OnChangedListener {
+                    requests.trySend(Request.UpdateAllowLan(allowLanEnabled))
+                }
+            }
+
+            val lanAddress = clickable(
+                title = R.string.lan_address,
+                summary = if (allowLanEnabled) R.string.tap_to_copy else R.string.lan_address_disabled,
+            ) {
+                enabled = allowLanEnabled && lanAddresses.isNotEmpty()
+                clicked {
+                    val firstAddress = lanAddresses.firstOrNull() ?: return@clicked
+                    requests.trySend(Request.CopyLanAddress(firstAddress))
+                    this@NetworkSettingsDesign.launch {
+                        showToast(R.string.copied, ToastDuration.Short)
+                    }
+                }
+            }
+
+            if (allowLanEnabled && lanAddresses.isNotEmpty()) {
+                lanAddress.summary = lanAddresses.first()
+            } else if (allowLanEnabled) {
+                lanAddress.summary = context.getString(R.string.lan_address_unavailable)
+                lanAddress.enabled = false
+            }
+
+            lanSwitch.listener = OnChangedListener {
+                requests.trySend(Request.UpdateAllowLan(allowLanEnabled))
+                if (!allowLanEnabled) {
+                    lanAddress.summary = context.getString(R.string.lan_address_disabled)
+                    lanAddress.enabled = false
+                } else {
+                    val firstAddress = lanAddresses.firstOrNull()
+                    if (firstAddress == null) {
+                        lanAddress.summary = context.getString(R.string.lan_address_unavailable)
+                        lanAddress.enabled = false
+                    } else {
+                        lanAddress.summary = firstAddress
+                        lanAddress.enabled = true
+                    }
+                }
+            }
 
             switch(
                 value = srvStore::bypassPrivateNetwork,

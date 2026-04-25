@@ -164,6 +164,11 @@
     <string name="tproxy_port">TProxy Port</string>
     <string name="authentication">Authentication</string>
     <string name="allow_lan">Allow LAN</string>
+    <string name="allow_lan_summary">Allow devices on LAN to connect</string>
+    <string name="lan_address">LAN Address</string>
+    <string name="lan_address_disabled">Enable Allow LAN to show address</string>
+    <string name="lan_address_unavailable">No available LAN IPv4 address</string>
+    <string name="tap_to_copy">Tap to copy</string>
     <string name="bind_address">Bind Address</string>
     <string name="mode">Mode</string>
     <string name="log_level">Log Level</string>
