@@ -23,6 +23,10 @@ class NetworkSettingsDesign(
     allowLan: Boolean,
     lanAddresses: List<String>,
 ) : Design<NetworkSettingsDesign.Request>(context) {
+    private class AllowLanState(initialEnabled: Boolean) {
+        var enabled: Boolean = initialEnabled
+    }
+
     sealed class Request {
         object StartAccessControlList : Request()
         data class UpdateAllowLan(val enabled: Boolean) : Request()
@@ -44,7 +48,7 @@ class NetworkSettingsDesign(
 
         val screen = preferenceScreen(context) {
             val vpnDependencies: MutableList<Preference> = mutableListOf()
-            var allowLanEnabled = allowLan
+            val allowLanState = AllowLanState(allowLan)
 
             val vpn = switch(
                 value = uiStore::enableVpn,
@@ -62,20 +66,20 @@ class NetworkSettingsDesign(
             category(R.string.vpn_service_options)
 
             val lanSwitch = switch(
-                value = ::allowLanEnabled,
+                value = allowLanState::enabled,
                 title = R.string.allow_lan,
                 summary = R.string.allow_lan_summary,
             ) {
                 listener = OnChangedListener {
-                    requests.trySend(Request.UpdateAllowLan(allowLanEnabled))
+                    requests.trySend(Request.UpdateAllowLan(allowLanState.enabled))
                 }
             }
 
             val lanAddress = clickable(
                 title = R.string.lan_address,
-                summary = if (allowLanEnabled) R.string.tap_to_copy else R.string.lan_address_disabled,
+                summary = if (allowLanState.enabled) R.string.tap_to_copy else R.string.lan_address_disabled,
             ) {
-                enabled = allowLanEnabled && lanAddresses.isNotEmpty()
+                enabled = allowLanState.enabled && lanAddresses.isNotEmpty()
                 clicked {
                     val firstAddress = lanAddresses.firstOrNull() ?: return@clicked
                     requests.trySend(Request.CopyLanAddress(firstAddress))
@@ -85,16 +89,16 @@ class NetworkSettingsDesign(
                 }
             }
 
-            if (allowLanEnabled && lanAddresses.isNotEmpty()) {
+            if (allowLanState.enabled && lanAddresses.isNotEmpty()) {
                 lanAddress.summary = lanAddresses.first()
-            } else if (allowLanEnabled) {
+            } else if (allowLanState.enabled) {
                 lanAddress.summary = context.getString(R.string.lan_address_unavailable)
                 lanAddress.enabled = false
             }
 
             lanSwitch.listener = OnChangedListener {
-                requests.trySend(Request.UpdateAllowLan(allowLanEnabled))
-                if (!allowLanEnabled) {
+                requests.trySend(Request.UpdateAllowLan(allowLanState.enabled))
+                if (!allowLanState.enabled) {
                     lanAddress.summary = context.getString(R.string.lan_address_disabled)
                     lanAddress.enabled = false
                 } else {
