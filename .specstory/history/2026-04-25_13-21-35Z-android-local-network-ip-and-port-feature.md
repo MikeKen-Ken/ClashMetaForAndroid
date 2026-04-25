@@ -1357,7 +1357,20 @@ _**Agent (default)**_
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt</summary>
 
-Status: **loading**
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/design/src/main/java/com/github/kr328/clash/design/NetworkSettingsDesign.kt</summary>
 
 </details>
 
@@ -1365,5 +1378,589 @@ Status: **loading**
 
 <tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
 <summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/design/src/main/res/values/strings.xml</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt",
+    "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/design/src/main/java/com/github/kr328/clash/design/NetworkSettingsDesign.kt",
+    "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/design/src/main/res/values/strings.xml"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt"
+    },
+    {
+      "relativeWorkspacePath": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/design/src/main/java/com/github/kr328/clash/design/NetworkSettingsDesign.kt"
+    },
+    {
+      "relativeWorkspacePath": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/design/src/main/res/values/strings.xml"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "values*.xml",
+  "outputMode": "content",
+  "path": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/design/src/main/res",
+  "pattern": "name=\"tap_to_copy\"|name=\"lan_address\"|name=\"allow_lan_summary\""
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/design/src/main/res",
+  "pattern": "name=\"tap_to_copy\"|name=\"lan_address\"|name=\"allow_lan_summary\"",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/strings.xml",
+  "outputMode": "content",
+  "path": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/design/src/main/res",
+  "pattern": "tap_to_copy|lan_address|allow_lan_summary"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/design/src/main/res",
+  "pattern": "tap_to_copy|lan_address|allow_lan_summary",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "design\\src\\main\\res\\values\\strings.xml"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 5
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git diff -- app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt design/src/main/java/com/github/kr328/clash/design/NetworkSettingsDesign.kt design/src/main/res/values/strings.xml</summary>
+
+```bash
+git diff -- app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt design/src/main/java/com/github/kr328/clash/design/NetworkSettingsDesign.kt design/src/main/res/values/strings.xml
+```
+
+```
+diff --git a/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt b/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt
+index c7cc724..21a8e6a 100644
+--- a/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt
++++ b/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt
+@@ -1,20 +1,37 @@
+ package com.github.kr328.clash
+ 
++import android.content.ClipData
++import android.content.ClipboardManager
++import androidx.core.content.getSystemService
++import com.github.kr328.clash.core.Clash
+ import com.github.kr328.clash.common.util.intent
++import com.github.kr328.clash.core.model.ConfigurationOverride
+ import com.github.kr328.clash.design.NetworkSettingsDesign
+ import com.github.kr328.clash.service.store.ServiceStore
++import com.github.kr328.clash.util.withClash
+ import kotlinx.coroutines.isActive
+ import kotlinx.coroutines.selects.select
++import java.net.Inet4Address
++import java.net.NetworkInterface
+ 
+ class NetworkSettingsActivity : BaseActivity&lt;NetworkSettingsDesign&gt;() {
+     override suspend fun main() {
++        val configuration = withClash { queryOverride(Clash.OverrideSlot.Persist) }
+         val design = NetworkSettingsDesign(
+             this,
+             uiStore,
+             ServiceStore(this),
+             clashRunning,
++            configuration.allowLan ?: false,
++            resolveLanAddresses(configuration),
+         )
+ 
++        defer {
++            withClash {
++                patchOverride(Clash.OverrideSlot.Persist, configuration)
++            }
++        }
++
+         setContentDesign(design)
+ 
+         while (isActive) {
+@@ -30,10 +47,43 @@ class NetworkSettingsActivity : BaseActivity&lt;NetworkSettingsDesign&gt;() {
+                     when (it) {
+                         NetworkSettingsDesign.Request.StartAccessControlList -&gt;
+                             startActivity(AccessControlActivity::class.intent)
++                        is NetworkSettingsDesign.Request.UpdateAllowLan -&gt;
++                            configuration.allowLan = it.enabled
++                        is NetworkSettingsDesign.Request.CopyLanAddress -&gt;
++                            copyTextToClipboard(it.address)
+                     }
+                 }
+             }
+         }
+     }
+ 
++    private fun copyTextToClipboard(text: String) {
++        getSystemService&lt;ClipboardManager&gt;()?.setPrimaryClip(
++            ClipData.newPlainText("lan_address", text)
++        )
++    }
++
++    private fun resolveLanAddresses(configuration: ConfigurationOverride): List&lt;String&gt; {
++        val port = resolveLanPort(configuration)
++        val addresses = mutableListOf&lt;String&gt;()
++        NetworkInterface.getNetworkInterfaces()?.toList()?.forEach { network -&gt;
++            if (!network.isUp || network.isLoopback || network.isVirtual) return@forEach
++
++            network.inetAddresses.toList()
++                .asSequence()
++                .filterIsInstance&lt;Inet4Address&gt;()
++                .filter { !it.isLoopbackAddress &amp;&amp; !it.isLinkLocalAddress }
++                .map { "${it.hostAddress}:$port" }
++                .forEach(addresses::add)
++        }
++
++        return addresses.distinct().sorted()
++    }
++
++    private fun resolveLanPort(configuration: ConfigurationOverride): Int {
++        return configuration.mixedPort
++            ?: configuration.httpPort
++            ?: configuration.socksPort
++            ?: 10801
++    }
+ }
+diff --git a/design/src/main/java/com/github/kr328/clash/design/NetworkSettingsDesign.kt b/design/src/main/java/com/github/kr328/clash/design/NetworkSettingsDesign.kt
+index 7f942b0..c6f10a1 100644
+--- a/design/src/main/java/com/github/kr328/clash/design/NetworkSettingsDesign.kt
++++ b/design/src/main/java/com/github/kr328/clash/design/NetworkSettingsDesign.kt
+@@ -20,9 +20,13 @@ class NetworkSettingsDesign(
+     uiStore: UiStore,
+     srvStore: ServiceStore,
+     running: Boolean,
++    allowLan: Boolean,
++    lanAddresses: List&lt;String&gt;,
+ ) : Design&lt;NetworkSettingsDesign.Request&gt;(context) {
+-    enum class Request {
+-        StartAccessControlList
++    sealed class Request {
++        object StartAccessControlList : Request()
++        data class UpdateAllowLan(val enabled: Boolean) : Request()
++        data class CopyLanAddress(val address: String) : Request()
+     }
+ 
+     private val binding = DesignSettingsCommonBinding
+@@ -40,6 +44,7 @@ class NetworkSettingsDesign(
+ 
+         val screen = preferenceScreen(context) {
+             val vpnDependencies: MutableList&lt;Preference&gt; = mutableListOf()
++            var allowLanEnabled = allowLan
+ 
+             val vpn = switch(
+                 value = uiStore::enableVpn,
+@@ -56,6 +61,54 @@ class NetworkSettingsDesign(
+ 
+             category(R.string.vpn_service_options)
+ 
++            val lanSwitch = switch(
++                value = ::allowLanEnabled,
++                title = R.string.allow_lan,
++                summary = R.string.allow_lan_summary,
++            ) {
++                listener = OnChangedListener {
++                    requests.trySend(Request.UpdateAllowLan(allowLanEnabled))
++                }
++            }
++
++            val lanAddress = clickable(
++                title = R.string.lan_address,
++                summary = if (allowLanEnabled) R.string.tap_to_copy else R.string.lan_address_disabled,
++            ) {
++                enabled = allowLanEnabled &amp;&amp; lanAddresses.isNotEmpty()
++                clicked {
++                    val firstAddress = lanAddresses.firstOrNull() ?: return@clicked
++                    requests.trySend(Request.CopyLanAddress(firstAddress))
++                    this@NetworkSettingsDesign.launch {
++                        showToast(R.string.copied, ToastDuration.Short)
++                    }
++                }
++            }
++
++            if (allowLanEnabled &amp;&amp; lanAddresses.isNotEmpty()) {
++                lanAddress.summary = lanAddresses.first()
++            } else if (allowLanEnabled) {
++                lanAddress.summary = context.getString(R.string.lan_address_unavailable)
++                lanAddress.enabled = false
++            }
++
++            lanSwitch.listener = OnChangedListener {
++                requests.trySend(Request.UpdateAllowLan(allowLanEnabled))
++                if (!allowLanEnabled) {
++                    lanAddress.summary = context.getString(R.string.lan_address_disabled)
++                    lanAddress.enabled = false
++                } else {
++                    val firstAddress = lanAddresses.firstOrNull()
++                    if (firstAddress == null) {
++                        lanAddress.summary = context.getString(R.string.lan_address_unavailable)
++                        lanAddress.enabled = false
++                    } else {
++                        lanAddress.summary = firstAddress
++                        lanAddress.enabled = true
++                    }
++                }
++            }
++
+             switch(
+                 value = srvStore::bypassPrivateNetwork,
+                 title = R.string.bypass_private_network,
+diff --git a/design/src/main/res/values/strings.xml b/design/src/main/res/values/strings.xml
+index 8faf6cc..b45a11f 100644
+Binary files a/design/src/main/res/values/strings.xml and b/design/src/main/res/values/strings.xml differ
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: python -c "from pathlib import Path; p=Path(r'design/src/main/res/values/strings.xml'); b=p.read_bytes()[:4]; print(b)"</summary>
+
+```bash
+python -c "from pathlib import Path; p=Path(r'design/src/main/res/values/strings.xml'); b=p.read_bytes()[:4]; print(b)"
+```
+
+```
+b'&lt;res'
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: python -c "from pathlib import Path; d=Path(r'design/src/main/res/values/strings.xml').read_bytes(); print(0 in d, len(d))"</summary>
+
+```bash
+python -c "from pathlib import Path; d=Path(r'design/src/main/res/values/strings.xml').read_bytes(); print(0 in d, len(d))"
+```
+
+```
+False 19608
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+代码已改完一轮，我正在做最后的静态检查，重点确认 `NetworkSettingsActivity` 的网络地址枚举和新请求类型没有编译风险。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt",
+    "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/design/src/main/java/com/github/kr328/clash/design/NetworkSettingsDesign.kt"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt"
+    },
+    {
+      "relativeWorkspacePath": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/design/src/main/java/com/github/kr328/clash/design/NetworkSettingsDesign.kt"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+已在安卓端实现“开启局域网后显示 `IP:端口`，点击可复制”的功能，改动如下：
+
+- 在 `NetworkSettings` 页面新增了局域网开关与地址展示项（地址项可点击复制）。
+- 开关状态直接写入 `ConfigurationOverride.allowLan`，与核心配置保持一致。
+- 地址展示逻辑为：读取本机可用 IPv4，拼接端口后显示为 `IP:端口`。
+- 端口优先级：`mixedPort` → `httpPort` → `socksPort` → 默认 `10801`。
+- 点击地址后会复制到剪贴板，并弹出 `Copied` 提示。
+
+本次修改文件：
+
+- `app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt`
+- `design/src/main/java/com/github/kr328/clash/design/NetworkSettingsDesign.kt`
+- `design/src/main/res/values/strings.xml`
+
+额外说明：
+
+- 当前展示的是首个可用局域网 IPv4 地址（避免界面过于复杂）。
+- 我已做静态检查（lints 无报错），但还没跑完整构建/真机验证。  
+  如果你愿意，我下一步可以继续补：  
+  1) 多网卡时显示“可选地址列表”；  
+  2) 同时支持复制全部地址。
+
+---
+
+_**User**_
+
+Run git submodule update --init --recursive --remote --force
+Submodule '.cursor' (git@github.com:MikeKen-Ken/cursor-rule.git) registered for path '.cursor'
+Submodule 'clash-verge-rev' (https://github.com/MikeKen-Ken/clash-verge-rev.git) registered for path 'clash-verge-rev'
+Submodule 'clash-foss' (https://github.com/MikeKen-Ken/mihomo) registered for path 'core/src/foss/golang/clash'
+Cloning into '/home/runner/work/ClashMetaForAndroid/ClashMetaForAndroid/.cursor'...
+git@github.com: Permission denied (publickey).
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+fatal: clone of 'git@github.com:MikeKen-Ken/cursor-rule.git' into submodule path '/home/runner/work/ClashMetaForAndroid/ClashMetaForAndroid/.cursor' failed
+Failed to clone '.cursor'. Retry scheduled
+Cloning into '/home/runner/work/ClashMetaForAndroid/ClashMetaForAndroid/clash-verge-rev'...
+Cloning into '/home/runner/work/ClashMetaForAndroid/ClashMetaForAndroid/core/src/foss/golang/clash'...
+Cloning into '/home/runner/work/ClashMetaForAndroid/ClashMetaForAndroid/.cursor'...
+git@github.com: Permission denied (publickey).
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+fatal: clone of 'git@github.com:MikeKen-Ken/cursor-rule.git' into submodule path '/home/runner/work/ClashMetaForAndroid/ClashMetaForAndroid/.cursor' failed
+Failed to clone '.cursor' a second time, aborting
+Error: Process completed with exit code 1.
+
+---
+
+_**Agent (default)**_
+
+我先定位并修复子模块 `.cursor` 的远程地址（从 SSH 改为 HTTPS），这样在 GitHub Actions 无私钥环境下就能正常拉取。改完我会给你可直接用的验证命令。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.gitmodules</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.gitmodules</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git submodule sync --recursive && git config -f .gitmodules --get-regexp '^submodule\..*\.url$'</summary>
+
+```bash
+git submodule sync --recursive && git config -f .gitmodules --get-regexp '^submodule\..*\.url$'
+```
+
+```
+At C:\Users\Ken-Narmal\AppData\Local\Temp\ps-script-41da2b09-4708-4344-9bed-fb8f2986492d.ps1:74 char:32
++ git submodule sync --recursive &amp;&amp; git config -f .gitmodules --get-reg ...
++                                ~~
+The token '&amp;&amp;' is not a valid statement separator in this version.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : InvalidEndOfLine
+ 
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git submodule sync --recursive; git config -f .gitmodules --get-regexp '^submodule\..*\.url$'</summary>
+
+```bash
+git submodule sync --recursive; git config -f .gitmodules --get-regexp '^submodule\..*\.url$'
+```
+
+```
+Synchronizing submodule url for '.cursor'
+Synchronizing submodule url for 'clash-verge-rev'
+Synchronizing submodule url for 'core/src/foss/golang/clash'
+submodule.clash-foss.url https://github.com/MikeKen-Ken/mihomo
+submodule.clash-verge-rev.url ../clash-verge-rev.git
+submodule..cursor.url https://github.com/MikeKen-Ken/cursor-rule.git
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
 
 </details></tool-use>
