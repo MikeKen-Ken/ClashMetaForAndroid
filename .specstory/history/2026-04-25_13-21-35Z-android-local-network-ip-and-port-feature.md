@@ -1878,89 +1878,11 @@ fatal: clone of 'git@github.com:MikeKen-Ken/cursor-rule.git' into submodule path
 Failed to clone '.cursor' a second time, aborting
 Error: Process completed with exit code 1.
 
+不需要拉去 .cursor 仓库，因为他和打包没有关系
+
 ---
 
 _**Agent (default)**_
 
-我先定位并修复子模块 `.cursor` 的远程地址（从 SSH 改为 HTTPS），这样在 GitHub Actions 无私钥环境下就能正常拉取。改完我会给你可直接用的验证命令。
-
-_**Agent (default)**_
-
-<tool-use data-tool-type="read" data-tool-name="read_file_v2">
-<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.gitmodules</summary>
-
-</details>
-</tool-use>
-
-<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
-<summary>Tool use: **read_file_v2**</summary>
-
-</details></tool-use>
-
-_**Agent (default)**_
-
-<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
-
-<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.gitmodules</summary>
-
-</details>
-
-</tool-use>
-
-<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
-<summary>Tool use: **edit_file_v2**</summary>
-
-</details></tool-use>
-
-_**Agent (default)**_
-
-<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
-<details><summary>Tool use: **run_terminal_command_v2** • Run command: git submodule sync --recursive && git config -f .gitmodules --get-regexp '^submodule\..*\.url$'</summary>
-
-```bash
-git submodule sync --recursive && git config -f .gitmodules --get-regexp '^submodule\..*\.url$'
-```
-
-```
-At C:\Users\Ken-Narmal\AppData\Local\Temp\ps-script-41da2b09-4708-4344-9bed-fb8f2986492d.ps1:74 char:32
-+ git submodule sync --recursive &amp;&amp; git config -f .gitmodules --get-reg ...
-+                                ~~
-The token '&amp;&amp;' is not a valid statement separator in this version.
-    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
-    + FullyQualifiedErrorId : InvalidEndOfLine
- 
-
-```
-</details>
-</tool-use>
-
-<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
-<summary>Tool use: **run_terminal_command_v2**</summary>
-
-</details></tool-use>
-
-_**Agent (default)**_
-
-<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
-<details><summary>Tool use: **run_terminal_command_v2** • Run command: git submodule sync --recursive; git config -f .gitmodules --get-regexp '^submodule\..*\.url$'</summary>
-
-```bash
-git submodule sync --recursive; git config -f .gitmodules --get-regexp '^submodule\..*\.url$'
-```
-
-```
-Synchronizing submodule url for '.cursor'
-Synchronizing submodule url for 'clash-verge-rev'
-Synchronizing submodule url for 'core/src/foss/golang/clash'
-submodule.clash-foss.url https://github.com/MikeKen-Ken/mihomo
-submodule.clash-verge-rev.url ../clash-verge-rev.git
-submodule..cursor.url https://github.com/MikeKen-Ken/cursor-rule.git
-
-```
-</details>
-</tool-use>
-
-<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
-<summary>Tool use: **run_terminal_command_v2**</summary>
-
-</details></tool-use>
+明白，你这个 CI 失败点就是 `.cursor` 子模块走了 `git@` SSH 地址，Runner 没私钥就会炸，而且它确实不参与构建。  
+我先检查仓库里的 `.gitmodules` 和工作流脚本，给你改成“子模块更新时跳过 `.cursor`”。

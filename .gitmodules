@@ -9,3 +9,4 @@
 [submodule ".cursor"]
 	path = .cursor
 	url = https://github.com/MikeKen-Ken/cursor-rule.git
+	update = none
