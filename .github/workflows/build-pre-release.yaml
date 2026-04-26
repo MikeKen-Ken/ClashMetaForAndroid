@@ -69,16 +69,35 @@ jobs:
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: |
+          set -euo pipefail
           # 方案 A：完全由 Secrets 提供 keystore 与签名参数
           if [ -z "$SIGNING_KEYSTORE_BASE64" ] || [ -z "$SIGNING_STORE_PASSWORD" ] || [ -z "$SIGNING_KEY_ALIAS" ] || [ -z "$SIGNING_KEY_PASSWORD" ]; then
             echo "Required signing secrets are missing. Need SIGNING_KEYSTORE_BASE64 / SIGNING_STORE_PASSWORD / SIGNING_KEY_ALIAS / SIGNING_KEY_PASSWORD."
             exit 1
           fi
 
-          echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > release.keystore
+          if ! printf '%s' "$SIGNING_KEYSTORE_BASE64" | base64 -d > release.keystore; then
+            echo "Failed to decode SIGNING_KEYSTORE_BASE64. Please re-generate the base64 from keystore file."
+            exit 1
+          fi
+
+          if [ ! -s release.keystore ]; then
+            echo "Decoded keystore is empty."
+            exit 1
+          fi
+
+          if ! keytool -list -keystore release.keystore -storepass "$SIGNING_STORE_PASSWORD" >/dev/null 2>&1; then
+            echo "Keystore cannot be opened. Check SIGNING_STORE_PASSWORD and keystore content."
+            exit 1
+          fi
 
           # 验证 alias 与密码是否匹配
-          keytool -list -keystore release.keystore -storepass "$SIGNING_STORE_PASSWORD" -alias "$SIGNING_KEY_ALIAS" >/dev/null
+          if ! keytool -list -keystore release.keystore -storepass "$SIGNING_STORE_PASSWORD" -alias "$SIGNING_KEY_ALIAS" >/dev/null 2>&1; then
+            echo "Alias not found in keystore: $SIGNING_KEY_ALIAS"
+            echo "Available aliases:"
+            keytool -list -keystore release.keystore -storepass "$SIGNING_STORE_PASSWORD" | sed -n 's/^.*, //p' || true
+            exit 1
+          fi
 
           # 生成 signing.properties 给 Gradle 使用
           {
