@@ -2413,3 +2413,337 @@ Status: **completed**
 <summary>Tool use: **read_lints**</summary>
 
 </details></tool-use>
+
+_**Agent (default)**_
+
+是的，安卓这边**需要改**，但不是改 `mihomo` 下载逻辑，而是改 **CI 拉私有 submodule 的认证方式**。  
+你贴的错误就发生在这一步：`git submodule update ...` 没凭证。
+
+我已经帮你改了：
+
+- 文件：`.github/workflows/build-pre-release.yaml`
+- 变更：
+  - `Checkout submodules` 步骤加了 `SUBMODULE_TOKEN`
+  - 用 `git config --global url."https://x-access-token:${SUBMODULE_TOKEN}@github.com/".insteadOf "https://github.com/"` 注入凭证
+  - 然后再执行 `git submodule sync --recursive` 和 `git submodule update --init --recursive --remote --force`
+
+这样 `clash-verge-rev` 和 `core/src/foss/golang/clash` 这两个私有 submodule 都能被拉下来。
+
+## 你现在要做的步骤
+
+1. 在 **安卓主仓库 `ClashMetaForAndroid`** 添加 secret：`MIHOMO_REPO_TOKEN`
+2. token 权限确保能访问这两个私有仓库：
+   - `MikeKen-Ken/mihomo`
+   - `MikeKen-Ken/clash-verge-rev`
+3. 权限至少给 `Contents: Read`（Fine-grained PAT 推荐）
+4. 重新跑 `Build Pre-Release`
+
+如果你愿意，我可以再帮你把其他 workflow 里可能存在的 `git submodule update` 也统一成这一套，避免后续再次踩坑。
+
+---
+
+_**User**_
+
+  echo "Signing properties generated."
+  shell: /usr/bin/bash -e {0}
+  env:
+    JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.10-7/x64
+    JAVA_HOME_21_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.10-7/x64
+    GRADLE_ACTION_ID: gradle/actions/setup-gradle
+    GRADLE_USER_HOME: /home/runner/.gradle
+    GRADLE_BUILD_ACTION_SETUP_COMPLETED: true
+    GRADLE_BUILD_ACTION_CACHE_RESTORED: true
+    DEVELOCITY_INJECTION_INIT_SCRIPT_NAME: gradle-actions.inject-develocity.init.gradle
+    DEVELOCITY_INJECTION_CUSTOM_VALUE: gradle-actions
+    GITHUB_DEPENDENCY_GRAPH_ENABLED: false
+    GOTOOLCHAIN: local
+    SIGNING_KEYSTORE_BASE64: ***
+    SIGNING_STORE_PASSWORD: ***
+    SIGNING_KEY_ALIAS: ***
+    SIGNING_KEY_PASSWORD: ***
+Error: Process completed with exit code 1.
+
+---
+
+_**Agent (default)**_
+
+这个日志看起来失败点就在“签名校验”步骤里（最常见是 `keytool -list ... -alias ...` 失败），但当前脚本没把具体原因打出来。  
+我先把该步骤改成可诊断版本：明确区分“keystore 解码失败 / 密码错 / alias 不存在”，并输出可读错误（不泄露 secret）。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\.github\workflows\build-pre-release.yaml</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\.github\\workflows\\build-pre-release.yaml"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\.github\\workflows\\build-pre-release.yaml"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+这个报错是签名步骤提前退出了，但之前脚本信息太少。  
+我已经把 `.github/workflows/build-pre-release.yaml` 的 `Setup fixed signing` 步骤增强成“可定位错误原因”的版本了。
+
+现在它会明确告诉你是哪一类问题：
+
+- `SIGNING_KEYSTORE_BASE64` 解码失败
+- 解码后 keystore 为空
+- keystore/`SIGNING_STORE_PASSWORD` 不匹配
+- `SIGNING_KEY_ALIAS` 不存在（并打印可用 alias 列表）
+
+另外我还把 base64 解码改成了 `printf '%s' ... | base64 -d`，避免 `echo` 引入换行导致的偶发损坏。
+
+你现在重新跑一次 workflow，下一次日志会给出明确原因；把新报错贴我，我可以直接告诉你该改哪个 secret。
+
+---
+
+_**User**_
+
+  echo "Signing properties generated."
+  shell: /usr/bin/bash -e {0}
+  env:
+    JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.10-7/x64
+    JAVA_HOME_21_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.10-7/x64
+    GRADLE_ACTION_ID: gradle/actions/setup-gradle
+    GRADLE_USER_HOME: /home/runner/.gradle
+    GRADLE_BUILD_ACTION_SETUP_COMPLETED: true
+    GRADLE_BUILD_ACTION_CACHE_RESTORED: true
+    DEVELOCITY_INJECTION_INIT_SCRIPT_NAME: gradle-actions.inject-develocity.init.gradle
+    DEVELOCITY_INJECTION_CUSTOM_VALUE: gradle-actions
+    GITHUB_DEPENDENCY_GRAPH_ENABLED: false
+    GOTOOLCHAIN: local
+    SIGNING_KEYSTORE_BASE64: ***
+    SIGNING_STORE_PASSWORD: ***
+    SIGNING_KEY_ALIAS: ***
+    SIGNING_KEY_PASSWORD: ***
+Keystore cannot be opened. Check SIGNING_STORE_PASSWORD and keystore content.
+Error: Process completed with exit code 1.
+
+---
+
+_**Agent (default)**_
+
+定位很明确了：当前失败是 **`release.keystore` 文件内容和 `SIGNING_STORE_PASSWORD` 不匹配**（或 `SIGNING_KEYSTORE_BASE64` 不是正确的 keystore 二进制）。
+
+按下面 5 步重做一次即可：
+
+- **1. 先在本地验证 keystore 和密码**
+  - 在项目根目录执行：
+  - `keytool -list -v -keystore "release.keystore" -storepass "你的STORE密码"`
+  - 如果这里都失败，说明你记的 `STORE_PASSWORD` 就不对（先修这个）。
+
+- **2. 确认 alias**
+  - 还是用上面命令输出里看 alias 名字，和你填的 `SIGNING_KEY_ALIAS` 必须完全一致（区分大小写）。
+
+- **3. 重新生成 base64（最关键）**
+  - 用二进制方式重新编码，不要手工复制时改行：
+  - PowerShell：
+    - `[Convert]::ToBase64String([IO.File]::ReadAllBytes("$pwd\release.keystore")) | Set-Content -NoNewline "$pwd\release.keystore.b64"`
+  - 把 `release.keystore.b64` 的整行内容作为 `SIGNING_KEYSTORE_BASE64`。
+
+- **4. 重新设置 4 个 Secrets**
+  - `SIGNING_KEYSTORE_BASE64`：上一步新值
+  - `SIGNING_STORE_PASSWORD`：keystore 密码
+  - `SIGNING_KEY_ALIAS`：真实 alias
+  - `SIGNING_KEY_PASSWORD`：key 密码（常见与 store 密码相同，但不一定）
+
+- **5. 重跑 workflow**
+
+---
+
+常见坑（你现在很可能中一个）：
+
+- `SIGNING_STORE_PASSWORD` 和 `SIGNING_KEY_PASSWORD` 填反
+- base64 不是从 keystore 二进制生成，而是从文本/错误文件生成
+- secret 里多了空格或换行
+- 用了旧 keystore，但密码是新 keystore 的
+
+如果你愿意，我可以再给你一段“本地自检脚本”，一次性验证这四项是否匹配，再上传到 GitHub。
+
+---
+
+_**User**_
+
+你帮我重新生成 keystore把@release.keystore  或者给我密码什么的
+
+---
+
+_**Agent (default)**_
+
+可以帮你重新生成，但先说明两点：
+
+- **旧 `release.keystore` 的密码无法反推出**，我不能“给出原密码”。
+- 只能走两条路：  
+  1) 你自己记起旧密码继续用；  
+  2) **生成全新 keystore**（签名身份会变，后续安装升级会受影响）。
+
+如果你接受“生成全新 keystore”，我可以立刻帮你做，并同步给你需要填的 GitHub Secrets。  
+我只需要你确认这几个值（可先用默认）：
+
+- `alias`（默认 `release`）
+- `keystore password`
+- `key password`（可与 keystore password 相同）
+- 证书信息：`CN/OU/O/L/ST/C`（可用占位）
+
+你回复一句：  
+`用默认生成，密码我来定：xxxx`  
+我就直接在当前仓库生成新的 `release.keystore`，并把后续 Secrets 更新步骤一次写给你。
+
+---
+
+_**User**_
+
+刚才报错是密码错了吗
+
+---
+
+_**Agent (default)**_
+
+是，刚才那个报错基本就是这个意思：
+
+- `Keystore cannot be opened. Check SIGNING_STORE_PASSWORD and keystore content.`
+
+对应两种可能：
+
+- `SIGNING_STORE_PASSWORD` 错了（最常见）
+- `SIGNING_KEYSTORE_BASE64` 不是正确的 `release.keystore` 内容（被编码错/贴错）
+
+它还没走到 alias 校验那一步，所以当前优先修 `STORE_PASSWORD` 和 `KEYSTORE_BASE64`。  
+如果你愿意，我下一步可以直接给你一条本地命令，马上验证你手上的 `release.keystore + storepass` 是否匹配。
+
+---
+
+_**User**_
+
+SIGNING_KEYSTORE_BASE64  你帮我读取一下
+
+---
+
+_**Agent (default)**_
+
+可以。我先用本地的 `release.keystore` 生成一份标准单行 Base64（这就是 `SIGNING_KEYSTORE_BASE64` 要填的值），并放到项目根目录文件里，避免终端截断。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: Get-ChildItem -Name</summary>
+
+```bash
+Get-ChildItem -Name
+```
+
+```
+.cursor
+.github
+.idea
+.specstory
+.vscode
+app
+clash-verge-rev
+common
+core
+design
+fastlane
+gradle
+hideapi
+service
+.gitattributes
+.gitignore
+.gitmodules
+build.gradle.kts
+CONTRIBUTING.md
+gradle.properties
+gradlew
+gradlew.bat
+LICENSE
+NOTICE
+PRIVACY_POLICY.md
+README.md
+release.keystore
+renovate.json
+settings.gradle.kts
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: $bytes=[IO.File]::ReadAllBytes("release.keystore"); $b64=[Convert]::ToBase64String($bytes); Set-Content -Path "release.keystore.b64" -Value $b64 -NoNewline; Write-Output "LEN=$($b64.Length)"</summary>
+
+```bash
+$bytes=[IO.File]::ReadAllBytes("release.keystore"); $b64=[Convert]::ToBase64String($bytes); Set-Content -Path "release.keystore.b64" -Value $b64 -NoNewline; Write-Output "LEN=$($b64.Length)"
+```
+
+```
+LEN=3632
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+已帮你生成好了。
+
+- 文件：`release.keystore.b64`
+- 位置：项目根目录 `c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\release.keystore.b64`
+- 内容：单行 Base64（长度 `3632`），可直接作为 `SIGNING_KEYSTORE_BASE64` 的值
+
+你现在直接把这个文件里的整行内容复制到 GitHub Secret 就行。  
+如果你要，我下一步可以再帮你本地校验这 4 个签名参数是否一致（`keystore/storepass/alias/keypass`）。
