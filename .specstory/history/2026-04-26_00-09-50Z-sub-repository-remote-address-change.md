@@ -1289,3 +1289,118 @@ Mode                 LastWriteTime         Length Name
 _**Agent (default)**_
 
 我现在删除其余 3 个 workflow 文件，仅保留 `build-pre-release.yaml`。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="delete_file">
+<details><summary>Tool use: **delete_file**</summary>
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="delete_file"><details>
+<summary>Tool use: **delete_file**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="delete_file">
+<details><summary>Tool use: **delete_file**</summary>
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="delete_file"><details>
+<summary>Tool use: **delete_file**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="delete_file">
+<details><summary>Tool use: **delete_file**</summary>
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="delete_file"><details>
+<summary>Tool use: **delete_file**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: ls</summary>
+
+```bash
+ls
+```
+
+```
+
+
+    目录: C:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\.github\workflows
+
+
+Mode                 LastWriteTime         Length Name                                                                 
+----                 -------------         ------ ----                                                                 
+-a----         2026/4/26      8:16           4215 build-pre-release.yaml                                               
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git status -sb</summary>
+
+```bash
+git status -sb
+```
+
+```
+## main...origin/main
+ D .github/workflows/build-debug.yaml
+ M .github/workflows/build-pre-release.yaml
+ D .github/workflows/build-release.yaml
+ D .github/workflows/update-dependencies.yaml
+ M .specstory/history/2026-04-25_13-21-35Z-android-local-network-ip-and-port-feature.md
+ M .specstory/history/2026-04-25_14-38-59Z-android-app-signature-consistency.md
+ M .specstory/statistics.json
+ M app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt
+?? .specstory/history/2026-04-26_00-09-50Z-remote-repository-address-change.md
+?? .specstory/history/2026-04-26_00-09-50Z-sub-repository-remote-address-change.md
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+已按你的要求处理完成：只保留了 `build pre-release`。
+
+已删除：
+- `.github/workflows/build-debug.yaml`
+- `.github/workflows/build-release.yaml`
+- `.github/workflows/update-dependencies.yaml`
+
+当前保留：
+- `.github/workflows/build-pre-release.yaml`
+
+如果你要，我可以接着帮你把这次改动直接提交并推送。

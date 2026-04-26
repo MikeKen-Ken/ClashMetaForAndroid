@@ -230,6 +230,28 @@ _**Agent (default)**_
 ```bash
 $branches = git for-each-ref --format='%(refname:short)' refs/remotes/origin | ForEach-Object { $_ -replace '^origin/', '' } | Where-Object { $_ -and $_ -ne 'HEAD' -and $_ -ne 'dev' } | Sort-Object -Unique; if ($branches.Count -gt 0) { git push origin --delete $branches }; git fetch origin --prune; git branch -r
 ```
+
+```
+  origin/HEAD -&gt; origin/dev
+  origin/dev
+  origin/dev-upstream
+error: unable to delete 'feat-core-health': remote ref does not exist
+error: unable to delete 'i18-porting': remote ref does not exist
+error: unable to delete 'main': remote ref does not exist
+error: unable to delete 'miriation-isahc': remote ref does not exist
+error: unable to delete 'origin': remote ref does not exist
+error: unable to delete 'renovate/cargo-dependencies': remote ref does not exist
+error: unable to delete 'renovate/npm-dependencies': remote ref does not exist
+error: failed to push some refs to 'github.com:MikeKen-Ken/clash-verge-rev.git'
+From github.com:MikeKen-Ken/clash-verge-rev
+ - [deleted]           (none)     -&gt; origin/feat-core-health
+ - [deleted]           (none)     -&gt; origin/i18-porting
+ - [deleted]           (none)     -&gt; origin/main
+ - [deleted]           (none)     -&gt; origin/miriation-isahc
+ - [deleted]           (none)     -&gt; origin/renovate/cargo-dependencies
+ - [deleted]           (none)     -&gt; origin/renovate/npm-dependencies
+
+```
 </details>
 </tool-use>
 
@@ -237,3 +259,42 @@ $branches = git for-each-ref --format='%(refname:short)' refs/remotes/origin | F
 <summary>Tool use: **run_terminal_command_v2**</summary>
 
 </details></tool-use>
+
+_**Agent (default)**_
+
+删除命令里混入了一条异常引用，但实际大部分分支已经被清掉；我再补删 `origin/dev-upstream` 并复查最终结果。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git push origin --delete dev-upstream; git fetch origin --prune; git branch -r</summary>
+
+```bash
+git push origin --delete dev-upstream; git fetch origin --prune; git branch -r
+```
+
+```
+  origin/HEAD -&gt; origin/dev
+  origin/dev
+To github.com:MikeKen-Ken/clash-verge-rev.git
+ - [deleted]           dev-upstream
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+已完成，现在 `origin` 远程也只剩 `dev`：
+
+- 远程分支当前仅有：
+  - `origin/HEAD -> origin/dev`
+  - `origin/dev`
+- `origin` 上的其他分支已删除（包括最后补删的 `dev-upstream`）
+
+你这个子仓库现在本地和远程都达成“只保留 `dev` + 无 `upstream`”的状态了。

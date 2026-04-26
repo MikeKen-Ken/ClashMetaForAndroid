@@ -2339,8 +2339,6 @@ _**Agent (default)**_
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt</summary>
 
-Status: **loading**
-
 </details>
 
 </tool-use>
@@ -2349,3 +2347,60 @@ Status: **loading**
 <summary>Tool use: **edit_file_v2**</summary>
 
 </details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+已经改好了，我这次把端口读取逻辑改成你要的“优先读当前会话”：
+
+在 `NetworkSettingsActivity` 里，`IP:端口` 现在按这个顺序取值：
+
+1. `Session Override.mixedPort`  
+2. `Persist Override.mixedPort`  
+3. `Session Override.httpPort`  
+4. `Persist Override.httpPort`  
+5. `Session Override.socksPort`  
+6. `Persist Override.socksPort`  
+7. 默认 `10801`
+
+同时 `allow-lan` 开关仍然写入 `Persist Override`（保持你原来设置行为不变）。
+
+这版已经过 lints 检查无报错。你现在可以在手机上再看一下，通常你说的“电脑端是我设置端口、安卓不是”这个问题会明显改善。  
+如果你测试后还不一致，我下一步就继续改成“直接读取运行时实际生效配置端口”（不依赖 override），可以做到和桌面端显示更一致。

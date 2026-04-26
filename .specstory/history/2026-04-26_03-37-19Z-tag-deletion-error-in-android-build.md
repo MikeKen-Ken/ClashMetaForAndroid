@@ -467,25 +467,40 @@ jobs:
 
 _**User**_
 
-我是手动在 git 设置的 我需要开哪些quan'xian
+我是手动在 git 设置的 我需要开哪些权限？现在只有Content read 和 write
 
 ---
 
 _**Agent (default)**_
 
-那就很接近了。你既然已经在仓库设置里手动开了权限，下一步重点查这 3 个点：
+你这个场景里，如果你说的是 **Fine-grained PAT**，那一般确实只要：
 
-- `build-pre-release.yaml` 里是否显式写了 `permissions: contents: write`（workflow 或 job 级）
-- 仓库是否有 **Tag protection rule** 卡住 `Prerelease-alpha` 的删除
-- 这次失败的 run 是否是“开权限之前触发的旧任务”（旧 run 不会自动继承新设置）
+- `Repository permissions` -> `Contents: Read and write`
 
-你这个报错是删 tag 失败，所以最常见剩余原因就是：  
-**workflow 文件里没声明写权限** 或 **tag 保护不允许删**。
+就够删/建 tag 和 release 了。  
+所以你现在这个 `Content read/write` 从权限项本身看是对的。
 
-可以这样快速验证：
+还要再确认 3 件事（很多人卡在这里）：
 
-1. 重新手动触发一次最新 commit 的 workflow  
-2. 看该 run 的日志里是否出现 token 权限信息（至少有 `contents: write`）  
-3. 若仍失败，去 `Settings -> Rules -> Tag rules` 检查 `Prerelease-alpha` 是否受保护
+- PAT 的 **Repository access** 必须包含 `MikeKen-Ken/ClashMetaForAndroid`（不是只选了别的仓库）
+- Workflow 里实际传入的是这个 PAT（不是还在用 `secrets.GITHUB_TOKEN`）
+- 仓库没有 tag protection 阻止删除 `Prerelease-alpha`
 
-如果你愿意，我可以直接给你一版“稳妥不踩坑”的 workflow 片段（包含 `permissions` + 只在主仓库上下文执行发布步骤）。
+如果你用的不是 PAT，而是默认 `GITHUB_TOKEN`，那要看仓库设置：
+
+- `Settings -> Actions -> General -> Workflow permissions`
+- 选 **Read and write permissions**
+
+---
+
+你可以直接这样改 action（强制用 PAT）：
+
+```yaml
+with:
+  tag_name: Prerelease-alpha
+  github_token: ${{ secrets.MY_RELEASE_PAT }}
+  delete_release: true
+```
+
+`MY_RELEASE_PAT` 就是你手动创建的那个 token。  
+如果你愿意，我可以继续帮你核对现在 workflow 里到底用的是 PAT 还是 `GITHUB_TOKEN`。

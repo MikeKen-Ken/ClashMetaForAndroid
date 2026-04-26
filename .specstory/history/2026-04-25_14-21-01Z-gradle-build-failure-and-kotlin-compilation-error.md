@@ -319,3 +319,112 @@ _**Agent (default)**_
 <summary>Tool use: **edit_file_v2**</summary>
 
 </details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: ls</summary>
+
+```bash
+ls
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+我先做一次最小编译验证（仅 `design` 模块同一任务），确认这次改动能消除该编译错误。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: .\gradlew.bat :design:compileAlphaReleaseKotlin --warning-mode all</summary>
+
+```bash
+.\gradlew.bat :design:compileAlphaReleaseKotlin --warning-mode all
+```
+
+```
+
+ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
+
+Please set the JAVA_HOME variable in your environment to match the
+location of your Java installation.
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\design\\src\\main\\java\\com\\github\\kr328\\clash\\design\\NetworkSettingsDesign.kt"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\design\\src\\main\\java\\com\\github\\kr328\\clash\\design\\NetworkSettingsDesign.kt"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+已修复你这次 CI 报错对应的代码问题，核心是避免使用 **局部变量引用** 作为 `KMutableProperty0`。
+
+我在 `design/src/main/java/com/github/kr328/clash/design/NetworkSettingsDesign.kt` 做了这些调整：
+
+- 新增 `AllowLanState` 包装类，把 `allowLan` 状态放到对象属性中
+- 将 `switch(value = ::allowLanEnabled)` 改为 `switch(value = allowLanState::enabled)`
+- 同步替换后续所有 `allowLanEnabled` 读取为 `allowLanState.enabled`
+
+这能规避 Kotlin/KAPT 在你当前构建链路下的限制：`Unsupported [References to variables aren't supported yet]`。
+
+---
+
+我本地尝试复现编译时遇到环境阻塞（不是代码错误）：
+
+- `JAVA_HOME is not set and no 'java' command could be found in your PATH.`
+
+按你的规则，这属于环境根因，必须先修复。请先在运行构建的环境（本地或 GitHub Actions）确保：
+
+- `JAVA_HOME` 已设置
+- `java -version` 可用
+- Android/Kotlin 项目建议使用 JDK 17（通常与当前 AGP/Kotlin 组合最稳）
+
+如果你愿意，我下一步可以直接帮你给 GitHub Actions 工作流补上/校正 JDK 配置（例如 `actions/setup-java` + `distribution: temurin` + `java-version: '17'`），让 CI 直接可用。
