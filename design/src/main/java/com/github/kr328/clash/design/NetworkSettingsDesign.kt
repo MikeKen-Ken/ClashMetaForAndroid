@@ -29,6 +29,7 @@ class NetworkSettingsDesign(
 
     sealed class Request {
         object StartAccessControlList : Request()
+        object StartLanDevices : Request()
         data class UpdateAllowLan(val enabled: Boolean) : Request()
         data class CopyLanAddress(val address: String) : Request()
     }
@@ -89,6 +90,16 @@ class NetworkSettingsDesign(
                 }
             }
 
+            val lanDevices = clickable(
+                title = R.string.lan_connected_devices,
+                summary = R.string.connections_devices,
+            ) {
+                enabled = allowLanState.enabled
+                clicked {
+                    requests.trySend(Request.StartLanDevices)
+                }
+            }
+
             if (allowLanState.enabled && lanAddresses.isNotEmpty()) {
                 lanAddress.summary = lanAddresses.first()
             } else if (allowLanState.enabled) {
@@ -101,7 +112,9 @@ class NetworkSettingsDesign(
                 if (!allowLanState.enabled) {
                     lanAddress.summary = context.getString(R.string.lan_address_disabled)
                     lanAddress.enabled = false
+                    lanDevices.enabled = false
                 } else {
+                    lanDevices.enabled = true
                     val firstAddress = lanAddresses.firstOrNull()
                     if (firstAddress == null) {
                         lanAddress.summary = context.getString(R.string.lan_address_unavailable)

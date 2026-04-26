@@ -150,7 +150,10 @@ data class ConfigurationOverride(
     @Serializable
     data class App(
         @SerialName("append-system-dns")
-        var appendSystemDns: Boolean? = null
+        var appendSystemDns: Boolean? = null,
+
+        @SerialName("lan-blocked-devices")
+        var lanBlockedDevices: List<String>? = null,
     )
 
     @Serializable

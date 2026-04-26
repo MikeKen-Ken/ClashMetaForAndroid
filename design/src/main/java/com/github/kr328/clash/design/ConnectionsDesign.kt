@@ -34,16 +34,30 @@ class ConnectionsDesign(
 ) : Design<ConnectionsDesign.Request>(context) {
     sealed class Request {
         data class CloseConnection(val connection: Connection) : Request()
+        data class DisableDevice(val sourceIp: String) : Request()
         object ClearClosedConnections : Request()
         object CloseAllConnections : Request()
         object CloseConnectionsExcludingDirect : Request()
+    }
+
+    private enum class TabMode {
+        Active,
+        Closed,
+        Devices,
     }
 
     private val binding = DesignConnectionsBinding
         .inflate(context.layoutInflater, context.root, false)
     private val adapter = ConnectionAdapter(
         context,
-        onClose = { conn -> requests.trySend(Request.CloseConnection(conn)) },
+        onClose = { conn ->
+            val sourceIp = conn.metadata?.sourceIP.orEmpty()
+            if (conn.id.startsWith("device:") && sourceIp.isNotEmpty()) {
+                requests.trySend(Request.DisableDevice(sourceIp))
+            } else {
+                requests.trySend(Request.CloseConnection(conn))
+            }
+        },
         onCopy = { _, displayText ->
             launch {
                 context.getSystemService<ClipboardManager>()?.setPrimaryClip(
@@ -63,17 +77,12 @@ class ConnectionsDesign(
 
     /** 当前会话的已关闭连接（带时间戳、按保留时长裁剪），不落盘，仅内存 */
     private val closedEntries = mutableListOf<ClosedEntry>()
-    var showActiveTab: Boolean = true
-        set(value) {
-            if (field == value) return
-            field = value
-            launch { refreshDisplayItems() }
-        }
+    private var tabMode: TabMode = TabMode.Active
     var mergeByDomain: Boolean = false
         set(value) {
             if (field == value) return
             field = value
-            if (!showActiveTab) launch { refreshDisplayItems() }
+            if (tabMode == TabMode.Closed) launch { refreshDisplayItems() }
         }
 
     val retentionHoursOptions: List<Int> get() = RETENTION_HOURS_OPTIONS
@@ -135,7 +144,7 @@ class ConnectionsDesign(
         previousTimeMs = nowMs
 
         withContext(Dispatchers.Main) {
-            if (showActiveTab) {
+            if (tabMode == TabMode.Active) {
                 adapter.patchDataSet(adapter::displayItems, displayItems, detectMove = true) { it.connection.id }
             } else {
                 refreshDisplayItems()
@@ -145,7 +154,11 @@ class ConnectionsDesign(
 
     private suspend fun refreshDisplayItems() {
         withContext(Dispatchers.Main) {
-            val items = if (showActiveTab) buildActiveDisplayItems() else buildClosedDisplayItems()
+            val items = when (tabMode) {
+                TabMode.Active -> buildActiveDisplayItems()
+                TabMode.Closed -> buildClosedDisplayItems()
+                TabMode.Devices -> buildDeviceDisplayItems()
+            }
             adapter.patchDataSet(adapter::displayItems, items, detectMove = true) { it.connection.id }
         }
     }
@@ -186,6 +199,33 @@ class ConnectionsDesign(
         }
     }
 
+    private fun buildDeviceDisplayItems(): List<ConnectionDisplayItem> {
+        val snapshot = lastSnapshot ?: return emptyList()
+        val groups = snapshot.connections
+            .filter { !it.metadata?.sourceIP.isNullOrEmpty() }
+            .groupBy { it.metadata?.sourceIP ?: "" }
+        return groups.entries
+            .sortedByDescending { it.value.size }
+            .map { (sourceIp, group) ->
+                val latest = group.maxByOrNull { it.start } ?: group.first()
+                val merged = latest.copy(
+                    id = "device:$sourceIp",
+                    upload = group.sumOf { it.upload },
+                    download = group.sumOf { it.download },
+                )
+                val trafficLine = context.getString(
+                    R.string.connections_device_conn_count,
+                    group.size,
+                )
+                ConnectionDisplayItem(
+                    connection = merged,
+                    trafficDisplayText = trafficLine,
+                    startTimeDisplayText = sourceIp,
+                    isClosed = false,
+                )
+            }
+    }
+
     private fun mergeConnectionsByHost(connections: List<Connection>): List<Connection> {
         val byHost = connections.groupBy { it.metadata?.host?.takeIf { h -> h.isNotEmpty() } ?: it.id }
         return byHost.values.map { group ->
@@ -199,16 +239,24 @@ class ConnectionsDesign(
 
     fun clearClosedConnections() {
         closedEntries.clear()
-        if (!showActiveTab) launch { refreshDisplayItems() }
+        if (tabMode == TabMode.Closed) launch { refreshDisplayItems() }
     }
 
     fun onTabActiveClick() {
-        showActiveTab = true
+        tabMode = TabMode.Active
+        launch { refreshDisplayItems() }
         updateTabAndToolbarVisibility()
     }
 
     fun onTabClosedClick() {
-        showActiveTab = false
+        tabMode = TabMode.Closed
+        launch { refreshDisplayItems() }
+        updateTabAndToolbarVisibility()
+    }
+
+    fun onTabDeviceClick() {
+        tabMode = TabMode.Devices
+        launch { refreshDisplayItems() }
         updateTabAndToolbarVisibility()
     }
 
@@ -237,10 +285,11 @@ class ConnectionsDesign(
     }
 
     private fun updateTabAndToolbarVisibility() {
-        binding.tabActiveButton?.isSelected = showActiveTab
-        binding.tabClosedButton?.isSelected = !showActiveTab
-        binding.closedToolbar?.visibility = if (showActiveTab) View.GONE else View.VISIBLE
-        binding.activeToolbar?.visibility = if (showActiveTab) View.VISIBLE else View.GONE
+        binding.tabActiveButton?.isSelected = tabMode == TabMode.Active
+        binding.tabClosedButton?.isSelected = tabMode == TabMode.Closed
+        binding.tabDeviceButton?.isSelected = tabMode == TabMode.Devices
+        binding.closedToolbar?.visibility = if (tabMode == TabMode.Closed) View.VISIBLE else View.GONE
+        binding.activeToolbar?.visibility = if (tabMode == TabMode.Closed) View.GONE else View.VISIBLE
     }
 
     init {

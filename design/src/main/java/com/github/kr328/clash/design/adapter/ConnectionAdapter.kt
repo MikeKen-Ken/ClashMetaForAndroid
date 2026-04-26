@@ -37,7 +37,11 @@ class ConnectionAdapter(
         holder.binding.trafficDisplayText = item.trafficDisplayText
         holder.binding.trafficDisplayView.visibility = View.VISIBLE
         holder.binding.startTimeDisplayText = item.startTimeDisplayText
-        val ruleText = formatRuleDisplay(conn)
+        val ruleText = if (conn.id.startsWith("device:")) {
+            context.getString(com.github.kr328.clash.design.R.string.connections_disable_device)
+        } else {
+            formatRuleDisplay(conn)
+        }
         holder.binding.ruleDisplayText = ruleText
         holder.binding.ruleDisplayView.visibility = if (ruleText.isNotEmpty()) View.VISIBLE else View.GONE
         val processView = holder.binding.processView

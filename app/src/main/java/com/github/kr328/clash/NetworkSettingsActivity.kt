@@ -50,6 +50,8 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
                     when (it) {
                         NetworkSettingsDesign.Request.StartAccessControlList ->
                             startActivity(AccessControlActivity::class.intent)
+                        NetworkSettingsDesign.Request.StartLanDevices ->
+                            startActivity(ConnectionsActivity::class.intent)
                         is NetworkSettingsDesign.Request.UpdateAllowLan ->
                             persistOverride.allowLan = it.enabled
                         is NetworkSettingsDesign.Request.CopyLanAddress ->

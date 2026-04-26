@@ -78,6 +78,15 @@
                     android:layout_marginStart="8dp"
                     android:text="@string/connections_closed"
                     android:onClick="@{() -> self.onTabClosedClick()}" />
+
+                <Button
+                    android:id="@+id/tab_device_button"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/connections_devices"
+                    android:onClick="@{() -> self.onTabDeviceClick()}" />
             </LinearLayout>
 
             <LinearLayout
