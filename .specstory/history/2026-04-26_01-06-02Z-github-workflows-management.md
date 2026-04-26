@@ -2199,3 +2199,217 @@ _**Agent (default)**_
 
 如果你愿意，我可以下一步帮你区分并确认：  
 你说的“安卓端”到底是 **CI 构建阶段** 还是 **App 内更新阶段**，然后给你对应最小改动方案。
+
+---
+
+_**User**_
+
+Run git submodule update --init --recursive --remote --force
+Submodule '.cursor' (https://github.com/MikeKen-Ken/cursor-rule.git) registered for path '.cursor'
+Submodule 'clash-verge-rev' (https://github.com/MikeKen-Ken/clash-verge-rev.git) registered for path 'clash-verge-rev'
+Submodule 'clash-foss' (https://github.com/MikeKen-Ken/mihomo) registered for path 'core/src/foss/golang/clash'
+Skipping submodule '.cursor'
+Cloning into '/home/runner/work/ClashMetaForAndroid/ClashMetaForAndroid/clash-verge-rev'...
+fatal: could not read Username for 'https://github.com': No such device or address
+fatal: clone of 'https://github.com/MikeKen-Ken/clash-verge-rev.git' into submodule path '/home/runner/work/ClashMetaForAndroid/ClashMetaForAndroid/clash-verge-rev' failed
+Failed to clone 'clash-verge-rev'. Retry scheduled
+Cloning into '/home/runner/work/ClashMetaForAndroid/ClashMetaForAndroid/core/src/foss/golang/clash'...
+fatal: could not read Username for 'https://github.com': No such device or address
+fatal: clone of 'https://github.com/MikeKen-Ken/mihomo' into submodule path '/home/runner/work/ClashMetaForAndroid/ClashMetaForAndroid/core/src/foss/golang/clash' failed
+Failed to clone 'core/src/foss/golang/clash'. Retry scheduled
+Cloning into '/home/runner/work/ClashMetaForAndroid/ClashMetaForAndroid/clash-verge-rev'...
+fatal: could not read Username for 'https://github.com': No such device or address
+fatal: clone of 'https://github.com/MikeKen-Ken/clash-verge-rev.git' into submodule path '/home/runner/work/ClashMetaForAndroid/ClashMetaForAndroid/clash-verge-rev' failed
+Failed to clone 'clash-verge-rev' a second time, aborting
+Error: Process completed with exit code 1.
+
+安卓在 github build 报这个错误
+
+---
+
+_**Agent (default)**_
+
+收到，这个报错是标准的“CI 在拉取私有 submodule 时没有凭证”。我先定位安卓 workflow 里 `git submodule update` 的步骤，然后直接改成带 token 的拉取方式。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.yml",
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid",
+  "pattern": "git submodule update --init --recursive --remote --force|submodule"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid",
+  "pattern": "git submodule update --init --recursive --remote --force|submodule",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **2** results in **1** directory</summary>
+
+Directory: **c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\.github\workflows** (2 files)
+
+| File |
+|------|
+| `../.github\workflows\build-pre-release.yaml` |
+| `../.github/workflows/build-pre-release.yaml` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\.github\\workflows",
+  "pattern": "submodule|actions/checkout"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\.github\\workflows",
+  "pattern": "submodule|actions/checkout",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": ".github\\workflows\\build-pre-release.yaml"
+    },
+    {
+      "matchCount": 3,
+      "uri": ".github/workflows/build-pre-release.yaml"
+    }
+  ],
+  "totalFiles": 2,
+  "totalMatches": 6
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\.github\workflows\build-pre-release.yaml</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+我会把这个 workflow 改成“先注入 GitHub token 到 git URL，再执行 submodule update”，这样私有子模块（`clash-verge-rev` 和 `mihomo`）都能被拉取。改完我给你可复用的最短配置步骤。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\.github\workflows\build-pre-release.yaml</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\.github\\workflows\\build-pre-release.yaml"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\.github\\workflows\\build-pre-release.yaml"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>

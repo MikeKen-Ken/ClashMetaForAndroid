@@ -16,7 +16,17 @@ jobs:
           fetch-tags: true
       
       - name: Checkout submodules
-        run: git submodule update --init --recursive --remote --force
+        env:
+          # Cross-repo private submodules require a PAT/fine-grained token.
+          SUBMODULE_TOKEN: ${{ secrets.MIHOMO_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -z "$SUBMODULE_TOKEN" ]; then
+            echo "Missing token for private submodules. Set MIHOMO_REPO_TOKEN."
+            exit 1
+          fi
+          git config --global url."https://x-access-token:${SUBMODULE_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git submodule sync --recursive
+          git submodule update --init --recursive --remote --force
 
       - name: Setup Java
         uses: actions/setup-java@v4
