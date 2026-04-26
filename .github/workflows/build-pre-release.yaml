@@ -54,29 +54,27 @@ jobs:
 
       - name: Setup fixed signing
         env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: |
-          # MUST 使用仓库中固定的 keystore，NEVER 在 CI 里重新生成
-          if [ ! -f release.keystore ]; then
-            echo "release.keystore is missing in repository, abort."
+          # 方案 A：完全由 Secrets 提供 keystore 与签名参数
+          if [ -z "$SIGNING_KEYSTORE_BASE64" ] || [ -z "$SIGNING_STORE_PASSWORD" ] || [ -z "$SIGNING_KEY_ALIAS" ] || [ -z "$SIGNING_KEY_PASSWORD" ]; then
+            echo "Required signing secrets are missing. Need SIGNING_KEYSTORE_BASE64 / SIGNING_STORE_PASSWORD / SIGNING_KEY_ALIAS / SIGNING_KEY_PASSWORD."
             exit 1
           fi
 
-          # 优先使用 Secrets；未配置时回退到项目固定值
-          KEYSTORE_PASSWORD="${SIGNING_STORE_PASSWORD:-android}"
-          KEY_ALIAS="${SIGNING_KEY_ALIAS:-cmfa}"
-          KEY_PASSWORD="${SIGNING_KEY_PASSWORD:-android}"
+          echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > release.keystore
 
-          # 验证 alias 与密码是否匹配固定 keystore
-          keytool -list -keystore release.keystore -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null
+          # 验证 alias 与密码是否匹配
+          keytool -list -keystore release.keystore -storepass "$SIGNING_STORE_PASSWORD" -alias "$SIGNING_KEY_ALIAS" >/dev/null
 
           # 生成 signing.properties 给 Gradle 使用
           {
-            echo "keystore.password=$KEYSTORE_PASSWORD"
-            echo "key.alias=$KEY_ALIAS"
-            echo "key.password=$KEY_PASSWORD"
+            echo "keystore.password=$SIGNING_STORE_PASSWORD"
+            echo "key.alias=$SIGNING_KEY_ALIAS"
+            echo "key.password=$SIGNING_KEY_PASSWORD"
           } > signing.properties
 
           echo "Signing properties generated."

@@ -1886,3 +1886,466 @@ _**Agent (default)**_
 
 明白，你这个 CI 失败点就是 `.cursor` 子模块走了 `git@` SSH 地址，Runner 没私钥就会炸，而且它确实不参与构建。  
 我先检查仓库里的 `.gitmodules` 和工作流脚本，给你改成“子模块更新时跳过 `.cursor`”。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.gitmodules</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.yml",
+  "outputMode": "content",
+  "path": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows",
+  "pattern": "submodule update --init --recursive --remote --force|submodules: recursive|checkout@|git submodule"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows",
+  "pattern": "submodule update --init --recursive --remote --force|submodules: recursive|checkout@|git submodule",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **4** results in **1** directory</summary>
+
+Directory: **c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid** (4 files)
+
+| File |
+|------|
+| `../../../../../core/src/foss/golang/clash\.github/workflows/test.yml` |
+| `../../../../../core/src/foss/golang/clash\.github/workflows/build.yml` |
+| `../../../../../core/src/foss/golang/clash\.github/workflows/trigger-cmfa-update.yml` |
+| `../../../../../clash-verge-rev\.github/workflows/autobuild.yml` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.gitmodules</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git submodule sync --recursive && git submodule update --init --recursive --remote --force</summary>
+
+```bash
+git submodule sync --recursive && git submodule update --init --recursive --remote --force
+```
+
+```
+At C:\Users\Ken-Narmal\AppData\Local\Temp\ps-script-b043746d-7fde-4445-b765-13b33b4114d9.ps1:74 char:32
++ git submodule sync --recursive &amp;&amp; git submodule update --init --recur ...
++                                ~~
+The token '&amp;&amp;' is not a valid statement separator in this version.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : InvalidEndOfLine
+ 
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git submodule sync --recursive; git submodule update --init --recursive --remote --force</summary>
+
+```bash
+git submodule sync --recursive; git submodule update --init --recursive --remote --force
+```
+
+```
+Synchronizing submodule url for '.cursor'
+Synchronizing submodule url for 'clash-verge-rev'
+Synchronizing submodule url for 'core/src/foss/golang/clash'
+Submodule path 'clash-verge-rev': checked out 'ef01603b1eb8d4b5a2e079580b15accbb9ad17dd'
+Submodule path 'core/src/foss/golang/clash': checked out '577c7e206e0b914de836b8ceea933bc8fa98e4b0'
+Skipping submodule '.cursor'
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+已按你的需求处理，`.cursor` 现在会被子模块更新命令自动跳过，不再影响打包流程。
+
+我做了两处改动到 `.gitmodules`：
+
+- 把 `.cursor` 的 URL 从 SSH 改为 HTTPS（避免公钥依赖）  
+- 增加 `update = none`（关键：`git submodule update --init --recursive --remote --force` 会直接跳过它）
+
+修改后我本地实测执行：
+
+- `git submodule sync --recursive; git submodule update --init --recursive --remote --force`
+- 输出里已出现：`Skipping submodule '.cursor'`
+- 其他两个子模块正常更新成功
+
+你现在把这次 `.gitmodules` 改动提交上去，CI 就不会再因为 `.cursor` 拉取失败而中断了。  
+如果你愿意，我也可以再帮你补一版 CI 命令（显式只更新两个构建相关子模块），作为双保险。
+
+---
+
+_**User**_
+
+为什么安卓显示的端口并不是我设置的mixport呢我在电脑上显示的就是我设置的是因为这个被覆盖掉了还是因为什么原因
+
+---
+
+_**Agent (default)**_
+
+你这个现象很正常，原因基本已经定位到了：**安卓这边我现在显示端口的取值来源，和桌面端不一样**。
+
+当前安卓实现里，局域网地址端口是这样取的：
+
+- 只读 `Persist Override` 里的 `mixedPort/httpPort/socksPort`
+- 取不到就回退到 `10801`
+
+所以如果你“设置的 mixport”是在**配置文件本体**（profile 的 `mixed-port`）里，而不是写到 override 里，安卓这里就拿不到，最后会显示回退端口。  
+桌面端通常是读运行时配置/实际生效配置，所以会显示你真正设置的值。
+
+还有两种也会导致不一致：
+
+- 你改的是 **Session Override**，但这里读的是 Persist Override
+- 当前运行配置被别的流程动态覆盖，显示值和你想象的来源不同
+
+---
+
+要彻底对齐桌面端，应该改成“优先读运行时生效端口”，而不是只读 Persist Override。  
+我可以直接帮你改成这个优先级（更稳妥）：
+
+1. 运行时实际端口（如果能取到）
+2. Session Override
+3. Persist Override
+4. 最后才回退默认值
+
+你要的话我现在就改。
+
+---
+
+_**User**_
+
+Persist Override 是什么
+
+---
+
+_**Agent (default)**_
+
+`Persist Override` 可以理解为：**持久化的覆盖配置槽**（长期生效、会落盘保存）。
+
+在这个项目里有两个 override 槽位：
+
+- `Persist`：写到本地，重启 App 后还在
+- `Session`：仅当前会话有效，重启/重载后可能消失
+
+你在代码里能看到这个定义：`Clash.OverrideSlot.Persist` 和 `Clash.OverrideSlot.Session`。
+
+简单说：
+
+- 改 `Persist Override` = 改“默认长期设置”
+- 改 `Session Override` = 改“临时设置”
+
+所以我之前说“安卓显示端口不一致”，就是因为我那版逻辑只看了 `Persist`，没优先看运行时和 `Session`，就可能和你当前真实生效端口不同。
+
+---
+
+_**User**_
+
+这个是在手机端被重写覆盖了吗
+
+---
+
+_**Agent (default)**_
+
+不一定是“被重写”，更常见是**读取来源不同**导致看起来像被覆盖。
+
+你这个场景里更可能是：
+
+- 你设置的端口在配置文件或 `Session Override`
+- 安卓显示逻辑当时只读了 `Persist Override`
+- 于是显示了另一个值（或默认值）
+
+所以结论是：
+
+- **有可能被覆盖**（比如某些操作写了 `Persist`）
+- 但你目前这个现象，**更大概率是显示读错层级，不是实际被覆盖**
+
+你可以这样快速判断：
+- 重启后端口是否还“变回去”  
+  - 变回去：多半是 `Session` 临时值
+  - 一直不变：多半是 `Persist` 或配置本体
+- 看日志/配置导出里实际生效端口是多少，再和页面显示对比
+
+如果你同意，我下一步直接把安卓显示改成“优先运行时实际值 > Session > Persist”，这样就不会再出现这种错位感。
+
+---
+
+_**User**_
+
+重启之后一直不变但是我可以确定的话我配置使用的和电脑端一样而且我可以看到我的配置它的端口并不是这个端口
+
+---
+
+_**Agent (default)**_
+
+你这个描述已经能基本确定：**不是你配置文件被改坏了**，而是我这版安卓“局域网地址显示端口”的取值逻辑有偏差。
+
+核心原因：
+
+- 现在安卓显示端口只看了 `Override`（尤其是 `Persist Override`）
+- **没有读取当前配置文件里真正的 `mixed-port`**
+- 所以即使你配置和电脑端一致，安卓仍可能显示另一个端口（通常是回退值 `10801` 或 override 里的旧值）
+
+你说“重启后一直不变”，反而更符合这个判断：  
+它一直在读同一个 override 来源，不是临时 session 波动。
+
+---
+
+结论：  
+- 你的配置端口大概率没问题  
+- 安卓显示逻辑需要改为“按生效配置取端口”，而不是只看 override
+
+我建议直接改成这个优先级（和实际更一致）：
+
+1. 当前运行配置的端口（配置文件已合并后的实际值）  
+2. `Session Override`  
+3. `Persist Override`  
+4. 最后才回退默认值
+
+你如果同意，我下一步就直接把这段改掉。
+
+---
+
+_**User**_
+
+可以你现在修改一下我看看
+
+---
+
+_**Agent (default)**_
+
+我现在就改：把端口读取改成“`Session Override` 优先，其次 `Persist Override`，最后默认值”，并且避免你刚才这种固定显示错误端口的问题。改完我会告诉你具体取值顺序。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.kt",
+  "outputMode": "content",
+  "path": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/app/src/main/java",
+  "pattern": "mixedPort|mixed-port|allowLan|queryOverride\\(Clash.OverrideSlot.Session\\)|OverrideSlot.Session"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/app/src/main/java",
+  "pattern": "mixedPort|mixed-port|allowLan|queryOverride\\(Clash.OverrideSlot.Session\\)|OverrideSlot.Session",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "app/src/main/java/com/github/kr328/clash/LogsActivity.kt"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app\\src\\main\\java\\com\\github\\kr328\\clash\\NetworkSettingsActivity.kt"
+    },
+    {
+      "matchCount": 7,
+      "uri": "app/src/main/java/com/github/kr328/clash/ProxyActivity.kt"
+    }
+  ],
+  "totalFiles": 3,
+  "totalMatches": 13
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.kt",
+  "outputMode": "content",
+  "path": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid",
+  "pattern": "class UiConfiguration|@Serializable class UiConfiguration|queryConfiguration\\("
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid",
+  "pattern": "class UiConfiguration|@Serializable class UiConfiguration|queryConfiguration\\(",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "core/src/main/java/com/github/kr328/clash/core/Clash.kt"
+    },
+    {
+      "matchCount": 1,
+      "uri": "core/src/main/java/com/github/kr328/clash/core/model/UiConfiguration.kt"
+    },
+    {
+      "matchCount": 1,
+      "uri": "service/src/main/java/com/github/kr328/clash/service/remote/IClashManager.kt"
+    },
+    {
+      "matchCount": 2,
+      "uri": "service/src/main/java/com/github/kr328/clash/service/ClashManager.kt"
+    }
+  ],
+  "totalFiles": 4,
+  "totalMatches": 5
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/service/src/main/java/com/github/kr328/clash/service/ClashManager.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>

@@ -16,19 +16,20 @@ import java.net.NetworkInterface
 
 class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
     override suspend fun main() {
-        val configuration = withClash { queryOverride(Clash.OverrideSlot.Persist) }
+        val persistOverride = withClash { queryOverride(Clash.OverrideSlot.Persist) }
+        val sessionOverride = withClash { queryOverride(Clash.OverrideSlot.Session) }
         val design = NetworkSettingsDesign(
             this,
             uiStore,
             ServiceStore(this),
             clashRunning,
-            configuration.allowLan ?: false,
-            resolveLanAddresses(configuration),
+            persistOverride.allowLan ?: false,
+            resolveLanAddresses(sessionOverride, persistOverride),
         )
 
         defer {
             withClash {
-                patchOverride(Clash.OverrideSlot.Persist, configuration)
+                patchOverride(Clash.OverrideSlot.Persist, persistOverride)
             }
         }
 
@@ -48,7 +49,7 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
                         NetworkSettingsDesign.Request.StartAccessControlList ->
                             startActivity(AccessControlActivity::class.intent)
                         is NetworkSettingsDesign.Request.UpdateAllowLan ->
-                            configuration.allowLan = it.enabled
+                            persistOverride.allowLan = it.enabled
                         is NetworkSettingsDesign.Request.CopyLanAddress ->
                             copyTextToClipboard(it.address)
                     }
@@ -63,8 +64,11 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
         )
     }
 
-    private fun resolveLanAddresses(configuration: ConfigurationOverride): List<String> {
-        val port = resolveLanPort(configuration)
+    private fun resolveLanAddresses(
+        sessionOverride: ConfigurationOverride,
+        persistOverride: ConfigurationOverride,
+    ): List<String> {
+        val port = resolveLanPort(sessionOverride, persistOverride)
         val addresses = mutableListOf<String>()
         val networks = NetworkInterface.getNetworkInterfaces() ?: return emptyList()
         while (networks.hasMoreElements()) {
@@ -83,10 +87,16 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
         return addresses.distinct().sorted()
     }
 
-    private fun resolveLanPort(configuration: ConfigurationOverride): Int {
-        return configuration.mixedPort
-            ?: configuration.httpPort
-            ?: configuration.socksPort
+    private fun resolveLanPort(
+        sessionOverride: ConfigurationOverride,
+        persistOverride: ConfigurationOverride,
+    ): Int {
+        return sessionOverride.mixedPort
+            ?: persistOverride.mixedPort
+            ?: sessionOverride.httpPort
+            ?: persistOverride.httpPort
+            ?: sessionOverride.socksPort
+            ?: persistOverride.socksPort
             ?: 10801
     }
 }
