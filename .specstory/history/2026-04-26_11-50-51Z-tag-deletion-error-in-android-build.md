@@ -255,3 +255,64 @@ _**Agent (default)**_
 通常只是“当前没有对应 release 可删”的提示，不是致命问题；真正致命的是后面的权限错误。
 
 如果你要，我可以再帮你把这条“先删再打 tag”的流程改成更稳的幂等发布方式（减少因为旧 tag 状态导致的不确定失败）。
+
+---
+
+_**User**_
+
+Run mikepenz/release-changelog-builder-action@v4
+📘 Reading input values
+🔖 Resolve tags
+🚀 Load pull requests
+  ℹ️ Comparing MikeKen-Ken/ClashMetaForAndroid - 'v2.11.26...v2.11.27'
+  ℹ️ Found 5 commits from the GitHub API for MikeKen-Ken/ClashMetaForAndroid
+  ℹ️ Fetching PRs between dates 2026-04-08T00:59:33.000Z to 2026-04-20T01:19:30.000Z for MikeKen-Ken/ClashMetaForAndroid
+  ℹ️ Retrieved 5 release commits for MikeKen-Ken/ClashMetaForAndroid
+  Error: Resource not accessible by integration - https://docs.github.com/rest/pulls/pulls#list-pull-requests
+  Error: 🔥 Failed to generate changelog due to {"name":"HttpError","status":403,"response":{"url":"https://api.github.com/repos/MikeKen-Ken/ClashMetaForAndroid/pulls?state=closed&sort=updated&per_page=100&direction=desc","status":403,"headers":{"access-control-allow-origin":"*","access-control-expose-headers":"ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset","content-encoding":"gzip","content-security-policy":"default-src 'none'","content-type":"application/json; charset=utf-8","date":"Sun, 26 Apr 2026 12:05:08 GMT","referrer-policy":"origin-when-cross-origin, strict-origin-when-cross-origin","server":"github.com","strict-transport-security":"max-age=31536000; includeSubdomains; preload","transfer-encoding":"chunked","vary":"Accept-Encoding, Accept, X-Requested-With","x-accept.
+
+
+---
+
+_**Agent (default)**_
+
+这个新报错我已经定位到：`release-changelog-builder` 会调用 `List pull requests` API，你当前 token 权限里缺少 `pull-requests: read`，所以 403。  
+我会直接在同一个 workflow 的 `permissions` 补上 `pull-requests: read`（并保留你刚加的 `contents: write`）。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows/build-pre-release.yaml</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+你这次 403 的根因是对的：  
+`mikepenz/release-changelog-builder-action` 需要读 PR 列表（`/pulls`），但 workflow token 没有对应权限。
+
+我已经改好了 `/.github/workflows/build-pre-release.yaml`：
+
+- `permissions.contents: write`（之前为删 tag/release加的）
+- `permissions.pull-requests: read`（本次新增，给 changelog action 读 PR）
+
+现在权限段应是：
+
+```yaml
+permissions:
+  contents: write
+  pull-requests: read
+```
+
+如果还报 403，再检查仓库设置里：
+- `Settings -> Actions -> General -> Workflow permissions` 必须是 **Read and write permissions**
+
+另外你这个步骤本身是非关键路径（只是生成 changelog），如果你希望“即使 changelog 失败也不影响发布”，我也可以顺手把该步骤改成 `continue-on-error: true`。

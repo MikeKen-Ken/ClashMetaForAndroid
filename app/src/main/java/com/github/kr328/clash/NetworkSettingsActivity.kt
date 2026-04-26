@@ -13,18 +13,20 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.selects.select
 import java.net.Inet4Address
 import java.net.NetworkInterface
+import java.io.File
 
 class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
     override suspend fun main() {
+        val serviceStore = ServiceStore(this)
         val persistOverride = withClash { queryOverride(Clash.OverrideSlot.Persist) }
         val sessionOverride = withClash { queryOverride(Clash.OverrideSlot.Session) }
         val design = NetworkSettingsDesign(
             this,
             uiStore,
-            ServiceStore(this),
+            serviceStore,
             clashRunning,
             persistOverride.allowLan ?: false,
-            resolveLanAddresses(sessionOverride, persistOverride),
+            resolveLanAddresses(serviceStore, sessionOverride, persistOverride),
         )
 
         defer {
@@ -65,10 +67,11 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
     }
 
     private fun resolveLanAddresses(
+        serviceStore: ServiceStore,
         sessionOverride: ConfigurationOverride,
         persistOverride: ConfigurationOverride,
     ): List<String> {
-        val port = resolveLanPort(sessionOverride, persistOverride)
+        val port = resolveLanPort(serviceStore, sessionOverride, persistOverride)
         val addresses = mutableListOf<String>()
         val networks = NetworkInterface.getNetworkInterfaces() ?: return emptyList()
         while (networks.hasMoreElements()) {
@@ -88,15 +91,31 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
     }
 
     private fun resolveLanPort(
+        serviceStore: ServiceStore,
         sessionOverride: ConfigurationOverride,
         persistOverride: ConfigurationOverride,
     ): Int {
+        val profileMixedPort = resolveProfileMixedPort(serviceStore)
         return sessionOverride.mixedPort
             ?: persistOverride.mixedPort
             ?: sessionOverride.httpPort
             ?: persistOverride.httpPort
             ?: sessionOverride.socksPort
             ?: persistOverride.socksPort
+            ?: profileMixedPort
             ?: 10801
+    }
+
+    private fun resolveProfileMixedPort(serviceStore: ServiceStore): Int? {
+        val activeProfile = serviceStore.activeProfile ?: return null
+        val config = File(filesDir, "imported/$activeProfile/config.yaml")
+        if (!config.exists()) return null
+
+        val mixedPortRegex = Regex("""^\s*mixed-port\s*:\s*(\d+)\s*(?:#.*)?$""")
+        return config.useLines { lines ->
+            lines.firstNotNullOfOrNull { line ->
+                mixedPortRegex.find(line)?.groupValues?.getOrNull(1)?.toIntOrNull()
+            }
+        }
     }
 }
