@@ -37,7 +37,9 @@ class ConnectionAdapter(
         holder.binding.trafficDisplayText = item.trafficDisplayText
         holder.binding.trafficDisplayView.visibility = View.VISIBLE
         holder.binding.startTimeDisplayText = item.startTimeDisplayText
-        val ruleText = if (conn.id.startsWith("device:")) {
+        val ruleText = if (conn.id.startsWith("blocked-device:")) {
+            context.getString(com.github.kr328.clash.design.R.string.connections_enable_device)
+        } else if (conn.id.startsWith("device:")) {
             context.getString(com.github.kr328.clash.design.R.string.connections_disable_device)
         } else {
             formatRuleDisplay(conn)

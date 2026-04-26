@@ -58,6 +58,15 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
                             }
                             launch { refreshConnections(design) }
                         }
+                        is ConnectionsDesign.Request.EnableDevice -> {
+                            blockedIps.remove(it.sourceIp)
+                            withClash {
+                                val persist = queryOverride(com.github.kr328.clash.core.Clash.OverrideSlot.Persist)
+                                persist.app.lanBlockedDevices = blockedIps.toList()
+                                patchOverride(com.github.kr328.clash.core.Clash.OverrideSlot.Persist, persist)
+                            }
+                            launch { refreshConnections(design) }
+                        }
                         ConnectionsDesign.Request.ClearClosedConnections -> {
                             design.clearClosedConnections()
                         }

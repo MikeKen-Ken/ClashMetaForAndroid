@@ -35,6 +35,7 @@ class ConnectionsDesign(
     sealed class Request {
         data class CloseConnection(val connection: Connection) : Request()
         data class DisableDevice(val sourceIp: String) : Request()
+        data class EnableDevice(val sourceIp: String) : Request()
         object ClearClosedConnections : Request()
         object CloseAllConnections : Request()
         object CloseConnectionsExcludingDirect : Request()
@@ -52,7 +53,9 @@ class ConnectionsDesign(
         context,
         onClose = { conn ->
             val sourceIp = conn.metadata?.sourceIP.orEmpty()
-            if (conn.id.startsWith("device:") && sourceIp.isNotEmpty()) {
+            if (conn.id.startsWith("blocked-device:") && sourceIp.isNotEmpty()) {
+                requests.trySend(Request.EnableDevice(sourceIp))
+            } else if (conn.id.startsWith("device:") && sourceIp.isNotEmpty()) {
                 requests.trySend(Request.DisableDevice(sourceIp))
             } else {
                 requests.trySend(Request.CloseConnection(conn))
@@ -94,7 +97,7 @@ class ConnectionsDesign(
         set(value) {
             if (value !in RETENTION_HOURS_OPTIONS) return
             uiStore.connectionsClosedRetentionHours = value
-            if (!showActiveTab) launch { refreshDisplayItems() }
+            if (tabMode == TabMode.Closed) launch { refreshDisplayItems() }
         }
 
     val activeCount: Int get() = lastSnapshot?.connections?.size ?: 0
@@ -204,7 +207,7 @@ class ConnectionsDesign(
         val groups = snapshot.connections
             .filter { !it.metadata?.sourceIP.isNullOrEmpty() }
             .groupBy { it.metadata?.sourceIP ?: "" }
-        return groups.entries
+        val activeItems = groups.entries
             .sortedByDescending { it.value.size }
             .map { (sourceIp, group) ->
                 val latest = group.maxByOrNull { it.start } ?: group.first()
@@ -224,6 +227,22 @@ class ConnectionsDesign(
                     isClosed = false,
                 )
             }
+        val blockedItems = uiStore.lanBlockedSourceIps
+            .filter { blockedIp -> blockedIp.isNotBlank() && blockedIp !in groups.keys }
+            .sorted()
+            .map { blockedIp ->
+                val blockedConn = Connection(
+                    id = "blocked-device:$blockedIp",
+                    metadata = com.github.kr328.clash.core.model.ConnectionMetadata(sourceIP = blockedIp),
+                )
+                ConnectionDisplayItem(
+                    connection = blockedConn,
+                    trafficDisplayText = context.getString(R.string.connections_device_blocked),
+                    startTimeDisplayText = blockedIp,
+                    isClosed = false,
+                )
+            }
+        return activeItems + blockedItems
     }
 
     private fun mergeConnectionsByHost(connections: List<Connection>): List<Connection> {
