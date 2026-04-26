@@ -510,8 +510,18 @@ The token '&amp;&amp;' is not a valid statement separator in this version.
 _**Agent (default)**_
 
 <tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
-<details><summary>Tool use: **run_terminal_command_v2**</summary>
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git ls-files "release.keystore"; git status --short</summary>
 
+```bash
+git ls-files "release.keystore"; git status --short
+```
+
+```
+release.keystore
+ M .specstory/statistics.json
+?? .specstory/history/2026-04-25_14-38-59Z-android-app-signature-consistency.md
+
+```
 </details>
 </tool-use>
 
@@ -519,3 +529,526 @@ _**Agent (default)**_
 <summary>Tool use: **run_terminal_command_v2**</summary>
 
 </details></tool-use>
+
+_**Agent (default)**_
+
+我准备改两处工作流：  
+1) 删掉 `pre-release` 里“缓存/自动生成 keystore”的逻辑；  
+2) `release` 和 `pre-release` 都统一改成“使用仓库内 `release.keystore` + secrets 写入 `signing.properties` + 缺失即失败”。  
+这样就不会再悄悄换签名。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows/build-pre-release.yaml</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows/build-release.yaml</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git diff -- .github/workflows/build-release.yaml .github/workflows/build-pre-release.yaml</summary>
+
+```bash
+git diff -- .github/workflows/build-release.yaml .github/workflows/build-pre-release.yaml
+```
+
+```
+diff --git a/.github/workflows/build-pre-release.yaml b/.github/workflows/build-pre-release.yaml
+index 06a77ff..1641d2b 100644
+--- a/.github/workflows/build-pre-release.yaml
++++ b/.github/workflows/build-pre-release.yaml
+@@ -52,62 +52,35 @@ jobs:
+         run: |
+           cd core/src/foss/golang &amp;&amp; go mod tidy
+ 
+-      - name: Cache signing keystore
+-        id: cache-keystore
+-        uses: actions/cache@v4
+-        with:
+-          path: release.keystore
+-          key: signing-keystore-final-v1
+-
+       - name: Setup fixed signing
++        env:
++          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
++          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
++          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+         run: |
+-          # 固定的签名参数（不要再更改这些值！）
+-          KEYSTORE_PASSWORD="android"
+-          KEY_ALIAS="cmfa"
+-          KEY_PASSWORD="android"
+-          
+-          # 检查缓存的 keystore 是否可用
+-          NEED_NEW_KEYSTORE=false
++          # MUST 使用仓库中固定的 keystore，NEVER 在 CI 里重新生成
+           if [ ! -f release.keystore ]; then
+-            echo "No cached keystore found"
+-            NEED_NEW_KEYSTORE=true
+-          else
+-            echo "Found cached keystore, verifying..."
+-            if ! keytool -list -keystore release.keystore -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" 2&gt;/dev/null; then
+-              echo "Cached keystore is invalid or has wrong password, will regenerate"
+-              rm -f release.keystore
+-              NEED_NEW_KEYSTORE=true
+-            else
+-              echo "Cached keystore is valid"
+-            fi
++            echo "release.keystore is missing in repository, abort."
++            exit 1
+           fi
+-          
+-          # 只在需要时生成新的 keystore
+-          if [ "$NEED_NEW_KEYSTORE" = "true" ]; then
+-            echo "Generating new keystore..."
+-            keytool -genkeypair \
+-              -keystore release.keystore \
+-              -alias "$KEY_ALIAS" \
+-              -keyalg RSA \
+-              -keysize 2048 \
+-              -validity 36500 \
+-              -storepass "$KEYSTORE_PASSWORD" \
+-              -keypass "$KEY_PASSWORD" \
+-              -dname "CN=CMFA, OU=CMFA, O=MetaCubeX, L=Unknown, ST=Unknown, C=US"
+-            echo "New keystore generated and will be cached"
++
++          # 必填 secrets 校验，避免写入空值导致签名异常
++          if [ -z "$SIGNING_STORE_PASSWORD" ] || [ -z "$SIGNING_KEY_ALIAS" ] || [ -z "$SIGNING_KEY_PASSWORD" ]; then
++            echo "Signing secrets are missing, abort."
++            exit 1
+           fi
+-          
+-          # 最终验证
+-          echo "Final verification..."
+-          keytool -list -keystore release.keystore -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS"
+-          
+-          # 创建 signing.properties
+-          echo "keystore.password=$KEYSTORE_PASSWORD" &gt; signing.properties
+-          echo "key.alias=$KEY_ALIAS" &gt;&gt; signing.properties
+-          echo "key.password=$KEY_PASSWORD" &gt;&gt; signing.properties
+-          
+-          echo "=== Signing configuration ==="
+-          cat signing.properties
++
++          # 验证 alias 与密码是否匹配固定 keystore
++          keytool -list -keystore release.keystore -storepass "$SIGNING_STORE_PASSWORD" -alias "$SIGNING_KEY_ALIAS" &gt;/dev/null
++
++          # 生成 signing.properties 给 Gradle 使用
++          {
++            echo "keystore.password=$SIGNING_STORE_PASSWORD"
++            echo "key.alias=$SIGNING_KEY_ALIAS"
++            echo "key.password=$SIGNING_KEY_PASSWORD"
++          } &gt; signing.properties
++
++          echo "Signing properties generated."
+ 
+       - name: Clean Build
+         run: |
+diff --git a/.github/workflows/build-release.yaml b/.github/workflows/build-release.yaml
+index 2ea770b..7f146e2 100644
+--- a/.github/workflows/build-release.yaml
++++ b/.github/workflows/build-release.yaml
+@@ -94,13 +94,29 @@ jobs:
+           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+         run: |
+-          touch signing.properties
+-          echo keystore.password="$SIGNING_STORE_PASSWORD" &gt; signing.properties
+-          echo key.alias="$SIGNING_KEY_ALIAS" &gt;&gt; signing.properties
+-          echo key.password="$SIGNING_KEY_PASSWORD" &gt;&gt; signing.properties
+-            
+-          echo "cat signing.properties"
+-          cat signing.properties
++          # MUST 使用仓库中固定的 keystore，NEVER 在 CI 里重新生成
++          if [ ! -f release.keystore ]; then
++            echo "release.keystore is missing in repository, abort."
++            exit 1
++          fi
++
++          # 必填 secrets 校验，避免写入空值导致签名异常
++          if [ -z "$SIGNING_STORE_PASSWORD" ] || [ -z "$SIGNING_KEY_ALIAS" ] || [ -z "$SIGNING_KEY_PASSWORD" ]; then
++            echo "Signing secrets are missing, abort."
++            exit 1
++          fi
++
++          # 验证 alias 与密码是否匹配固定 keystore
++          keytool -list -keystore release.keystore -storepass "$SIGNING_STORE_PASSWORD" -alias "$SIGNING_KEY_ALIAS" &gt;/dev/null
++
++          # 生成 signing.properties 给 Gradle 使用
++          {
++            echo "keystore.password=$SIGNING_STORE_PASSWORD"
++            echo "key.alias=$SIGNING_KEY_ALIAS"
++            echo "key.password=$SIGNING_KEY_PASSWORD"
++          } &gt; signing.properties
++
++          echo "Signing properties generated."
+ 
+       - name: Clean Build
+         run: |
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git status --short</summary>
+
+```bash
+git status --short
+```
+
+```
+ M .github/workflows/build-pre-release.yaml
+ M .github/workflows/build-release.yaml
+ M .specstory/statistics.json
+?? .specstory/history/2026-04-25_14-38-59Z-android-app-signature-consistency.md
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows/build-release.yaml",
+    "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows/build-pre-release.yaml"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows/build-release.yaml"
+    },
+    {
+      "relativeWorkspacePath": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows/build-pre-release.yaml"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+已经帮你固定好了，并且是“直接用项目内 keystore”的方案。
+
+改动如下：
+- 已修改 `/.github/workflows/build-release.yaml`
+- 已修改 `/.github/workflows/build-pre-release.yaml`
+- 两个工作流现在都改为：
+  - **MUST** 使用仓库里的 `release.keystore`
+  - **NEVER** 在 CI 里自动生成新 keystore
+  - 启动构建前校验 `SIGNING_STORE_PASSWORD / SIGNING_KEY_ALIAS / SIGNING_KEY_PASSWORD` 不为空
+  - 用 `keytool -list` 验证 alias/密码与该 keystore 匹配，不匹配直接失败
+  - 动态生成 `signing.properties` 给 Gradle 使用
+
+另外我确认过：
+- `release.keystore` 已经是 git 跟踪文件（不是临时文件），所以可以稳定复用同一签名。
+
+你现在只需要确保 GitHub Secrets 里的这三个值和当前 `release.keystore` 完全一致即可：
+- `SIGNING_STORE_PASSWORD`
+- `SIGNING_KEY_ALIAS`
+- `SIGNING_KEY_PASSWORD`
+
+如果你要，我下一步可以再帮你加一个“打印证书 SHA-256 指纹并比对预期值”的强校验，防止未来误替换 keystore。
+
+---
+
+_**User**_
+
+Run # MUST 使用仓库中固定的 keystore，NEVER 在 CI 里重新生成
+Signing secrets are missing, abort.
+Error: Process completed with exit code 1.
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+**Exploring secret management steps**
+
+I’m considering checking old fixed values from previous pre-releases, perhaps related to the android/cmfa/android. If the user is okay with that, I could suggest setting secrets to those values. It might be a good idea to mention commands for inspecting local signing properties if applicable.
+
+I could provide quick steps for managing repository secrets via GitHub, including verifying the setup with a debug step. Lastly, I'll want to include instructions for running a local command to verify the alias against the keystore.</details></think>
+
+_**Agent (default)**_
+
+这是环境配置问题，不是代码问题：CI 现在按设计会在缺少密钥时直接失败。  
+报错 `Signing secrets are missing` 说明你仓库的 GitHub Actions Secrets 没配置完整。
+
+请在仓库里补齐这 3 个 Secret（名字必须完全一致）：
+
+- `SIGNING_STORE_PASSWORD`
+- `SIGNING_KEY_ALIAS`
+- `SIGNING_KEY_PASSWORD`
+
+路径：GitHub 仓库 → `Settings` → `Secrets and variables` → `Actions` → `New repository secret`
+
+---
+
+你之前工作流里用过固定值（可先尝试）：
+- `SIGNING_STORE_PASSWORD=android`
+- `SIGNING_KEY_ALIAS=cmfa`
+- `SIGNING_KEY_PASSWORD=android`
+
+如果这组值和当前 `release.keystore` 不匹配，构建会在 `keytool -list` 那一步失败；那就需要用你真实 keystore 的密码/别名。
+
+可在本地验证（会提示输入密码）：
+```bash
+keytool -list -v -keystore release.keystore
+```
+看输出里的 `Alias name`，把对应密码填到上述 3 个 Secret。
+
+---
+
+如果你愿意，我可以继续帮你把工作流再增强成：
+- 缺少 secrets 时给出更明确的错误提示（指明是哪个 secret 缺失）  
+这样排查会更快。
+
+---
+
+_**User**_
+
+你没有办法直接在项目里进行配置吗就是把这些东西存在本地
+
+---
+
+_**Agent (default)**_
+
+可以，能直接放在项目里配置。  
+我现在给你改成：**优先读 GitHub Secrets，若未配置则自动回退到项目内固定值**（`android/cmfa/android`），这样你不配 Secrets 也能跑。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows/build-release.yaml</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows/build-pre-release.yaml</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git diff -- .github/workflows/build-release.yaml .github/workflows/build-pre-release.yaml</summary>
+
+```bash
+git diff -- .github/workflows/build-release.yaml .github/workflows/build-pre-release.yaml
+```
+
+```
+diff --git a/.github/workflows/build-pre-release.yaml b/.github/workflows/build-pre-release.yaml
+index 1641d2b..4158f51 100644
+--- a/.github/workflows/build-pre-release.yaml
++++ b/.github/workflows/build-pre-release.yaml
+@@ -64,20 +64,19 @@ jobs:
+             exit 1
+           fi
+ 
+-          # 必填 secrets 校验，避免写入空值导致签名异常
+-          if [ -z "$SIGNING_STORE_PASSWORD" ] || [ -z "$SIGNING_KEY_ALIAS" ] || [ -z "$SIGNING_KEY_PASSWORD" ]; then
+-            echo "Signing secrets are missing, abort."
+-            exit 1
+-          fi
++          # 优先使用 Secrets；未配置时回退到项目固定值
++          KEYSTORE_PASSWORD="${SIGNING_STORE_PASSWORD:-android}"
++          KEY_ALIAS="${SIGNING_KEY_ALIAS:-cmfa}"
++          KEY_PASSWORD="${SIGNING_KEY_PASSWORD:-android}"
+ 
+           # 验证 alias 与密码是否匹配固定 keystore
+-          keytool -list -keystore release.keystore -storepass "$SIGNING_STORE_PASSWORD" -alias "$SIGNING_KEY_ALIAS" &gt;/dev/null
++          keytool -list -keystore release.keystore -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" &gt;/dev/null
+ 
+           # 生成 signing.properties 给 Gradle 使用
+           {
+-            echo "keystore.password=$SIGNING_STORE_PASSWORD"
+-            echo "key.alias=$SIGNING_KEY_ALIAS"
+-            echo "key.password=$SIGNING_KEY_PASSWORD"
++            echo "keystore.password=$KEYSTORE_PASSWORD"
++            echo "key.alias=$KEY_ALIAS"
++            echo "key.password=$KEY_PASSWORD"
+           } &gt; signing.properties
+ 
+           echo "Signing properties generated."
+diff --git a/.github/workflows/build-release.yaml b/.github/workflows/build-release.yaml
+index 7f146e2..fcf593f 100644
+--- a/.github/workflows/build-release.yaml
++++ b/.github/workflows/build-release.yaml
+@@ -100,20 +100,19 @@ jobs:
+             exit 1
+           fi
+ 
+-          # 必填 secrets 校验，避免写入空值导致签名异常
+-          if [ -z "$SIGNING_STORE_PASSWORD" ] || [ -z "$SIGNING_KEY_ALIAS" ] || [ -z "$SIGNING_KEY_PASSWORD" ]; then
+-            echo "Signing secrets are missing, abort."
+-            exit 1
+-          fi
++          # 优先使用 Secrets；未配置时回退到项目固定值
++          KEYSTORE_PASSWORD="${SIGNING_STORE_PASSWORD:-android}"
++          KEY_ALIAS="${SIGNING_KEY_ALIAS:-cmfa}"
++          KEY_PASSWORD="${SIGNING_KEY_PASSWORD:-android}"
+ 
+           # 验证 alias 与密码是否匹配固定 keystore
+-          keytool -list -keystore release.keystore -storepass "$SIGNING_STORE_PASSWORD" -alias "$SIGNING_KEY_ALIAS" &gt;/dev/null
++          keytool -list -keystore release.keystore -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" &gt;/dev/null
+ 
+           # 生成 signing.properties 给 Gradle 使用
+           {
+-            echo "keystore.password=$SIGNING_STORE_PASSWORD"
+-            echo "key.alias=$SIGNING_KEY_ALIAS"
+-            echo "key.password=$SIGNING_KEY_PASSWORD"
++            echo "keystore.password=$KEYSTORE_PASSWORD"
++            echo "key.alias=$KEY_ALIAS"
++            echo "key.password=$KEY_PASSWORD"
+           } &gt; signing.properties
+ 
+           echo "Signing properties generated."
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows/build-release.yaml",
+    "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows/build-pre-release.yaml"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows/build-release.yaml"
+    },
+    {
+      "relativeWorkspacePath": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows/build-pre-release.yaml"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+可以，已经按“存在项目里”给你改好了。
+
+现在行为是：
+- 工作流优先读取 Secrets（如果你配了就用）
+- **如果没配 Secrets，会自动回退到项目内固定值**：`android / cmfa / android`
+- 仍然强制使用仓库里的 `release.keystore`，不会再在 CI 里重生签名
+
+已修改：
+- `.github/workflows/build-release.yaml`
+- `.github/workflows/build-pre-release.yaml`
+
+你现在直接重跑 CI 就行。  
+如果还报错，基本只会是这两类：
+- `release.keystore` 与 `android/cmfa/android` 不匹配
+- `release.keystore` 文件本身被替换过
+
+要不要我再顺手加一段日志，把实际使用的是“Secrets 还是本地回退值”打印出来（不泄露密码），方便你后面排查？

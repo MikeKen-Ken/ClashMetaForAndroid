@@ -64,20 +64,19 @@ jobs:
             exit 1
           fi
 
-          # 必填 secrets 校验，避免写入空值导致签名异常
-          if [ -z "$SIGNING_STORE_PASSWORD" ] || [ -z "$SIGNING_KEY_ALIAS" ] || [ -z "$SIGNING_KEY_PASSWORD" ]; then
-            echo "Signing secrets are missing, abort."
-            exit 1
-          fi
+          # 优先使用 Secrets；未配置时回退到项目固定值
+          KEYSTORE_PASSWORD="${SIGNING_STORE_PASSWORD:-android}"
+          KEY_ALIAS="${SIGNING_KEY_ALIAS:-cmfa}"
+          KEY_PASSWORD="${SIGNING_KEY_PASSWORD:-android}"
 
           # 验证 alias 与密码是否匹配固定 keystore
-          keytool -list -keystore release.keystore -storepass "$SIGNING_STORE_PASSWORD" -alias "$SIGNING_KEY_ALIAS" >/dev/null
+          keytool -list -keystore release.keystore -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null
 
           # 生成 signing.properties 给 Gradle 使用
           {
-            echo "keystore.password=$SIGNING_STORE_PASSWORD"
-            echo "key.alias=$SIGNING_KEY_ALIAS"
-            echo "key.password=$SIGNING_KEY_PASSWORD"
+            echo "keystore.password=$KEYSTORE_PASSWORD"
+            echo "key.alias=$KEY_ALIAS"
+            echo "key.password=$KEY_PASSWORD"
           } > signing.properties
 
           echo "Signing properties generated."
