@@ -1368,3 +1368,433 @@ release.keystore history:
 <summary>Tool use: **run_terminal_command_v2**</summary>
 
 </details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+**Considering security of keystore information**
+
+I need to address the concern about whether the release keystore being committed puts the private signing key at risk if the repository is public. I should point out the logs indicate there are no plaintext passwords tracked in Git, aside from a hardcoded fallback. I want to provide remediation steps for scenario A if exposure is suspected. Also, while .specstory may mention default passwords, those aren’t true keys. Lastly, I can't check the values of GitHub actions secrets.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git ls-files "*.keystore" "*.jks"</summary>
+
+```bash
+git ls-files "*.keystore" "*.jks"
+```
+
+```
+release.keystore
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+**Considering file tracking changes**
+
+I’m thinking we could suggest stopping tracking by using `git rm --cached release.keystore`. It's likely an option the user is looking for. However, removing a tracked file might create issues until the secret is set again. I wonder if we should avoid automatic removal without confirmation? It seems that if the user asks for Plan A, I should enforce that without fallback, and integrate secret decoding into `release.keystore`. Updating both signing workflows is something I plan to patch, too.</details></think>
+
+_**Agent (default)**_
+
+我已经确认了暴露面：`release.keystore` 目前在 git 历史里（存在一次提交），这意味着**如果仓库曾经公开或被他人拉取，该签名私钥就视为已泄露**。  
+我现在直接把工作流切到纯方案 A（`SIGNING_KEYSTORE_BASE64` + 3 个密码 Secret），不再依赖仓库内 keystore。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows/build-release.yaml</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows/build-pre-release.yaml</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git diff -- .github/workflows/build-release.yaml .github/workflows/build-pre-release.yaml</summary>
+
+```bash
+git diff -- .github/workflows/build-release.yaml .github/workflows/build-pre-release.yaml
+```
+
+```
+diff --git a/.github/workflows/build-pre-release.yaml b/.github/workflows/build-pre-release.yaml
+index 4158f51..2392552 100644
+--- a/.github/workflows/build-pre-release.yaml
++++ b/.github/workflows/build-pre-release.yaml
+@@ -54,29 +54,27 @@ jobs:
+ 
+       - name: Setup fixed signing
+         env:
++          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+         run: |
+-          # MUST 使用仓库中固定的 keystore，NEVER 在 CI 里重新生成
+-          if [ ! -f release.keystore ]; then
+-            echo "release.keystore is missing in repository, abort."
++          # 方案 A：完全由 Secrets 提供 keystore 与签名参数
++          if [ -z "$SIGNING_KEYSTORE_BASE64" ] || [ -z "$SIGNING_STORE_PASSWORD" ] || [ -z "$SIGNING_KEY_ALIAS" ] || [ -z "$SIGNING_KEY_PASSWORD" ]; then
++            echo "Required signing secrets are missing. Need SIGNING_KEYSTORE_BASE64 / SIGNING_STORE_PASSWORD / SIGNING_KEY_ALIAS / SIGNING_KEY_PASSWORD."
+             exit 1
+           fi
+ 
+-          # 优先使用 Secrets；未配置时回退到项目固定值
+-          KEYSTORE_PASSWORD="${SIGNING_STORE_PASSWORD:-android}"
+-          KEY_ALIAS="${SIGNING_KEY_ALIAS:-cmfa}"
+-          KEY_PASSWORD="${SIGNING_KEY_PASSWORD:-android}"
++          echo "$SIGNING_KEYSTORE_BASE64" | base64 -d &gt; release.keystore
+ 
+-          # 验证 alias 与密码是否匹配固定 keystore
+-          keytool -list -keystore release.keystore -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" &gt;/dev/null
++          # 验证 alias 与密码是否匹配
++          keytool -list -keystore release.keystore -storepass "$SIGNING_STORE_PASSWORD" -alias "$SIGNING_KEY_ALIAS" &gt;/dev/null
+ 
+           # 生成 signing.properties 给 Gradle 使用
+           {
+-            echo "keystore.password=$KEYSTORE_PASSWORD"
+-            echo "key.alias=$KEY_ALIAS"
+-            echo "key.password=$KEY_PASSWORD"
++            echo "keystore.password=$SIGNING_STORE_PASSWORD"
++            echo "key.alias=$SIGNING_KEY_ALIAS"
++            echo "key.password=$SIGNING_KEY_PASSWORD"
+           } &gt; signing.properties
+ 
+           echo "Signing properties generated."
+diff --git a/.github/workflows/build-release.yaml b/.github/workflows/build-release.yaml
+index fcf593f..f5b9515 100644
+--- a/.github/workflows/build-release.yaml
++++ b/.github/workflows/build-release.yaml
+@@ -90,29 +90,27 @@ jobs:
+ 
+       - name: Signing properties
+         env:
++          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+         run: |
+-          # MUST 使用仓库中固定的 keystore，NEVER 在 CI 里重新生成
+-          if [ ! -f release.keystore ]; then
+-            echo "release.keystore is missing in repository, abort."
++          # 方案 A：完全由 Secrets 提供 keystore 与签名参数
++          if [ -z "$SIGNING_KEYSTORE_BASE64" ] || [ -z "$SIGNING_STORE_PASSWORD" ] || [ -z "$SIGNING_KEY_ALIAS" ] || [ -z "$SIGNING_KEY_PASSWORD" ]; then
++            echo "Required signing secrets are missing. Need SIGNING_KEYSTORE_BASE64 / SIGNING_STORE_PASSWORD / SIGNING_KEY_ALIAS / SIGNING_KEY_PASSWORD."
+             exit 1
+           fi
+ 
+-          # 优先使用 Secrets；未配置时回退到项目固定值
+-          KEYSTORE_PASSWORD="${SIGNING_STORE_PASSWORD:-android}"
+-          KEY_ALIAS="${SIGNING_KEY_ALIAS:-cmfa}"
+-          KEY_PASSWORD="${SIGNING_KEY_PASSWORD:-android}"
++          echo "$SIGNING_KEYSTORE_BASE64" | base64 -d &gt; release.keystore
+ 
+-          # 验证 alias 与密码是否匹配固定 keystore
+-          keytool -list -keystore release.keystore -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" &gt;/dev/null
++          # 验证 alias 与密码是否匹配
++          keytool -list -keystore release.keystore -storepass "$SIGNING_STORE_PASSWORD" -alias "$SIGNING_KEY_ALIAS" &gt;/dev/null
+ 
+           # 生成 signing.properties 给 Gradle 使用
+           {
+-            echo "keystore.password=$KEYSTORE_PASSWORD"
+-            echo "key.alias=$KEY_ALIAS"
+-            echo "key.password=$KEY_PASSWORD"
++            echo "keystore.password=$SIGNING_STORE_PASSWORD"
++            echo "key.alias=$SIGNING_KEY_ALIAS"
++            echo "key.password=$SIGNING_KEY_PASSWORD"
+           } &gt; signing.properties
+ 
+           echo "Signing properties generated."
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows/build-release.yaml",
+    "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows/build-pre-release.yaml"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows/build-release.yaml"
+    },
+    {
+      "relativeWorkspacePath": "c:/Users/Ken-Narmal/Desktop/ClashMetaForAndroid/.github/workflows/build-pre-release.yaml"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+是的，结论很明确：
+
+- 我已检查到 `release.keystore` 在 git 历史中被提交过（提交：`8b2ef8a`）。
+- `signing.properties` 没有进入 git 历史。
+- 这意味着：**如果仓库曾公开，或曾被他人克隆/镜像，签名私钥应视为已泄露**。
+
+我已经按你要的方案 A 改好了工作流（仅用 Secrets）：
+- `/.github/workflows/build-release.yaml`
+- `/.github/workflows/build-pre-release.yaml`
+
+现在构建必须依赖这 4 个 Secrets：
+- `SIGNING_KEYSTORE_BASE64`
+- `SIGNING_STORE_PASSWORD`
+- `SIGNING_KEY_ALIAS`
+- `SIGNING_KEY_PASSWORD`
+
+---
+
+你接下来只要做这几步：
+
+1. 本地把 keystore 转 base64（PowerShell）：
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("release.keystore")) | Set-Clipboard
+```
+2. GitHub 仓库 `Settings` → `Secrets and variables` → `Actions`，新增 `SIGNING_KEYSTORE_BASE64`，粘贴剪贴板内容。
+3. 再新增另外 3 个密码/别名 Secret（必须和该 keystore 完全一致）。
+4. 重跑 Action。
+
+---
+
+安全建议（重要）：
+- 因为 `release.keystore` 已进过历史，建议你尽快做一次**签名轮换**（新 keystore + 新发布链路）。
+- 至少要把仓库里这个文件从后续版本移除跟踪（避免继续扩散）。  
+如果你要，我下一步可以直接帮你做“停止跟踪 keystore + 保留本地文件 + 仅 Secrets 签名”的完整收口。
+
+---
+
+_**User**_
+
+重新告诉我，我如何在 github 中设置
+
+---
+
+_**Agent (default)**_
+
+按这个流程设置就可以（方案 A，最安全）：
+
+## 在 GitHub 设置 4 个 Secrets
+
+进入你的仓库页面：
+
+`Settings` → `Secrets and variables` → `Actions` → `New repository secret`
+
+依次创建下面 4 个（名字必须完全一致）：
+
+- `SIGNING_KEYSTORE_BASE64`
+- `SIGNING_STORE_PASSWORD`
+- `SIGNING_KEY_ALIAS`
+- `SIGNING_KEY_PASSWORD`
+
+---
+
+## 本地先准备 `SIGNING_KEYSTORE_BASE64`
+
+在项目根目录 PowerShell 执行：
+
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("release.keystore"))
+```
+
+复制输出的整串内容，粘贴到 `SIGNING_KEYSTORE_BASE64` 的 value。
+
+---
+
+## 其余 3 个值怎么填
+
+- `SIGNING_STORE_PASSWORD`：keystore 的 store 密码
+- `SIGNING_KEY_ALIAS`：key alias（如 `cmfa`）
+- `SIGNING_KEY_PASSWORD`：该 alias 对应的 key 密码
+
+如果你不确定 alias，可本地查：
+
+```powershell
+keytool -list -v -keystore release.keystore
+```
+
+---
+
+## 设置完成后如何验证
+
+1. 回到 `Actions`
+2. 重新运行 `Build Release` 或 `Build Pre-Release`
+3. 看日志中签名步骤是否通过（不会再报 missing secrets）
+
+---
+
+如果你愿意，我下一步可以给你一段“逐项检查脚本”，你在本地跑一次就能确认这 4 个值是否匹配，避免反复重跑 CI。
+
+---
+
+_**User**_
+
+SIGNING_STORE_PASSWORD：keystore 的 store 密码
+SIGNING_KEY_ALIAS：key alias（如 cmfa）
+SIGNING_KEY_PASSWORD：该 alias 对应的 key 密码
+
+这几个我怎么知道
+
+---
+
+_**Agent (default)**_
+
+这 3 个值里，**只有 alias 有机会“查出来”**，密码本身是**无法反查**的。
+
+## 先说结论
+
+- `SIGNING_KEY_ALIAS`：可以尝试列出
+- `SIGNING_STORE_PASSWORD`：如果忘了，不能解密找回
+- `SIGNING_KEY_PASSWORD`：如果忘了，也不能找回
+
+---
+
+## 你可以怎么做
+
+### 1) 尝试用你怀疑的密码验证（最现实）
+你之前历史里出现过一组：`android / cmfa / android`，可以先试这组。
+
+在有 JDK 的终端里执行：
+
+```bash
+keytool -list -v -keystore release.keystore -storepass "你的猜测密码"
+```
+
+- 如果成功，会看到 `Alias name: ...`，那就拿到 `SIGNING_KEY_ALIAS`
+- 如果报 `Keystore was tampered with, or password was incorrect`，说明 store 密码不对
+
+再验证 key 密码（通常和 store 密码相同，但不一定）：
+
+```bash
+keytool -keypasswd -keystore release.keystore -alias "你的alias" -storepass "store密码" -keypass "你猜的key密码" -new "你猜的key密码"
+```
+
+这条命令只是用来验证（新旧填同一个），不改值；失败就说明 key 密码不对。
+
+---
+
+### 2) 从你过去的配置来源找
+- 老机器上的 `signing.properties`
+- 密码管理器
+- 以前 CI 的 Secret 记录（如果你曾经配过）
+- 团队里负责打包的人
+
+---
+
+### 3) 如果完全找不回
+那就只能**新建 keystore**。但你这个场景要注意：
+
+- 若用户是通过 APK 覆盖更新：**签名变了就无法升级**（必须卸载重装）
+- 若走 Google Play 且启用 Play App Signing：可以走官方密钥轮换流程（相对可控）
+
+---
+
+如果你愿意，我可以下一步直接给你一套“最小试错清单”（按顺序试哪些常见密码、每步看什么报错），尽量帮你把旧密钥找回来。
+
+---
+
+_**User**_
+
+直接给我新建一个
+
+---
+
+_**Agent (default)**_
+
+可以，我直接帮你落地“新建一套固定签名”。先说明一个关键点：**新 keystore 会导致旧安装包无法覆盖更新（需要卸载重装）**。  
+我先在你本机检查 `keytool` 是否可用；如果不可用，我会直接给你加一个一次性 GitHub Action 来生成并导出新 keystore 信息。
+
+_**Agent (default)**_
+
+Cancelled
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git status --short</summary>
+
+```bash
+git status --short
+```
+
+```
+ M .specstory/history/2026-04-25_14-38-59Z-android-app-signature-consistency.md
+ M .specstory/statistics.json
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
