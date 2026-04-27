@@ -30,6 +30,7 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
                     .orEmpty()
             }
         )
+        uiStore.lanBlockedSourceIps = blockedIps.toSet()
 
         refreshConnections(design)
 
@@ -51,6 +52,7 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
                         }
                         is ConnectionsDesign.Request.DisableDevice -> {
                             blockedIps.add(it.sourceIp)
+                            uiStore.lanBlockedSourceIps = blockedIps.toSet()
                             withClash {
                                 val persist = queryOverride(com.github.kr328.clash.core.Clash.OverrideSlot.Persist)
                                 persist.app.lanBlockedDevices = blockedIps.toList()
@@ -60,6 +62,7 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
                         }
                         is ConnectionsDesign.Request.EnableDevice -> {
                             blockedIps.remove(it.sourceIp)
+                            uiStore.lanBlockedSourceIps = blockedIps.toSet()
                             withClash {
                                 val persist = queryOverride(com.github.kr328.clash.core.Clash.OverrideSlot.Persist)
                                 persist.app.lanBlockedDevices = blockedIps.toList()

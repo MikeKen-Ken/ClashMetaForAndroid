@@ -1,0 +1,287 @@
+function main(config) {
+    const ENABLE_SMUX = false;
+
+    const AUTO = "🔀";
+    const DIRECT = "⬆️";
+    const FALLBACK = "↩️";
+    const NO_HK = "🚫 🇭🇰";
+    const HK = "🇭🇰";
+
+    const DEFAULT_AUTO = "🚀 节点选择";
+    const DEFAULT_DIRECT = "🎯 全球直连";
+    const DEFAULT_FALLBACK = "🐟 漏网之鱼";
+
+    const replaceAll = (str, find, replace) => str.replace(new RegExp(find, 'gi'), replace);
+
+    const filterNode = (nodeName) => {
+        const parts = nodeName.split(/\s+/);
+        const lastPart = parts[parts.length - 1];
+        return true;
+    };
+
+    const addSmuxOptimization = (proxy) => {
+        if (!ENABLE_SMUX) return proxy;
+        const tcpProtocols = [
+            'shadowsocks', 'ss', 'vmess', 'vless', 'trojan',
+            'trojan-go', 'snell', 'http', 'socks5'
+        ];
+        const smuxConfig = {
+            enabled: true,
+            protocol: "smux",
+            "max-connections": 8,
+            "max-streams": 32,
+            "only-tcp": true,
+            padding: false,
+            statistic: true
+        };
+        if (proxy.type && tcpProtocols.includes(proxy.type.toLowerCase())) {
+            proxy.smux = smuxConfig;
+        }
+        return proxy;
+    };
+
+    const sortNodes = (nodes) => {
+        return nodes;
+    };
+
+    const modifyProxyGroup = (group) => {
+        const groupModifications = {
+            "🚀 节点选择": {
+                name: AUTO,
+                type: "fallback",
+                url: "https://www.gstatic.com/generate_204",
+                interval: 7200,
+                "max-failed-times": 1,
+                "expected-status": 204,
+                lazy: true,
+                "disable-udp": false,
+            }
+        };
+        if (groupModifications[group.name]) {
+            return { ...group, ...groupModifications[group.name] };
+        }
+        if (group.proxies) {
+            group.proxies = group.proxies
+                .filter(filterNode)
+                .map(proxy => replaceAll(proxy, DEFAULT_AUTO, AUTO));
+            group.proxies = sortNodes(group.proxies);
+        }
+        return group;
+    };
+
+    try {
+        if (!config) {
+            console.error("Config is null or undefined");
+            return null;
+        }
+        if (!config["proxy-groups"] || config["proxy-groups"].length < 3) {
+            console.error("Config needs at least 3 proxy groups");
+            return config;
+        }
+
+        config["geodata-mode"] = false;
+        config["proxy-groups"] = config["proxy-groups"].map(modifyProxyGroup);
+
+        if (config["proxy-groups"].length > 0) {
+            const removeLastChar = name => {
+                if (name.length > 1 && /^[A-Z]$/i.test(name.slice(-1)) && name.slice(-2, -1) !== '-') {
+                    return name.slice(0, -1);
+                }
+                return name;
+            };
+
+            if (config.proxies) {
+                config.proxies = config.proxies
+                    .filter(proxy => filterNode(proxy.name))
+                    .map(proxy => {
+                        proxy.name = removeLastChar(proxy.name);
+                        return proxy;
+                    });
+            }
+
+            config["proxy-groups"].forEach(group => {
+                if (group.proxies) {
+                    group.proxies = group.proxies
+                        .filter(filterNode)
+                        .map(removeLastChar);
+                    group.proxies = sortNodes(group.proxies);
+                }
+            });
+
+            const firstGroup = config["proxy-groups"][0];
+
+            const newGroups = [
+                {
+                    name: HK,
+                    proxies: firstGroup.proxies.filter(proxy => proxy.includes("🇭🇰"))
+                },
+                {
+                    name: NO_HK,
+                    proxies: firstGroup.proxies.filter(proxy => !proxy.includes("🇭🇰"))
+                },
+            ].map(group => ({ ...firstGroup, ...group }));
+
+            // splice 后顺序：index 0=AUTO, 1=HK, 2=NO_HK, 3+=其余
+            config["proxy-groups"].splice(1, 0, ...newGroups);
+
+            config["proxy-groups"].slice(3).forEach((group, index) => {
+                if (group.proxies && Array.isArray(group.proxies)) {
+                    group.proxies = [];
+                    if (index === 0) {
+                        group.proxies.push(
+                            "DIRECT",
+                            config["proxy-groups"][0].name,
+                            config["proxy-groups"][1].name,
+                            config["proxy-groups"][2].name,
+                        );
+                    } else {
+                        group.proxies.push(
+                            config["proxy-groups"][0].name,
+                            config["proxy-groups"][1].name,
+                            config["proxy-groups"][2].name,
+                            "DIRECT"
+                        );
+                    }
+                }
+                if (group.name === DEFAULT_DIRECT) {
+                    group.name = DIRECT;
+                    group.type = "select";
+                    delete group.url;
+                    delete group.interval;
+                    delete group.timeout;
+                    delete group.lazy;
+                } else if (group.name === DEFAULT_FALLBACK) {
+                    group.name = FALLBACK;
+                }
+            });
+        }
+
+        const ruleProvidersList = [
+            ['fakeip-filter', 'fakeip-filter.mrs', 'domain', 'mrs'],
+            ['private', 'private.mrs', 'domain', 'mrs'],
+            ['privateip', 'privateip.mrs', 'ipcidr', 'mrs'],
+            ['ads', 'ads.mrs', 'domain', 'mrs'],
+            ['spotify-adslist', 'pi-hole.txt', 'domain', 'text'],
+            ['spotify-whitelist', 'WHITELIST.txt', 'domain', 'text'],
+            ['trackerslist', 'trackerslist.mrs', 'domain', 'mrs'],
+            ['applications', 'applications.list', 'classical', 'text'],
+            ['microsoft-cn', 'microsoft-cn.mrs', 'domain', 'mrs'],
+            ['apple-cn', 'apple-cn.mrs', 'domain', 'mrs'],
+            ['games-cn', 'games-cn.mrs', 'domain', 'mrs'],
+            ['games', 'games.mrs', 'domain', 'mrs'],
+            ['youtube', 'youtube.mrs', 'domain', 'mrs'],
+            ['tiktok', 'tiktok.mrs', 'domain', 'mrs'],
+            ['bilibili', 'bilibili.mrs', 'domain', 'mrs'],
+            ['media', 'media.mrs', 'domain', 'mrs'],
+            ['mediaip', 'mediaip.mrs', 'ipcidr', 'mrs'],
+            ['ai', 'ai.mrs', 'domain', 'mrs'],
+            ['networktest', 'networktest.mrs', 'domain', 'mrs'],
+            ['tld-proxy', 'tld-proxy.mrs', 'domain', 'mrs'],
+            ['proxy', 'proxy.mrs', 'domain', 'mrs'],
+            ['cn', 'cn.mrs', 'domain', 'mrs'],
+            ['cnip', 'cnip.mrs', 'ipcidr', 'mrs'],
+            ['telegramip', 'telegramip.mrs', 'ipcidr', 'mrs'],
+            ['custome-reject', 'custome-reject.yaml', 'classical', 'yaml'],
+            ['custome-whitelist-direct', 'custome-whitelist-direct.yaml', 'classical', 'yaml'],
+            ['custome-whitelist-proxy', 'custome-whitelist-proxy.yaml', 'classical', 'yaml'],
+            ['custome-proxy', 'custome-proxy.yaml', 'classical', 'yaml'],
+            ['custome-noHK', 'custome-noHK.yaml', 'classical', 'yaml'],
+            ['custome-HK', 'custome-HK.yaml', 'classical', 'yaml'],
+            ['custome-direct', 'custome-direct.yaml', 'classical', 'yaml'],
+        ];
+
+        config['rule-providers'] = Object.fromEntries(
+            ruleProvidersList.map(([name, filename, behavior, format]) => {
+                if (name.startsWith('custome-')) {
+                    return [name, {
+                        type: "http", behavior, format,
+                        path: `./ruleset/${filename}`,
+                        url: `https://raw.githubusercontent.com/MikeKen-Ken/custome-rule/main/${filename}`,
+                        interval: 86400
+                    }];
+                }
+                if (name.startsWith('spotify-')) {
+                    return [name, {
+                        type: "http", behavior, format,
+                        path: `./ruleset/${filename}`,
+                        url: `https://raw.githubusercontent.com/Isaaker/spotify-adslist/main/Lists/${filename}`,
+                        interval: 86400
+                    }];
+                }
+                return [name, {
+                    type: "http", behavior, format,
+                    path: `./ruleset/${filename}`,
+                    url: `https://raw.githubusercontent.com/DustinWin/ruleset_geodata/mihomo-ruleset/${filename}`,
+                    interval: 86400
+                }];
+            })
+        );
+
+        config.rules = [
+            `AND,((PROCESS-NAME,BaiduNetdisk.exe),(DOMAIN-SUFFIX,bing.com)),REJECT`,
+            `AND,((PROCESS-NAME,BaiduNetdisk.exe),(DOMAIN-SUFFIX,google.com)),REJECT`,
+            `AND,((PROCESS-NAME,BaiduNetdisk.exe),(DOMAIN-SUFFIX,googleapis.com)),REJECT`,
+            `AND,((PROCESS-NAME,BaiduNetdisk.exe),(DOMAIN-SUFFIX,cloudmessaging.edge.microsoft.com)),REJECT`,
+            `AND,((PROCESS-NAME,Spotify.exe),(DOMAIN-SUFFIX,google.com)),REJECT`,
+
+            `RULE-SET,custome-reject,REJECT`,
+            `RULE-SET,custome-whitelist-direct,${DIRECT}`,
+            `RULE-SET,custome-whitelist-proxy,${AUTO}`,
+
+            `RULE-SET,private,${DIRECT}`,
+            `RULE-SET,privateip,${DIRECT},no-resolve`,
+            `RULE-SET,trackerslist,REJECT`,
+            `RULE-SET,ads,REJECT`,
+            `RULE-SET,spotify-whitelist,${HK}`,
+            `RULE-SET,spotify-adslist,REJECT`,
+
+            `RULE-SET,custome-noHK,${NO_HK}`,
+            `RULE-SET,custome-HK,${HK}`,
+            `RULE-SET,custome-proxy,${AUTO}`,
+            `RULE-SET,custome-direct,${DIRECT}`,
+
+            `RULE-SET,ai,${NO_HK}`,
+            `RULE-SET,networktest,${DIRECT}`,
+            `RULE-SET,applications,${DIRECT}`,
+            `RULE-SET,microsoft-cn,${DIRECT}`,
+            `RULE-SET,apple-cn,${DIRECT}`,
+            `RULE-SET,games-cn,${DIRECT}`,
+            `RULE-SET,bilibili,${DIRECT}`,
+
+            `RULE-SET,youtube,${AUTO}`,
+            `RULE-SET,tiktok,${AUTO}`,
+            `RULE-SET,games,${AUTO}`,
+            `RULE-SET,media,${AUTO}`,
+            `RULE-SET,tld-proxy,${AUTO}`,
+
+            `RULE-SET,proxy,${AUTO}`,
+            `RULE-SET,cn,${DIRECT}`,
+
+            `RULE-SET,telegramip,${AUTO},no-resolve`,
+            `RULE-SET,mediaip,${AUTO},no-resolve`,
+            `RULE-SET,cnip,${DIRECT},no-resolve`,
+
+            `MATCH,${FALLBACK}`
+        ];
+
+        if (config.proxies) {
+            config.proxies = config.proxies.map(proxy => {
+                proxy.udp = true;
+                proxy.tfo = true;
+                proxy["udp-relay-mode"] = "quic";
+                proxy["ip-version"] = "dual";
+                proxy["reduce-rtt"] = true;
+                proxy["fast-open"] = true;
+                proxy["congestion-controller"] = "cubic";
+                proxy["request-timeout"] = 1000;
+                proxy["client-fingerprint"] = "random";
+                return addSmuxOptimization(proxy);
+            });
+        }
+
+        return config;
+    } catch (error) {
+        console.error("Generate config error:", error);
+        return null;
+    }
+}

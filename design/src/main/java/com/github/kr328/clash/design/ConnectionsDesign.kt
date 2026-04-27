@@ -22,6 +22,7 @@ import com.github.kr328.clash.design.util.formatConnectionStartTime
 import com.github.kr328.clash.design.util.toBytesString
 import com.github.kr328.clash.design.util.toSpeedString
 import com.github.kr328.clash.design.ui.ToastDuration
+import com.github.kr328.clash.design.landevices.LanRemoteDeviceFilter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -204,7 +205,11 @@ class ConnectionsDesign(
 
     private fun buildDeviceDisplayItems(): List<ConnectionDisplayItem> {
         val snapshot = lastSnapshot ?: return emptyList()
-        val groups = snapshot.connections
+        val localIps = LanRemoteDeviceFilter.collectLocalInterfaceIps()
+        val remoteLanConnections = snapshot.connections.filter {
+            LanRemoteDeviceFilter.isRemoteLanClient(it, localIps)
+        }
+        val groups = remoteLanConnections
             .filter { !it.metadata?.sourceIP.isNullOrEmpty() }
             .groupBy { it.metadata?.sourceIP ?: "" }
         val activeItems = groups.entries

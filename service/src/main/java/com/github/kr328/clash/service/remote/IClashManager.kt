@@ -27,6 +27,7 @@ interface IClashManager {
     fun closeConnection(id: String): Boolean
     fun closeAllConnections()
     fun closeConnectionsExcludingDirect()
+    fun closeLanConnections()
 
     fun setLogObserver(observer: ILogObserver?)
 }

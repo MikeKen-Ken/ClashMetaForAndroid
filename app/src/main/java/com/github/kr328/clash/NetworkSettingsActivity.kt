@@ -52,8 +52,13 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
                             startActivity(AccessControlActivity::class.intent)
                         NetworkSettingsDesign.Request.StartLanDevices ->
                             startActivity(ConnectionsActivity::class.intent)
-                        is NetworkSettingsDesign.Request.UpdateAllowLan ->
+                        is NetworkSettingsDesign.Request.UpdateAllowLan -> {
+                            val turningOff = persistOverride.allowLan == true && !it.enabled
                             persistOverride.allowLan = it.enabled
+                            if (turningOff) {
+                                withClash { closeLanConnections() }
+                            }
+                        }
                         is NetworkSettingsDesign.Request.CopyLanAddress ->
                             copyTextToClipboard(it.address)
                     }

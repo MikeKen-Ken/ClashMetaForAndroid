@@ -1,5 +1,6 @@
 package com.github.kr328.clash.core
 
+import com.github.kr328.clash.common.net.LanSourceIp
 import com.github.kr328.clash.core.bridge.*
 import com.github.kr328.clash.core.model.*
 import com.github.kr328.clash.core.util.parseInetSocketAddress
@@ -245,6 +246,16 @@ object Clash {
         val snapshot = queryConnections()
         for (conn in snapshot.connections) {
             if (!conn.chains.contains("DIRECT")) {
+                closeConnection(conn.id)
+            }
+        }
+    }
+
+    /** 关闭 source 为私网地址的连接（与电脑端关闭 allow-lan 时的行为对齐）。 */
+    fun closeLanConnections() {
+        val snapshot = queryConnections()
+        for (conn in snapshot.connections) {
+            if (LanSourceIp.isLanSourceIp(conn.metadata?.sourceIP)) {
                 closeConnection(conn.id)
             }
         }

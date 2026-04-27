@@ -88,6 +88,10 @@ class ClashManager(private val context: Context) : IClashManager,
         Clash.closeConnectionsExcludingDirect()
     }
 
+    override fun closeLanConnections() {
+        Clash.closeLanConnections()
+    }
+
     override suspend fun healthCheck(group: String) {
         Clash.healthCheck(group).await()
         store.activeProfile?.let { uuid ->

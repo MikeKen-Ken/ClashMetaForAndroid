@@ -154,6 +154,16 @@ data class ConfigurationOverride(
 
         @SerialName("lan-blocked-devices")
         var lanBlockedDevices: List<String>? = null,
+
+        /** 与电脑端 clash-for-android 字段对齐，便于配置往返与核心侧设备上限逻辑。 */
+        @SerialName("lan-max-devices")
+        var lanMaxDevices: Int? = null,
+
+        @SerialName("lan-over-limit-action")
+        var lanOverLimitAction: String? = null,
+
+        @SerialName("lan-silent-threshold-seconds")
+        var lanSilentThresholdSeconds: Int? = null,
     )
 
     @Serializable
