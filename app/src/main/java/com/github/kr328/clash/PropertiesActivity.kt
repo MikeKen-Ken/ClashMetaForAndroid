@@ -3,11 +3,18 @@ package com.github.kr328.clash
 import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.common.util.setUUID
 import com.github.kr328.clash.common.util.uuid
+import androidx.lifecycle.lifecycleScope
 import com.github.kr328.clash.design.PropertiesDesign
 import com.github.kr328.clash.design.ui.ToastDuration
 import com.github.kr328.clash.design.util.showExceptionToast
 import com.github.kr328.clash.service.model.Profile
 import com.github.kr328.clash.util.withProfile
+import io.github.g00fy2.quickie.QRResult
+import io.github.g00fy2.quickie.QRResult.QRError
+import io.github.g00fy2.quickie.QRResult.QRMissingPermission
+import io.github.g00fy2.quickie.QRResult.QRSuccess
+import io.github.g00fy2.quickie.QRResult.QRUserCanceled
+import io.github.g00fy2.quickie.ScanQRCode
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -17,6 +24,7 @@ import com.github.kr328.clash.design.R
 class PropertiesActivity : BaseActivity<PropertiesDesign>() {
     private var canceled: Boolean = false
     private lateinit var original: Profile
+    private val scanLauncher = registerForActivityResult(ScanQRCode(), ::scanResultHandler)
 
     override suspend fun main() {
         setResult(RESULT_CANCELED)
@@ -59,6 +67,9 @@ class PropertiesActivity : BaseActivity<PropertiesDesign>() {
                     when (it) {
                         PropertiesDesign.Request.BrowseFiles -> {
                             startActivity(FilesActivity::class.intent.setUUID(uuid))
+                        }
+                        PropertiesDesign.Request.LaunchScanner -> {
+                            scanLauncher.launch(null)
                         }
                         PropertiesDesign.Request.Commit -> {
                             design.verifyAndCommit()
@@ -110,6 +121,22 @@ class PropertiesActivity : BaseActivity<PropertiesDesign>() {
                 } catch (e: Exception) {
                     showExceptionToast(e)
                 }
+            }
+        }
+    }
+
+    private fun scanResultHandler(result: QRResult) {
+        lifecycleScope.launch {
+            when (result) {
+                is QRSuccess -> {
+                    val url = result.content.rawValue
+                        ?: result.content.rawBytes?.let { String(it) }.orEmpty()
+                    design?.updateUrlByQrCode(url)
+                }
+
+                QRUserCanceled -> {}
+                QRMissingPermission -> design?.showExceptionToast(getString(R.string.import_from_qr_no_permission))
+                is QRError -> design?.showExceptionToast(getString(R.string.import_from_qr_exception))
             }
         }
     }

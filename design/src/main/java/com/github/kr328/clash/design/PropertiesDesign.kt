@@ -21,6 +21,7 @@ class PropertiesDesign(context: Context) : Design<PropertiesDesign.Request>(cont
     sealed class Request {
         object Commit : Request()
         object BrowseFiles : Request()
+        object LaunchScanner : Request()
     }
 
     private val binding = DesignPropertiesBinding
@@ -147,6 +148,24 @@ class PropertiesDesign(context: Context) : Design<PropertiesDesign.Request>(cont
 
     fun requestBrowseFiles() {
         requests.trySend(Request.BrowseFiles)
+    }
+
+    fun requestLaunchScanner() {
+        if (profile.type == Profile.Type.File || profile.type == Profile.Type.External) {
+            return
+        }
+
+        requests.trySend(Request.LaunchScanner)
+    }
+
+    fun updateUrlByQrCode(url: String) {
+        if (profile.type == Profile.Type.File || profile.type == Profile.Type.External) {
+            return
+        }
+
+        if (url != profile.source) {
+            profile = profile.copy(source = url)
+        }
     }
 
     private fun ModelProgressBarConfigure.applyFrom(status: FetchStatus) {
