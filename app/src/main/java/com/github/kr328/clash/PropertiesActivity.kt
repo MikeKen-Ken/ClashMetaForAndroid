@@ -131,7 +131,9 @@ class PropertiesActivity : BaseActivity<PropertiesDesign>() {
                 is QRSuccess -> {
                     val url = result.content.rawValue
                         ?: result.content.rawBytes?.let { String(it) }.orEmpty()
-                    design?.updateUrlByQrCode(url)
+                    val currentDesign = design ?: return@launch
+                    currentDesign.updateUrlByQrCode(url)
+                    currentDesign.verifyAndCommit()
                 }
 
                 QRUserCanceled -> {}

@@ -13,6 +13,7 @@ import com.github.kr328.clash.common.util.setUUID
 import com.github.kr328.clash.design.NewProfileDesign
 import com.github.kr328.clash.design.R
 import com.github.kr328.clash.design.model.ProfileProvider
+import com.github.kr328.clash.design.ui.ToastDuration
 import com.github.kr328.clash.design.util.showExceptionToast
 import com.github.kr328.clash.service.model.Profile
 import com.github.kr328.clash.util.withProfile
@@ -186,14 +187,20 @@ class NewProfileActivity : BaseActivity<NewProfileDesign>() {
     }
 
     private suspend fun createProfileByQrCode(url: String) {
-        withProfile {
-            launchProperties(
-                create(
+        try {
+            withProfile {
+                val uuid = create(
                     type = Profile.Type.Url,
                     name = getString(R.string.new_profile),
-                    url,
+                    source = url,
                 )
-            )
+                commit(uuid)
+            }
+            setResult(Activity.RESULT_OK)
+            finish()
+        } catch (e: Exception) {
+            design?.showToast(R.string.invalid_url, ToastDuration.Long)
+            design?.showExceptionToast(e)
         }
     }
 
