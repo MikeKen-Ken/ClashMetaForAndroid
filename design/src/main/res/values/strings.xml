@@ -389,6 +389,12 @@
 
     <string name="hide_app_icon_title">Hide App Icon</string>
     <string name="hide_app_icon_desc">You can dial *#*#252746382#*#* to open this App</string>
+    <string name="view_running_config">View Running Config</string>
+    <string name="running_config">Running Config</string>
+    <string name="running_config_not_running">Clash.Meta is not running.</string>
+    <string name="running_config_no_active_profile">No active profile found.</string>
+    <string name="running_config_file_not_found">Unable to find current profile config.yaml.</string>
+    <string name="running_config_empty">Current config is empty.</string>
     <string name="import_from_qr_no_permission">Camera access is restricted. Please enable it in Settings.</string>
     <string name="import_from_qr_exception">An unhandled system exception occurred.</string>
 </resources>

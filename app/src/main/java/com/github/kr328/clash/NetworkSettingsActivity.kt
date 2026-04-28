@@ -2,6 +2,9 @@ package com.github.kr328.clash
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.net.ConnectivityManager
+import android.net.LinkProperties
+import android.net.NetworkCapabilities
 import androidx.core.content.getSystemService
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.common.util.intent
@@ -55,6 +58,12 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
                         is NetworkSettingsDesign.Request.UpdateAllowLan -> {
                             val turningOff = persistOverride.allowLan == true && !it.enabled
                             persistOverride.allowLan = it.enabled
+                            if (it.enabled) {
+                                // 每次开启局域网时自动刷新 bind-address，避免网络切换后仍绑定旧 IP。
+                                resolvePreferredIpv4Address()?.let { ip ->
+                                    persistOverride.bindAddress = ip
+                                }
+                            }
                             if (turningOff) {
                                 withClash { closeLanConnections() }
                             }
@@ -79,6 +88,7 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
         persistOverride: ConfigurationOverride,
     ): List<String> {
         val port = resolveLanPort(serviceStore, sessionOverride, persistOverride)
+        val preferredIpv4 = resolvePreferredIpv4Address()
         val addresses = mutableListOf<String>()
         val networks = NetworkInterface.getNetworkInterfaces() ?: return emptyList()
         while (networks.hasMoreElements()) {
@@ -94,17 +104,77 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
             }
         }
 
-        // 与电脑端一致：优先展示典型家宽网段，避免仅因字符串排序把 10.x 放在 192.168.x 之前
+        // 优先展示系统当前活跃网络对应的 IPv4，降低多网卡/热点/VPN 场景下选错地址的概率。
         return addresses.distinct().sortedWith { a, b ->
-            val pa = lanAddressSortKey(a)
-            val pb = lanAddressSortKey(b)
+            val pa = lanAddressSortKey(a, preferredIpv4)
+            val pb = lanAddressSortKey(b, preferredIpv4)
             if (pa != pb) pa.compareTo(pb) else a.compareTo(b)
         }
     }
 
-    /** 192.168 / 10 / 172 私网中，优先 192.168 作为“局域网”主地址（多网卡时常有 10.x 与 192.168.x 并存）。 */
-    private fun lanAddressSortKey(addressWithPort: String): Int {
+    private fun resolvePreferredIpv4Address(): String? {
+        val connectivityManager = getSystemService<ConnectivityManager>() ?: return null
+        val activeNetwork = connectivityManager.activeNetwork
+
+        if (activeNetwork != null) {
+            val activeCaps = connectivityManager.getNetworkCapabilities(activeNetwork)
+            if (isWifiNetwork(activeCaps) && !isVpnNetwork(activeCaps)) {
+                connectivityManager.getLinkProperties(activeNetwork)?.let { props ->
+                    extractIpv4Address(props)?.let { return it }
+                }
+            }
+        }
+
+        for (network in connectivityManager.allNetworks) {
+            val caps = connectivityManager.getNetworkCapabilities(network) ?: continue
+            if (!isWifiNetwork(caps) || isVpnNetwork(caps)) continue
+
+            connectivityManager.getLinkProperties(network)?.let { props ->
+                extractIpv4Address(props)?.let { return it }
+            }
+        }
+
+        for (network in connectivityManager.allNetworks) {
+            val caps = connectivityManager.getNetworkCapabilities(network) ?: continue
+            if (isVpnNetwork(caps)) continue
+            connectivityManager.getLinkProperties(network)?.let { props ->
+                extractIpv4Address(props)?.let { return it }
+            }
+        }
+
+        if (activeNetwork != null) {
+            val activeCaps = connectivityManager.getNetworkCapabilities(activeNetwork)
+            if (activeCaps != null && !isVpnNetwork(activeCaps)) {
+                connectivityManager.getLinkProperties(activeNetwork)?.let { props ->
+                    extractIpv4Address(props)?.let { return it }
+                }
+            }
+        }
+
+        return null
+    }
+
+    private fun isWifiNetwork(caps: NetworkCapabilities?): Boolean {
+        return caps?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+    }
+
+    private fun isVpnNetwork(caps: NetworkCapabilities?): Boolean {
+        return caps?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
+    }
+
+    private fun extractIpv4Address(linkProperties: LinkProperties): String? {
+        return linkProperties.linkAddresses
+            .asSequence()
+            .mapNotNull { it.address as? Inet4Address }
+            .firstOrNull { !it.isLoopbackAddress && !it.isLinkLocalAddress }
+            ?.hostAddress
+    }
+
+    /** 优先活跃网络地址，其次按常见私网网段排序。 */
+    private fun lanAddressSortKey(addressWithPort: String, preferredIpv4: String?): Int {
         val ip = addressWithPort.substringBefore(':')
+        if (!preferredIpv4.isNullOrBlank() && ip == preferredIpv4) return -1
+
         return when {
             ip.startsWith("192.168.") -> 0
             ip.startsWith("10.") -> 1

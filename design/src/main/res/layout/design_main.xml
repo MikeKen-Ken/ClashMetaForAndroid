@@ -79,6 +79,23 @@
                         android:layout_height="wrap_content"
                         android:text="@string/application_name"
                         android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1" />
+
+                    <ImageView
+                        android:layout_width="@dimen/item_tailing_component_size"
+                        android:layout_height="@dimen/item_tailing_component_size"
+                        android:layout_marginStart="@dimen/item_tailing_margin"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:contentDescription="@string/view_running_config"
+                        android:focusable="true"
+                        android:onClick="@{() -> self.request(Request.OpenRunningConfig)}"
+                        android:padding="@dimen/toolbar_image_action_padding"
+                        android:src="@drawable/ic_baseline_assignment" />
                 </LinearLayout>
 
                 <com.github.kr328.clash.design.view.LargeActionCard

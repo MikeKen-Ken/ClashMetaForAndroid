@@ -16,6 +16,7 @@ import kotlinx.coroutines.withContext
 class MainDesign(context: Context) : Design<MainDesign.Request>(context) {
     enum class Request {
         ToggleStatus,
+        OpenRunningConfig,
         OpenConnections,
         OpenProxy,
         OpenProfiles,
