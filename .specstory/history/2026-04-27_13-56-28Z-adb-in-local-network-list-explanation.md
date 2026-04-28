@@ -4058,4 +4058,1497 @@ _**Agent (default)**_
 <think><details><summary>Thought Process</summary>
 I need to dig deeper:
 
-- Desktop closeLanConnections uses only `isLanSourceIp`, not `isRemoteLanClientConnection`.</details></think>
+- Desktop closeLanConnections uses only `isLanSourceIp`, not `isRemoteLanClientConnection`. So when users turn off allow-lan on the proxies page, it closes all LAN source IP connectionsincluding those from the local machines own LAN IPwhich may be intentional to tear down everything from private IPs.
+
+- Alignment consideration: Should desktop closeLanConnections also use a remote-only filter?
+- User requested alignment: disabling LAN should close external LAN clients and possibly local adb noise too.
+- Closing by isLanSourceIp is broader than needed.
+- Narrowing to remote-only might avoid closing connections from a phone's own 192.168 address.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.kt",
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid",
+  "pattern": "lan-max|lan-silent|lanBlocked|lan-blocked|closeConnection|closeAll"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid",
+  "pattern": "lan-max|lan-silent|lanBlocked|lan-blocked|closeConnection|closeAll",
+  "topFiles": [
+    {
+      "matchCount": 6,
+      "uri": "service/src/main/java/com/github/kr328/clash/service/ClashManager.kt"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/src/main/java/com/github/kr328/clash/ProxyActivity.kt"
+    },
+    {
+      "matchCount": 7,
+      "uri": "app/src/main/java/com/github/kr328/clash/ConnectionsActivity.kt"
+    },
+    {
+      "matchCount": 1,
+      "uri": "design/src/main/java/com/github/kr328/clash/design/ConnectionsDesign.kt"
+    },
+    {
+      "matchCount": 2,
+      "uri": "core/src/main/java/com/github/kr328/clash/core/model/ConfigurationOverride.kt"
+    },
+    {
+      "matchCount": 1,
+      "uri": "design/src/main/java/com/github/kr328/clash/design/store/UiStore.kt"
+    },
+    {
+      "matchCount": 3,
+      "uri": "service/src/main/java/com/github/kr328/clash/service/remote/IClashManager.kt"
+    },
+    {
+      "matchCount": 1,
+      "uri": "design\\src\\main\\java\\com\\github\\kr328\\clash\\design\\ConnectionsDesign.kt"
+    },
+    {
+      "matchCount": 4,
+      "uri": "core/src/main/java/com/github/kr328/clash/core/Clash.kt"
+    }
+  ],
+  "totalFiles": 9,
+  "totalMatches": 27
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\core\src\main\java\com\github\kr328\clash\core\model\ConfigurationOverride.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\design\src\main\java\com\github\kr328\clash\design\store\UiStore.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Key findings:
+
+- Android stores `lanBlockedSourceIps` in UiStore (local prefs) separately from core's `lanBlockedDevices` in persist override.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.kt",
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid",
+  "pattern": "lanBlocked|lan_blocked"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid",
+  "pattern": "lanBlocked|lan_blocked",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "app/src/main/java/com/github/kr328/clash/ConnectionsActivity.kt"
+    },
+    {
+      "matchCount": 1,
+      "uri": "design/src/main/java/com/github/kr328/clash/design/ConnectionsDesign.kt"
+    },
+    {
+      "matchCount": 2,
+      "uri": "design/src/main/java/com/github/kr328/clash/design/store/UiStore.kt"
+    },
+    {
+      "matchCount": 1,
+      "uri": "core/src/main/java/com/github/kr328/clash/core/model/ConfigurationOverride.kt"
+    },
+    {
+      "matchCount": 1,
+      "uri": "design\\src\\main\\java\\com\\github\\kr328\\clash\\design\\ConnectionsDesign.kt"
+    }
+  ],
+  "totalFiles": 5,
+  "totalMatches": 8
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+There may be a bug where ConnectionsDesign incorrectly references `uiStore`.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\app\src\main\java\com\github\kr328\clash\ConnectionsActivity.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\clash-verge-rev\src\features\lan-devices\state.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I see a disconnect on Android:</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.kt",
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid",
+  "pattern": "lanBlockedSourceIps"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid",
+  "pattern": "lanBlockedSourceIps",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": ".\\design\\src\\main\\java\\com\\github\\kr328\\clash\\design\\ConnectionsDesign.kt"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\design\\src\\main\\java\\com\\github\\kr328\\clash\\design\\store\\UiStore.kt"
+    }
+  ],
+  "totalFiles": 2,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+So `lanBlockedSourceIps` is **only read** in ConnectionsDesign, never written in the codebase! That's a bug - the blocked devices row on Android might always be empty because `lanBlockedSourceIps` is never written to in the codebase. The default is an empty set, so the blocked section never shows persisted IPs. The UI store is always empty, meaning device cards for blocked IPs won't appear unless something external sets prefs.
+
+The fix for Android alignment:
+- **Unify blocked list source**: Use same source as Activity - either pass blockedIps into Design, or sync uiStore from persist on ConnectionsActivity launch and on each enable/disable.
+
+Cleanest approach: ConnectionsDesign should receive blocked IPs from the same place as filtering - Options:
+- Pass `getBlockedLanIps: () -> Set<String>` or constructor param `initialBlocked: Set<String>` + callback updates
+- Or sync UiStore in Activity when loading and on disable/enable
+
+Simplest alignment with desktop: desktop reads from clash config `lan-blocked-devices`. Android persist has same. Design should read the blocked list for the device tab from the same source as Activity. Since Design doesn't easily have access to withClash, two options exist:
+
+- Option A: ConnectionsActivity calls `design.setLanBlockedIps(blockedIps)` after each refresh and on start.
+- Option B: Sync uiStore in Activity by setting `uiStore.lanBlockedSourceIps = blockedIps.toSet()` when loading and after enable/disable, keeping Design unchanged.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "BaseActivity*.kt",
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\app\\src\\main\\java\\com\\github\\kr328\\clash",
+  "pattern": "uiStore"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\app\\src\\main\\java\\com\\github\\kr328\\clash",
+  "pattern": "uiStore",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "app/src/main/java/com/github/kr328/clash/BaseActivity.kt"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll sync `uiStore.lanBlockedSourceIps = blockedIps.` I'll sync `uiStore.lanBlockedSourceIps = blockedIps` in ConnectionsActivity after:
+- Initial load from persist
+- DisableDevice
+- EnableDevice
+
+UI refresh needs to trigger after sync. If user is on device tab, refreshConnections already handles this via patchConnections which calls refreshDisplayItems for non-Active connections. Active tab uses first branch, while Devices tab uses second branch since tabMode is not Active. When only uiStore changes (without snapshot change), blocked list is built from uiStore plus groups from snapshot.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.go",
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\core\\src\\foss\\golang\\clash",
+  "pattern": "lan-max|lan-silent|lan-blocked|LanMax"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\core\\src\\foss\\golang\\clash",
+  "pattern": "lan-max|lan-silent|lan-blocked|LanMax",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "core\\src\\foss\\golang\\clash\\config\\config.go"
+    },
+    {
+      "matchCount": 2,
+      "uri": "core\\src\\foss\\golang\\clash\\hub\\executor\\executor.go"
+    },
+    {
+      "matchCount": 3,
+      "uri": "core\\src\\foss\\golang\\clash\\tunnel\\tunnel.go"
+    }
+  ],
+  "totalFiles": 3,
+  "totalMatches": 10
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The Go core supports lan-max-devices and blocking. ConfigurationOverride on Android only includes `lanBlockedDevices` in the App class. Need to verify if `lan-max-devices` and `lan-silent` exist in the App YAML merge path.
+
+- Go core may read from the full merged configuration.
+- If profile YAML contains a `clash-for-android` section, it might function on phones too.
+- Desktop UI modifies `clash-for-android` with max/silent settings, but Android lacks such UI.
+- Aligning "" requires addressing these discrepancies. - Fix Android UiStore vs persist mismatch for blocked devices display by syncing uiStore from persist in ConnectionsActivity.
+- For desktop closeLanConnections, align to use isRemoteLanClientConnection so turning off allow-lan doesn't accidentally close RFC1918 sources; consider closing inbound proxy recipient connections only for safer "disable LAN" behavior.
+- Re-read proxies for clarification.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\core\src\foss\golang\clash\config\config.go</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.go",
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\core\\src\\foss\\golang\\clash",
+  "pattern": "lan-silent|LanSilent|silent"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\core\\src\\foss\\golang\\clash",
+  "pattern": "lan-silent|LanSilent|silent",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "core/src/foss/golang/clash\\test/clash_test.go"
+    },
+    {
+      "matchCount": 1,
+      "uri": "core/src/foss/golang/clash\\log/level.go"
+    },
+    {
+      "matchCount": 2,
+      "uri": "core/src/foss/golang/clash\\test/dns_test.go"
+    }
+  ],
+  "totalFiles": 3,
+  "totalMatches": 4
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.go",
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\core\\src\\foss\\golang\\clash",
+  "pattern": "lan-silent|LanSilent"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\core\\src\\foss\\golang\\clash",
+  "pattern": "lan-silent|LanSilent",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+`lan-silent-threshold-seconds` exists only in the desktop global.d configuration file. The `lan-silent-threshold-seconds` setting is exclusive to the desktop `global.d` configuration and may be ignored by core or custom forks. Since Android's `ConfigurationOverride` lacks this field, patching it from desktop could result in YAML inclusion. For Android compatibility, optional fields could be added to `ConfigurationOverride.App` for parity during merging. However, since Go doesn't process `lan-silent`, it's purely a frontend feature on desktop. In `connections.tsx`, `lan-silent` is saved to clash-for-android, indicating it's used for UI-only silent device detection on desktop. Android's device view lacks silent/disconnected cards found on desktop, showing a simplified list instead.
+
+Gaps to fix:
+
+- **Android ConnectionsActivity**: Sync `uiStore.lanBlockedSourceIps = blockedIps.toSet()` on init and after enable/disable to match persist + desktop behavior for the "" device tab.
+- **Desktop closeLanConnections.ts**: Remove duplicate `isLanSourceIp` by importing from `lan-devices/model` for a single source of truth.
+- **Desktop connections.tsx filterConn**: Filter `blockedLanIps` from connection list for the active tab. Android Activity filters blocked IPs from the full snapshot before patching, aligning with the desktop pattern.
+
+- **Android refreshConnections** auto-closes connections where `sourceIP` is in `blockedIps`, matching desktop behavior. Blocking an IP closes all connections from that IP.
+- **ConnectionMetadata.processPath** may be added on Android if core sends it; requires model and serialization updatesskip unless core sends it.
+- **lan-max-devices / lan-over-limit** on Android needs Java model update to support `ConfigurationOverride`.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\design\src\main\java\com\github\kr328\clash\design\NetworkSettingsDesign.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Android fails to invoke closeLanConnections when disabling allow LAN, whereas the desktop version handles this through proxy mechanisms.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\app\src\main\java\com\github\kr328\clash\NetworkSettingsActivity.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll add the condition `UpdateAllowLan(false)` in the appropriate section.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\core\src\main\java\com\github\kr328\clash\core\Clash.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll add a `closeLanConnections()` function to Clash. I'll add a `closeLanConnections()` function to Clash that mirrors the desktop's close-connections.ts implementation using `LanRemoteDeviceFilter`. Since desktop uses `isLanSourceIp` broadly, I need to ensure consistent logic.
+
+Options:
+- Duplicate `isLanSourceIp` logic in Clash.kt for closeLanConnections
+- Add extension in app module only when NetworkSettings calls withClash
+- Move LanIp-rules to common module (larger change)
+
+Simplest approach is to duplicate `isLanSourceIp` in Clash.kt or add extension in app module. The `closeConnectionsFromLanSources()` logic can be inlined in `NetworkSettingsActivity` within the `withClash` block. The order should check `persistOverride.allowLan` before updating it. 
+
+- Check if LAN was enabled and is being disabled
+- Then call `withClash { closeConnectionsFromLanSources() }` 
+- Update `persistOverride.allowLan` after the check
+
+This avoids potential race conditions and ensures proper state handling during LAN toggle operations.</details></think>
+
+_**Agent (default)**_
+
+File not found
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.kt",
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\app",
+  "pattern": "fun.*withClash|withClash"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\app",
+  "pattern": "fun.*withClash|withClash",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app/src/main/java/com/github/kr328/clash/util/Remote.kt"
+    },
+    {
+      "matchCount": 9,
+      "uri": "app/src/main/java/com/github/kr328/clash/ConnectionsActivity.kt"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app/src/main/java/com/github/kr328/clash/ProvidersActivity.kt"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app/src/main/java/com/github/kr328/clash/OverrideSettingsActivity.kt"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app/src/main/java/com/github/kr328/clash/MainActivity.kt"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app/src/main/java/com/github/kr328/clash/LogsActivity.kt"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/src/main/java/com/github/kr328/clash/MetaFeatureSettingsActivity.kt"
+    }
+  ],
+  "totalFiles": 8,
+  "totalMatches": 43
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Best place for closeLanConnections is Clash.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **28** results in **1** directory</summary>
+
+Directory: **c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\common\src\main\java** (28 files)
+
+| File |
+|------|
+| `../common/src/main/java/com/github/kr328/clash/common/constants/Metadata.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/store/StoreProvider.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/util/Components.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/util/Parcelable.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/log/DebugLog.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/compat/UI.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/compat/Resource.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/ProxyGroupRefresh.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/compat/Html.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/constants/Permissions.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/log/Log.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/id/UndefinedIds.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/util/Intent.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/Global.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/compat/Context.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/constants/Components.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/util/Global.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/store/Providers.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/store/Store.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/constants/Intents.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/compat/Intents.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/compat/App.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/compat/View.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/compat/Package.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/util/Patterns.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/util/Ticker.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/constants/Authorities.kt` |
+| `../common/src/main/java/com/github/kr328/clash/common/compat/Services.kt` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\core\build.gradle.kts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\core\build.gradle.kts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+core implements common; design implements core plus common. I'll add `com.github.kr328.clash.common.net.LanSourceIp` in common module with `fun isLanSourceIp(ip: String?): Boolean` - single source of truth.
+
+Then update:
+- `LanRemoteDeviceFilter.kt` - remove duplicate isLanSourceIp, import from common
+- `Clash.kt` - add `closeLanConnections()` using LanSourceIp.isLanSourceIp
+
+design depends on common? design build.gradle - implementation(project(":common")) - not explicit but core has common, design has core - transitive? Added `LanSourceIp` object with `isPrivateLanSource` function to common module for shared logic.  
+Updated `LanRemoteDeviceFilter` to import from common instead of duplicating logic.  
+Ensured `Clash.kt` can access `LanSourceIp.isPrivateLanSource` through common module dependency.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\core\src\main\java\com\github\kr328\clash\core\Clash.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Add the import statement for the Clash library.</details></think>
+
+_**Agent (default)**_
+
+对齐项：1. 修复安卓 `lanBlockedDevices`（persist）与 `UiStore.lanBlockedSourceIps` 不同步，导致设备页“已禁用”不显示。2. 关闭「允许局域网」时像电脑端一样关闭私网来源连接。3. 将 `isLanSourceIp` 抽到 `common`，供 core 与 design 共用，并统一桌面端 `close-connections.ts` 的重复实现。
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\common\src\main\java\com\github\kr328\clash\common\net\LanSourceIp.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\design\src\main\java\com\github\kr328\clash\design\landevices\LanRemoteDeviceFilter.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\design\src\main\java\com\github\kr328\clash\design\landevices\LanRemoteDeviceFilter.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\design\build.gradle.kts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The design already includes common elements. Good.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\core\src\main\java\com\github\kr328\clash\core\Clash.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\core\src\main\java\com\github\kr328\clash\core\Clash.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\app\src\main\java\com\github\kr328\clash\ConnectionsActivity.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\app\src\main\java\com\github\kr328\clash\ConnectionsActivity.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\app\src\main\java\com\github\kr328\clash\NetworkSettingsActivity.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\clash-verge-rev\src\utils\close-connections.ts</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+NetworkSettingsActivity requires an import for Clash; it already includes `import com.`. NetworkSettingsActivity needs to import `github.kr328.clash.core.Clash` instead of `com.`.
+
+ConnectionsActivity correctly inherits `uiStore` from BaseActivity, so no need for explicit import.
+
+For connections.tsx, verify that blocked auto-close uses `isLanSourceIp` - consider using `isRemoteLanClient` for consistency with other parts of the codebase. The current behavior only blocks remote devices, but theoretically a local IP could also be blocked. Keep `isLanSourceIp` in the useEffect for now.
+
+Add new fields to ConfigurationOverride.App for lan-max-devices and related settings.</details></think>
+
+_**Agent (default)**_
+
+正在将 `lan-max-devices` 等字段加入 `ConfigurationOverride.App`，以便与电脑端写入的 `clash-for-android` 配置在合并时一致（避免被覆盖丢失）。
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\core\src\main\java\com\github\kr328\clash\core\model\ConfigurationOverride.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Add to App:
+- @SerialName("lan-max-devices")</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.kt",
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid",
+  "pattern": "closeConnectionsExcludingDirect|closeLanConnections"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid",
+  "pattern": "closeConnectionsExcludingDirect|closeLanConnections",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app/src/main/java/com/github/kr328/clash/ConnectionsActivity.kt"
+    },
+    {
+      "matchCount": 1,
+      "uri": "service/src/main/java/com/github/kr328/clash/service/remote/IClashManager.kt"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\src\\main\\java\\com\\github\\kr328\\clash\\ConnectionsActivity.kt"
+    },
+    {
+      "matchCount": 2,
+      "uri": "core\\src\\main\\java\\com\\github\\kr328\\clash\\core\\Clash.kt"
+    },
+    {
+      "matchCount": 2,
+      "uri": "core/src/main/java/com/github/kr328/clash/core/Clash.kt"
+    },
+    {
+      "matchCount": 2,
+      "uri": "service/src/main/java/com/github/kr328/clash/service/ClashManager.kt"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\src\\main\\java\\com\\github\\kr328\\clash\\NetworkSettingsActivity.kt"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/src/main/java/com/github/kr328/clash/ProxyActivity.kt"
+    }
+  ],
+  "totalFiles": 8,
+  "totalMatches": 11
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The withClash block requires a receiver implementing IClashManager or similar, necessitating a read of Remote.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\app\src\main\java\com\github\kr328\clash\util\Remote.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+withClash utilizes the IClashManager receiver instead of interacting with Clash directly.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\service\src\main\java\com\github\kr328\clash\service\remote\IClashManager.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The `Clash.closeLanConnections()` method cannot be called inside the `withClash { }` block because the block's receiver, `IClashManager`, does not contain this method.</details></think>
+
+_**Agent (default)**_
+
+将 `closeLanConnections` 加入 `IClashManager`，与 `closeConnection` 一样通过 Binder 调用，避免在应用进程直接调 `Clash`。
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\service\src\main\java\com\github\kr328\clash\service\remote\IClashManager.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\service\src\main\java\com\github\kr328\clash\service\ClashManager.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Add override after closeConnectionsExcludingDirect
+
+- Add override after closeConnectionsExcludingDirect
+- Ensure proper cleanup of connections
+- Handle exclusion logic for direct connections</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\service\src\main\java\com\github\kr328\clash\service\ClashManager.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\app\src\main\java\com\github\kr328\clash\NetworkSettingsActivity.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.kt",
+  "outputMode": "files_with_matches",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid",
+  "pattern": "IClashManager"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "files_with_matches",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid",
+  "pattern": "IClashManager",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": ".\\service\\src\\main\\java\\com\\github\\kr328\\clash\\service\\ClashManager.kt"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\service\\src\\main\\java\\com\\github\\kr328\\clash\\service\\remote\\IClashManager.kt"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\service\\src\\main\\java\\com\\github\\kr328\\clash\\service\\remote\\IRemoteService.kt"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\service\\src\\main\\java\\com\\github\\kr328\\clash\\service\\RemoteService.kt"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\app\\src\\main\\java\\com\\github\\kr328\\clash\\util\\Remote.kt"
+    }
+  ],
+  "totalFiles": 5,
+  "totalMatches": 5
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\service\src\main\java\com\github\kr328\clash\service\remote\IRemoteService.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\core\src\main\java\com\github\kr328\clash\core\model\ConfigurationOverride.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.kt",
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid",
+  "pattern": "ConfigurationOverride\\.App\\(|App\\("
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid",
+  "pattern": "ConfigurationOverride\\.App\\(|App\\(",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": ".\\core\\src\\main\\java\\com\\github\\kr328\\clash\\core\\model\\ConfigurationOverride.kt"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\app\\src\\main\\java\\com\\github\\kr328\\clash\\remote\\Remote.kt"
+    }
+  ],
+  "totalFiles": 2,
+  "totalMatches": 4
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\app\\src\\main\\java\\com\\github\\kr328\\clash\\NetworkSettingsActivity.kt",
+    "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\app\\src\\main\\java\\com\\github\\kr328\\clash\\ConnectionsActivity.kt",
+    "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\core\\src\\main\\java\\com\\github\\kr328\\clash\\core\\Clash.kt",
+    "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\design\\src\\main\\java\\com\\github\\kr328\\clash\\design\\landevices\\LanRemoteDeviceFilter.kt",
+    "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\common\\src\\main\\java\\com\\github\\kr328\\clash\\common\\net\\LanSourceIp.kt",
+    "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\clash-verge-rev\\src\\utils\\close-connections.ts"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\app\\src\\main\\java\\com\\github\\kr328\\clash\\NetworkSettingsActivity.kt"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\app\\src\\main\\java\\com\\github\\kr328\\clash\\ConnectionsActivity.kt"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\core\\src\\main\\java\\com\\github\\kr328\\clash\\core\\Clash.kt"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\design\\src\\main\\java\\com\\github\\kr328\\clash\\design\\landevices\\LanRemoteDeviceFilter.kt"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\common\\src\\main\\java\\com\\github\\kr328\\clash\\common\\net\\LanSourceIp.kt"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\clash-verge-rev\\src\\utils\\close-connections.ts"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The App module may need to regenerate kaidl since IClashManager is used from app  the generated client should include the new method upon compilation.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.kt",
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\app",
+  "pattern": "allowLan|allow_lan"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\Ken-Narmal\\Desktop\\ClashMetaForAndroid\\app",
+  "pattern": "allowLan|allow_lan",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "app\\src\\main\\java\\com\\github\\kr328\\clash\\NetworkSettingsActivity.kt"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt"
+    }
+  ],
+  "totalFiles": 2,
+  "totalMatches": 6
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+- Set network settings to allow only LAN connections.
+- Toggle the setting to align closely with LAN-only mode.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\Ken-Narmal\Desktop\ClashMetaForAndroid\app\src\main\java\com\github\kr328\clash\remote\Remote.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+verifyApp is unrelated.  
+Done. Code citations should be provided sparingly  the user requested conceptual explanations and alignment.</details></think>
+
+_**Agent (default)**_
+
+我对比了双端后，除了设备视图的过滤，还做了这些**对齐与修复**（并说明仍有意保留的差异）。
+
+## 已对齐的部分
+
+**1. 私网 IP 判定（单一规则源）**  
+- 安卓：新增 `common/.../LanSourceIp.kt`，`LanRemoteDeviceFilter` 与 `Clash.closeLanConnections()` 都复用同一套规则。  
+- 电脑端：`close-connections.ts` 里重复的 `isLanSourceIp` 已改为从 `@/features/lan-devices/model` 引用，与连接页设备逻辑一致。
+
+**2. 关闭「允许局域网」时顺带关掉私网来源连接**  
+- 电脑端：代理页关 `allow-lan` 时会 `closeLanConnections()`。  
+- 安卓端：在 `NetworkSettingsActivity` 里，当从开启变为关闭时，通过 `withClash { closeLanConnections() }` 走 Binder 调核心里的 `Clash.closeLanConnections()`（与 `closeConnection` 同路径，不在应用进程裸调 `Clash`）。
+
+**3. 禁用设备列表：持久化与 UI 一致**  
+- 设备页「已禁用」读的是 `UiStore.lanBlockedSourceIps`，但原先**从未**与 `persist.app.lanBlockedDevices` 同步，等于一直可能是空的。  
+- 现在在 `ConnectionsActivity` 启动时、以及禁用/解禁设备后，都会 `uiStore.lanBlockedSourceIps = blockedIps.toSet()`，与电脑端「配置里的 `lan-blocked-devices` + 界面」一致。
+
+**4. `clash-for-android` 覆盖字段（配置往返）**  
+- 在 `ConfigurationOverride.App` 中补充了 `lan-max-devices`、`lan-over-limit-action`、`lan-silent-threshold-seconds`，与电脑端写入的字段对齐，避免合并/保存覆盖时把这类键丢掉。  
+- 说明：当前 **Go 核心里没有** `lan-silent-threshold-seconds` 的引用，该键在核心里多半仍是「仅前端/配置保留」；设备上限等仍以核心里已有逻辑为准。
+
+## 刻意不对齐或尚未做的部分
+
+**1. `closeLanConnections` 仍用「全部私网 sourceIP」**  
+- 与电脑端现网一致：关 LAN 时要拆掉**所有**私网来源连接，而不是设备视图里的「仅远端客户端」。若改成 `isRemoteLanClient`，本机私网源连接可能关不干净。
+
+**2. 安卓没有电脑端那套「静默 / 已断开设备卡片 + 设备上限下拉」**  
+- 那是 `connections.tsx` 的 UI 与 `patchClash` 行为；安卓连接页仍是简化设备列表。若要对齐交互，需要单独做一版 UI + 写 `persist.app` 里对应字段（模型已能带过去）。
+
+**3. 构建说明**  
+- 我给 `IClashManager` 增加了 `closeLanConnections()`，需完整编译一次以便 **kaidl** 生成/校验 Binder 代码。你本机若仍未配 `JAVA_HOME`，需先修好 JDK 环境再跑 Gradle。
+
+如果你希望下一步把**设备上限 / 静默阈值**在安卓连接页也做成和电脑端同款控件，可以说一下优先级（只做 UI 写 persist，还是还要在核心里接 `lan-silent` 行为）。

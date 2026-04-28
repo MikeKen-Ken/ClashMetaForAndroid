@@ -68,7 +68,20 @@ _**Agent (default)**_
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: C:\Users\Ken-Narmal\.gitai-commit-zh</summary>
 
-Status: **loading**
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:\Users\Ken-Narmal\.gitconfig</summary>
 
 </details>
 
@@ -78,3 +91,44 @@ Status: **loading**
 <summary>Tool use: **edit_file_v2**</summary>
 
 </details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\Ken-Narmal\.gitai-commit-zh</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\Ken-Narmal\.gitconfig</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+已按你的流程配置完成，结果如下：
+
+- 已创建：`C:\Users\Ken-Narmal\.gitai-commit-zh`
+- 文件内容已写入你提供的中文 prompt 模板（含 `{{ gitDiff }}` 占位符）
+- 已修改：`C:\Users\Ken-Narmal\.gitconfig`
+- 已追加配置段：
+  - `[smartgit-ai-commit-message "generate"]`
+  - `llm = github`
+  - `maxDiffSize = 32768`
+  - `promptTemplate = ~/.gitai-commit-zh`
+
+这样 SmartGit 在 Windows 下会按你说的方式解析 `~` 到用户目录，并使用中文提交消息模板。

@@ -94,7 +94,23 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
             }
         }
 
-        return addresses.distinct().sorted()
+        // 与电脑端一致：优先展示典型家宽网段，避免仅因字符串排序把 10.x 放在 192.168.x 之前
+        return addresses.distinct().sortedWith { a, b ->
+            val pa = lanAddressSortKey(a)
+            val pb = lanAddressSortKey(b)
+            if (pa != pb) pa.compareTo(pb) else a.compareTo(b)
+        }
+    }
+
+    /** 192.168 / 10 / 172 私网中，优先 192.168 作为“局域网”主地址（多网卡时常有 10.x 与 192.168.x 并存）。 */
+    private fun lanAddressSortKey(addressWithPort: String): Int {
+        val ip = addressWithPort.substringBefore(':')
+        return when {
+            ip.startsWith("192.168.") -> 0
+            ip.startsWith("10.") -> 1
+            ip.startsWith("172.") -> 2
+            else -> 3
+        }
     }
 
     private fun resolveLanPort(
