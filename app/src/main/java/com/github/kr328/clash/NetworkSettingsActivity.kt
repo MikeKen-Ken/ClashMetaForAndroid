@@ -3,6 +3,8 @@ package com.github.kr328.clash
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.net.ConnectivityManager
+import android.net.LinkProperties
+import android.net.NetworkCapabilities
 import androidx.core.content.getSystemService
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.common.util.intent
@@ -112,9 +114,36 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
 
     private fun resolvePreferredIpv4Address(): String? {
         val connectivityManager = getSystemService<ConnectivityManager>() ?: return null
-        val activeNetwork = connectivityManager.activeNetwork ?: return null
-        val linkProperties = connectivityManager.getLinkProperties(activeNetwork) ?: return null
+        val activeNetwork = connectivityManager.activeNetwork
 
+        if (activeNetwork != null) {
+            val activeCaps = connectivityManager.getNetworkCapabilities(activeNetwork)
+            if (activeCaps?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true) {
+                connectivityManager.getLinkProperties(activeNetwork)?.let { props ->
+                    extractIpv4Address(props)?.let { return it }
+                }
+            }
+        }
+
+        for (network in connectivityManager.allNetworks) {
+            val caps = connectivityManager.getNetworkCapabilities(network) ?: continue
+            if (!caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) continue
+
+            connectivityManager.getLinkProperties(network)?.let { props ->
+                extractIpv4Address(props)?.let { return it }
+            }
+        }
+
+        if (activeNetwork != null) {
+            connectivityManager.getLinkProperties(activeNetwork)?.let { props ->
+                extractIpv4Address(props)?.let { return it }
+            }
+        }
+
+        return null
+    }
+
+    private fun extractIpv4Address(linkProperties: LinkProperties): String? {
         return linkProperties.linkAddresses
             .asSequence()
             .mapNotNull { it.address as? Inet4Address }

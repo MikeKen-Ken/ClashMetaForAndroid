@@ -1790,3 +1790,597 @@ _**Agent (default)**_
 <summary>Tool use: **read_file_v2**</summary>
 
 </details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/cmd/network.rs</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+**Considering network interfaces**
+
+I'm thinking about leveraging the `get_network_interfaces` function to order names from `sysinfo`, likely focusing on active interfaces. For the frontend, I could use `useNetworkInterfaces` because it probably contains names and additional information I might need. I should consider inspecting the hook to see how it can help me further. It’s interesting to explore these options! Let's see what I can find out about the network interfaces and how to best implement them.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src/hooks/use-network.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src/services/cmds.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src",
+  "pattern": "interface NetworkInterface|type NetworkInterface|Addr"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src",
+  "pattern": "interface NetworkInterface|type NetworkInterface|Addr",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "clash-verge-rev\\src\\types\\global.d.ts"
+    },
+    {
+      "matchCount": 9,
+      "uri": "clash-verge-rev\\src\\types\\generated\\i18n-keys.ts"
+    },
+    {
+      "matchCount": 9,
+      "uri": "clash-verge-rev\\src\\types\\generated\\i18n-resources.ts"
+    },
+    {
+      "matchCount": 2,
+      "uri": "clash-verge-rev\\src\\providers\\app-data-provider.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src\\providers\\app-data-context.ts"
+    },
+    {
+      "matchCount": 8,
+      "uri": "clash-verge-rev\\src\\locales\\zhtw\\settings.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src\\locales\\zhtw\\home.json"
+    },
+    {
+      "matchCount": 8,
+      "uri": "clash-verge-rev\\src\\locales\\zh\\settings.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src\\locales\\zh\\home.json"
+    },
+    {
+      "matchCount": 8,
+      "uri": "clash-verge-rev\\src\\locales\\tt\\settings.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src\\locales\\tt\\home.json"
+    },
+    {
+      "matchCount": 8,
+      "uri": "clash-verge-rev\\src\\locales\\tr\\settings.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src\\locales\\tr\\home.json"
+    },
+    {
+      "matchCount": 8,
+      "uri": "clash-verge-rev\\src\\locales\\ru\\settings.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src\\locales\\ru\\home.json"
+    },
+    {
+      "matchCount": 8,
+      "uri": "clash-verge-rev\\src\\locales\\ko\\settings.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src\\locales\\ko\\home.json"
+    },
+    {
+      "matchCount": 3,
+      "uri": "clash-verge-rev\\src\\locales\\jp\\settings.json"
+    }
+  ],
+  "totalFiles": 18,
+  "totalMatches": 192
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src/types/global.d.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+**Choosing preferred IP**
+
+I'm thinking I need to choose a preferred IP from the network interfaces obtained through the get_network_interfaces names list. Prioritizing might help, but I could probably just take the first one in the list to represent the active interface, which seems like a good approach. I'll implement a helper function in proxies.tsx to select the preferred LAN IPv4 from the first interface with IPv4. I'll also make sure to toggle the allow-LAN option with the chosen bind address. Let's get started on patching that file!</details></think>
+
+_**Agent (default)**_
+
+可以改，我现在就给电脑端“允许局域网”开关加同样逻辑：开启时自动把 `bind-address` 设为当前优先网卡 IPv4，`mixed-port` 保持你现有配置。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: F:/work/ClashMetaForAndroid/clash-verge-rev/src/pages/proxies.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "F:/work/ClashMetaForAndroid/clash-verge-rev/src/pages/proxies.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "F:/work/ClashMetaForAndroid/clash-verge-rev/src/pages/proxies.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+可以，已经帮你改了电脑端，行为和安卓一致。
+
+现在电脑端在 `允许局域网` 打开时会：
+
+- 自动选当前优先网卡的 IPv4
+- 同时写入 `allow-lan: true` 和 `bind-address: 当前IP`
+- **不改** `mixed-port`，仍用你现有配置
+
+我改的是 `clash-verge-rev/src/pages/proxies.tsx`，并且已检查无 lint 问题。
+
+补充一点：  
+这个“当前优先网卡 IP”是按当前接口列表优先顺序选的（通常就是当前在用网络），如果你切网络后想立即生效，和安卓一样建议“关一下再开局域网”触发刷新。
+
+---
+
+_**User**_
+
+安卓局域网使用的确实是本机信息中的 ip，但是和当前链接的wifi ip 不同。我想知道 这两个 ip 什么区别，应该使用哪个才是正确的
+
+---
+
+_**Agent (default)**_
+
+你这个现象很常见，本质是：**手机上同时有多个“本机 IP”**，但只有一个是你当前这条 Wi‑Fi 上可达的。
+
+常见两类 IP：
+
+- **Wi‑Fi 接口 IP**  
+  来自你当前连接的路由器（如 `192.168.1.x` / `10.x.x.x` / `172.20.x.x`），这是局域网设备互访应该用的。
+- **其他接口 IP**（虚拟网卡/隧道/热点/VPN）  
+  例如 VPN、系统虚拟接口、USB 网络、热点桥接等分配的地址。它“是本机 IP”，但对同 Wi‑Fi 的电脑不一定可达。
+
+你问“哪个才正确”：
+
+- **正确的是：和对端设备在同一网段的那个 IP**。  
+  例如电脑是 `192.168.31.45`，手机就该用 `192.168.31.*` 的地址。
+- 不是看“它是不是本机 IP”，而是看“对端是否能路由到它”。
+
+最快判断法（1 分钟）：
+
+1. 先看电脑 IP（如 `192.168.1.100`）。
+2. 手机候选 IP 里选同前缀的（`192.168.1.*`）。
+3. 电脑上直接测 `手机IP:端口`（你配置的 `mixed-port`）。  
+   能通就是正确 IP；不通就换另一个候选 IP。
+
+一句话总结：  
+**局域网代理应使用“当前连接 Wi‑Fi 对应网卡的 IP”，不是任意本机 IP。**  
+
+如果你愿意，我可以再帮你把安卓端显示文案改成“当前 Wi‑Fi IP（推荐）/其他本机 IP（备用）”，避免后续混淆。
+
+---
+
+_**User**_
+
+那安卓这里 允许来自局域网的连接 使用的 ip 现在用的是哪个ip
+
+---
+
+_**Agent (default)**_
+
+现在安卓端“允许来自局域网的连接”开启后，实际用的是：
+
+- **`bind-address` 指定的 IP**（如果有）
+- 没有 `bind-address` 才会退回核心默认行为（通常是 `*`）
+
+而按我们刚改的逻辑，你每次在安卓端打开这个开关时会自动做这件事：
+
+- 读取 `ConnectivityManager.activeNetwork` 的 IPv4（当前活跃网络 IP）
+- 写入 `persistOverride.bindAddress`
+- 然后核心按这个 IP + 你的端口（`mixed-port`/http/socks）监听
+
+所以“现在用的是哪个 IP”的答案是：  
+**当前活跃网络的 IPv4（即开启开关那一刻取到的那个）**。  
+
+如果你想我也可以再加一条日志/界面提示，把“本次已绑定 IP”明确显示出来，方便你每次确认。
+
+---
+
+_**User**_
+
+刚才不是跟你说了改成：那能不能不用 bind ip，而是每次打开局域网链接的时候，采用当前设备 ip，这样肯定不会失效。但是端口采用mixed-port配置
+
+
+请你确认
+
+---
+
+_**Agent (default)**_
+
+你说得对，我确认一下当前实现，和你要求是一致的：
+
+- 不再让你手动固定一个长期 `bind-address`
+- 每次**打开局域网连接**时，动态取“当前设备活跃网络 IP”
+- 把这个 IP 写到 `bind-address`（仅用于本次/当前网络环境）
+- 端口继续走现有 `mixed-port` 配置，不改端口策略
+
+所以结论是：  
+你要的“每次开启时用当前 IP + 端口用 mixed-port”已经按这个逻辑落地了。
+
+补一句边界：如果网络切换发生在“已经开启之后”，需要你关掉再打开一次“允许局域网”，让它重新取一次当前 IP。
+
+---
+
+_**User**_
+
+那么这个 ip 貌似不一定是当前网络，比如 WiFi 使用的对吗？
+
+---
+
+_**Agent (default)**_
+
+对，你这个判断是准确的：**不一定 100% 是 Wi‑Fi 的 IP**。
+
+现在取的是“系统当前活跃网络（active network）”的 IPv4，通常是你正在用的 Wi‑Fi，但以下情况可能不是：
+
+- 开了 VPN（活跃网络可能指向 VPN 通道）
+- 多网络并存且系统路由策略切走了别的接口
+- 某些机型/ROM 对 active network 的定义有差异
+
+所以可以理解为：
+
+- 它是“当前默认出口网络 IP”
+- 但不严格等于“Wi‑Fi 网卡 IP”
+
+如果你希望**强制就是当前 Wi‑Fi IP**，可以再改成“优先取 Wi‑Fi `TRANSPORT_WIFI` 的 IPv4；取不到再回退 active network”。  
+这样更贴合你“局域网互连”的目标。
+
+---
+
+_**User**_
+
+我想知道局域网互联，是不是应该用 Wi‑Fi IP 更加合理？保证可以局域网下可以相互连接？
+
+---
+
+_**Agent (default)**_
+
+是，**局域网互联优先用 Wi‑Fi IP 更合理**。  
+
+原因很直接：
+
+- 你的电脑/其他设备通常是通过同一个 Wi‑Fi AP 接入
+- Wi‑Fi IP 才是这条二层局域网里最稳定、最可达的地址
+- active network 可能落到 VPN/虚拟接口，导致“本机有 IP 但对端不可达”
+
+所以为“保证局域网下互相连接”，推荐策略是：
+
+- **优先 Wi‑Fi IPv4**
+- 取不到时再回退 active network IPv4
+- 仍取不到再回退当前多网卡枚举结果
+
+这套优先级最贴合你的目标。  
+如果你确认，我下一步就把安卓端和电脑端都改成这个优先级。
+
+---
+
+_**User**_
+
+那如果多个路由器，但是都是局域网的情况呢
+
+---
+
+_**Agent (default)**_
+
+这种情况要分两种，结论不一样：
+
+- **同一二层广播域（同网段、可互访）**  
+  多个 AP/路由只是桥接（常见 Mesh/AP 模式）。  
+  用 Wi‑Fi IP 没问题，设备之间可互连。
+
+- **不同子网/被路由隔离（NAT 或访客网络）**  
+  例如一个在 `192.168.1.x`，一个在 `192.168.31.x`，或开启了 AP 隔离/Client Isolation。  
+  这时即使都叫“局域网”，也可能互相访问不到；不是 IP 选错，而是网络策略不通。
+
+所以“多个路由器但都是局域网”时，判断标准是：
+
+- 两端 IP 是否同网段（至少先看前 3 段是否一致，粗略判断）
+- 能否互 ping / 访问对方端口
+- 路由器是否开启隔离策略
+
+你的目标是“稳定互连”，最稳做法：
+
+- 绑定当前 Wi‑Fi IP（推荐）
+- 同时保留认证（`authentication`）
+- 若跨子网，需路由放通端口或改到同一子网
+
+一句话：  
+**Wi‑Fi IP 是“更正确的入口”，但能否互连最终由网络拓扑和隔离策略决定。**
+
+---
+
+_**User**_
+
+那么安卓和电脑端都修改吧，先用 WiFi 的 ip
+
+---
+
+_**Agent (default)**_
+
+收到，我现在同时改两端：安卓端优先取 `TRANSPORT_WIFI` 的 IPv4，电脑端在网卡列表里优先选 Wi‑Fi 接口的 IPv4，再回退其他接口。改完我会做 lint 检查。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src/pages/proxies.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: F:/work/ClashMetaForAndroid/clash-verge-rev/src/pages/proxies.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt",
+    "F:/work/ClashMetaForAndroid/clash-verge-rev/src/pages/proxies.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt"
+    },
+    {
+      "relativeWorkspacePath": "F:/work/ClashMetaForAndroid/clash-verge-rev/src/pages/proxies.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+已按你的要求改完，安卓和电脑端都变成“**优先 Wi‑Fi IP**”。
+
+- 安卓：`app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt`
+  - `resolvePreferredIpv4Address()` 现在优先：
+    1) 活跃网络且是 Wi‑Fi  
+    2) 所有网络里带 Wi‑Fi 的网络  
+    3) 最后才回退活跃网络
+  - 开启局域网时写入 `bind-address` 的就是这个优先结果。
+
+- 电脑端：`clash-verge-rev/src/pages/proxies.tsx`
+  - 开启 `allow-lan` 时用于 `bind-address` 的 IP 改为：
+    - 先按网卡名优先 Wi‑Fi（`Wi-Fi/WLAN/Wireless`）
+    - 再从该网卡里取可用 IPv4
+    - 没有再回退其他接口
+
+- `mixed-port` 逻辑未改，仍沿用现有配置。  
+- 两个文件都已过 lint 检查，无新增报错。
+
+如果你愿意，我下一步可以再加“当前实际绑定 IP”的提示文案，避免你每次需要猜它到底选了哪个。
+
+---
+
+_**User**_
+
+安卓你如何判断是不是WiFi? 貌似我在用 WiFi 的时候很明显，连接上了 WiFi 数据
+
+---
+
+_**Agent (default)**_
+
+安卓这边我现在是用系统网络能力判断的，不是靠名字猜：
+
+- 先拿 `ConnectivityManager.activeNetwork`
+- 再取它的 `NetworkCapabilities`
+- 用 `hasTransport(NetworkCapabilities.TRANSPORT_WIFI)` 判断是否是 Wi‑Fi 传输
+
+也就是说，判断条件是**系统认定该网络为 Wi‑Fi transport**。  
+如果是，就从这个网络的 `LinkProperties` 里取 IPv4 作为优先 IP。
+
+你说“我明明在用 Wi‑Fi，但像没按 Wi‑Fi 选”这种情况确实可能出现，常见原因是：
+
+- 某些 ROM 下 `activeNetwork` 可能挂在 VPN/其他 transport 上
+- Wi‑Fi 已连接，但默认路由暂时不走它
+- 设备有特殊网络加速/双通道策略
+
+我已经在逻辑里加了回退，顺序是：
+
+1. `activeNetwork` 且 `TRANSPORT_WIFI`  
+2. 遍历 `allNetworks` 找任意 `TRANSPORT_WIFI`  
+3. 最后回退到 `activeNetwork` 的 IPv4
+
+所以不是只看第一步。  
+如果你愿意，我可以再加一条 debug 日志，把“本次命中的 transport 类型 + 选中的 IP”打出来，这样你现场就能确认它到底走了哪条分支。
