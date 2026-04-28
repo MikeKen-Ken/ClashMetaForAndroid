@@ -92,8 +92,6 @@ _**Agent (default)**_
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: f:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/cmd/runtime_share.rs</summary>
 
-Status: **loading**
-
 </details>
 
 </tool-use>
@@ -102,3 +100,453 @@ Status: **loading**
 <summary>Tool use: **edit_file_v2**</summary>
 
 </details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "f:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/cmd/runtime_share.rs"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "f:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/cmd/runtime_share.rs"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+已改好，现在是**一次性二维码分享**：
+
+- 修改文件：`clash-verge-rev/src-tauri/src/cmd/runtime_share.rs`
+- 新行为：
+  - 首次正确访问 `/share/<token>/runtime.yaml` 时返回配置；
+  - 返回后立即关闭当前分享服务；
+  - 后续再扫同一二维码会失败（返回 `404`）。
+- 仍保留原来的 `600s` TTL 兜底（如果一直没人扫，会自动超时关闭）。
+
+实现上我加了一个原子标记 `AtomicBool` 防止并发下多次成功访问，并在首个成功请求后按 `share_id` 精确关闭当前会话。  
+另外已检查该文件的 lint，结果无报错。
+
+如果你想更激进一点，我还可以再加一层：**只允许首个来源 IP 访问**（同一次扫码的重试也允许），进一步降低被局域网其他设备撞到的概率。
+
+---
+
+_**User**_
+
+第一次扫描之后，页面会有任何反应吗？、
+
+---
+
+_**Agent (default)**_
+
+我先看下前端 `proxies.tsx` 里对这个分享接口的处理，确认“首次扫描成功后”页面有没有做状态更新或提示。稍等我查一下。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "f:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src",
+  "pattern": "start_runtime_config_lan_share|stop_runtime_config_lan_share"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "f:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src",
+  "pattern": "start_runtime_config_lan_share|stop_runtime_config_lan_share",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "f:/work/ClashMetaForAndroid/clash-verge-rev/src",
+  "pattern": "start_runtime_config_lan_share|stop_runtime_config_lan_share|runtime.*share|二维码|qr|QR"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "f:/work/ClashMetaForAndroid/clash-verge-rev/src",
+  "pattern": "start_runtime_config_lan_share|stop_runtime_config_lan_share|runtime.*share|二维码|qr|QR",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src/types/generated/i18n-keys.ts"
+    },
+    {
+      "matchCount": 3,
+      "uri": "clash-verge-rev\\src/components/setting/mods/config-viewer.tsx"
+    }
+  ],
+  "totalFiles": 2,
+  "totalMatches": 4
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: f:/work/ClashMetaForAndroid/clash-verge-rev/src/components/setting/mods/runtime-lan-share-dialog.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: f:/work/ClashMetaForAndroid/clash-verge-rev/src/components/setting/mods/config-viewer.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+目前**不会有明显页面反应**。  
+你现在这套实现里，首次扫描成功后后端会关掉分享服务，但前端弹窗没有监听这个“已关闭”事件，所以：
+
+- 二维码弹窗还会停留在页面上；
+- URL 文本看起来也还在；
+- 只是该链接再访问会失败（404）。
+
+如果你希望“扫一次后界面自动变化”，可以再加一层前端反馈，例如：
+- 自动关闭弹窗；
+- 或把按钮/文案改成“已失效（已被扫描）”。
+
+---
+
+_**User**_
+
+扫一次之后，二维码被模糊，好实现吗？不好实现可以用关闭或者其他方法
+
+---
+
+_**Agent (default)**_
+
+这个需求好实现，我建议直接做成“**首次扫描成功后，弹窗自动失效显示**”（比如二维码模糊+提示），比单纯关闭更友好。  
+我先补一个后端事件（首次访问时发出），再在前端弹窗监听这个事件并切换成“已失效”状态。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "f:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src",
+  "pattern": "emit|listen|once|tauri.*event|app_handle\\(|Handle::app_handle"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "f:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src",
+  "pattern": "emit|listen|once|tauri.*event|app_handle\\(|Handle::app_handle",
+  "topFiles": [
+    {
+      "matchCount": 4,
+      "uri": "clash-verge-rev\\src-tauri/src/core/hotkey.rs"
+    },
+    {
+      "matchCount": 3,
+      "uri": "clash-verge-rev\\src-tauri/src/core/sysopt.rs"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src-tauri/src/core/manager/state.rs"
+    },
+    {
+      "matchCount": 4,
+      "uri": "clash-verge-rev\\src-tauri/src/core/notification.rs"
+    },
+    {
+      "matchCount": 4,
+      "uri": "clash-verge-rev\\src-tauri/src/core/handle.rs"
+    },
+    {
+      "matchCount": 2,
+      "uri": "clash-verge-rev\\src-tauri/src/utils/server.rs"
+    },
+    {
+      "matchCount": 2,
+      "uri": "clash-verge-rev\\src-tauri/src/utils/resolve/dns.rs"
+    },
+    {
+      "matchCount": 3,
+      "uri": "clash-verge-rev\\src-tauri/src/lib.rs"
+    },
+    {
+      "matchCount": 2,
+      "uri": "clash-verge-rev\\src-tauri/src/core/service.rs"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src-tauri/src/utils/resolve/ui.rs"
+    },
+    {
+      "matchCount": 4,
+      "uri": "clash-verge-rev\\src-tauri/src/utils/dirs.rs"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src-tauri/src/utils/resolve/window.rs"
+    },
+    {
+      "matchCount": 16,
+      "uri": "clash-verge-rev\\src-tauri/src/module/lightweight.rs"
+    },
+    {
+      "matchCount": 2,
+      "uri": "clash-verge-rev\\src-tauri/src/utils/window_manager.rs"
+    },
+    {
+      "matchCount": 8,
+      "uri": "clash-verge-rev\\src-tauri/src/core/tray/mod.rs"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src-tauri/src/feat/clash.rs"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src-tauri/src/feat/proxy.rs"
+    },
+    {
+      "matchCount": 2,
+      "uri": "clash-verge-rev\\src-tauri/src/utils/linux/mime.rs"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src-tauri/src/core/manager/lifecycle.rs"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src-tauri/src/utils/notification.rs"
+    }
+  ],
+  "totalFiles": 34,
+  "totalMatches": 91
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "f:/work/ClashMetaForAndroid/clash-verge-rev/src",
+  "pattern": "@tauri-apps/api/event|listen\\(|once\\(|runtimeShare|RuntimeLanShare"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "f:/work/ClashMetaForAndroid/clash-verge-rev/src",
+  "pattern": "@tauri-apps/api/event|listen\\(|once\\(|runtimeShare|RuntimeLanShare",
+  "topFiles": [
+    {
+      "matchCount": 7,
+      "uri": "clash-verge-rev\\src/pages/_layout/hooks/use-layout-events.ts"
+    },
+    {
+      "matchCount": 4,
+      "uri": "clash-verge-rev\\src/hooks/use-listen.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src/components/home/test-card.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": "clash-verge-rev\\src/pages/profiles.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src/components/test/test-item.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src/providers/window/window-provider.tsx"
+    },
+    {
+      "matchCount": 3,
+      "uri": "clash-verge-rev\\src/hooks/use-close-all-with-delay-check.ts"
+    },
+    {
+      "matchCount": 4,
+      "uri": "clash-verge-rev\\src/providers/app-data-provider.tsx"
+    }
+  ],
+  "totalFiles": 8,
+  "totalMatches": 23
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: f:/work/ClashMetaForAndroid/clash-verge-rev/src/services/cmds.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: f:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/feat/profile.rs</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: f:/work/ClashMetaForAndroid/clash-verge-rev/src/hooks/use-listen.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+我准备做两处改动：  
+1) 后端在“首次成功访问”时发一个前端事件；2) 弹窗监听该事件后把二维码和链接置为失效态（模糊+提示+禁用复制）。  
+这样你能直观看到“已经被扫过”。

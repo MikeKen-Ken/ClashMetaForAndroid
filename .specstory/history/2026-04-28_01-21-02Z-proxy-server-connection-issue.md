@@ -2389,13 +2389,155 @@ _**Agent (default)**_
 
 _**User**_
 
-现在安卓的问题是，我打开 tun 模式， ip就会改变，也就是自身干扰了获取 wifi ip
+现在安卓的问题是，我打开 tun 模式， ip就会改变，也就是自身干扰了获取 wifi ip。如何修复？ 一般这种情况是怎么修复的呢？
 
 ---
 
 _**Agent (default)**_
 
-你这个反馈很关键：TUN 开启后系统网络栈会多出虚拟接口，确实可能干扰当前逻辑。我先把安卓获取逻辑改成“优先直接取 `WifiManager` 的 Wi‑Fi IPv4（不受 TUN 虚拟网卡影响）”，再回退现有方案。
+你这个判断非常准确：**TUN 打开后，`activeNetwork` 常常变成 VPN/TUN 网络**，导致“当前网络 IP”被污染，从而选错 `bind-address`。
+
+你现在这类实现（先看 activeNetwork）在 TUN 场景下确实容易中招，这是 Android 上很典型的问题。
+
+### 为什么会这样
+开启 TUN 本质上是启动 `VpnService`，系统路由会优先走虚拟隧道接口。  
+此时：
+
+- `ConnectivityManager.activeNetwork` 可能返回 VPN 网络
+- 你再从它拿 `LinkProperties`，拿到的就不是 Wi‑Fi 网卡地址
+- 于是表现为“一开 TUN，IP 就变了”
+
+### 一般怎么修
+行业里通常用这套优先级（你这个场景最稳）：
+
+1. **明确排除 VPN 网络**（`hasTransport(VPN)` 直接跳过）
+2. **优先真实 Wi‑Fi 网络**（`hasTransport(WIFI)`）
+3. Wi‑Fi 里再取 IPv4（非 loopback/link-local）
+4. 兜底才用其它物理网络（蜂窝/以太网），仍排除 VPN
+
+你现在代码在 `NetworkSettingsActivity` 里是有“先 active 再 allNetworks”的思路，但还不够“强排 VPN”，所以 TUN 下仍可能拿偏。
+
+### 推荐判定条件（关键）
+对每个 `network` 的 `NetworkCapabilities` 至少做这些判断：
+
+- 必须：`hasTransport(WIFI)`
+- 必须：`!hasTransport(VPN)`
+- 建议：`hasCapability(INTERNET)`（可选）
+- 建议：优先 `VALIDATED`（可选）
+
+### 另一种更硬的做法
+如果你的目标就是“局域网互联固定看 Wi‑Fi”，可直接走 Wi‑Fi 通道来源（例如 Wi‑Fi 子系统拿到的 IPv4），完全不依赖 `activeNetwork`，这样最不受 TUN 干扰。
+
+---
+
+如果你愿意，我可以下一步给你一版“最小改动”的伪代码（按你项目当前函数结构），直接替换判定分支：**先遍历 `allNetworks` 选 `WIFI && !VPN`，不要先读 activeNetwork**。这样能直接解决你现在这个问题。
+
+---
+
+_**User**_
+
+我想用行业通用做法。同时安卓和Windows 端都要修复。但是这些方法是有明确的 api 或者工具吗
+
+---
+
+_**Agent (default)**_
+
+有，且是“有明确 API”的，只是不是一个跨平台统一 API，而是**各平台各自的标准网络 API**。  
+行业通用做法也是基于这些 API 做“筛选真实物理网卡 + 排除虚拟隧道”。
+
+## 结论先说
+- **安卓**：用 `ConnectivityManager` / `NetworkCapabilities` / `LinkProperties`，并明确排除 VPN/TUN。
+- **Windows**：用系统网络接口与路由 API（如 `GetAdaptersAddresses`、`GetBestRoute2`），优先物理网卡与默认路由接口，排除虚拟/TUN 适配器。
+- **跨平台桌面（你这个 Tauri/Rust）**：通常通过 `default-net`、`pnet_datalink`、`network_interface` + 路由信息库组合实现。
+
+---
+
+## 安卓端（行业通用）
+你可以直接依赖这些官方 API：
+
+- `ConnectivityManager.getAllNetworks()`
+- `ConnectivityManager.getNetworkCapabilities(network)`
+- `ConnectivityManager.getLinkProperties(network)`
+- 判定条件：
+  - 要 `TRANSPORT_WIFI`
+  - 不要 `TRANSPORT_VPN`
+  - 从 `LinkProperties.linkAddresses` 取 IPv4（过滤 loopback/link-local）
+
+这就是移动端最常见、最稳妥方案。  
+重点是：**不要只信 `activeNetwork`**，TUN 开启后它经常是 VPN。
+
+---
+
+## Windows 端（行业通用）
+Windows 上常见两种路径：
+
+1. **IP Helper API（最通用）**
+   - `GetAdaptersAddresses`：拿网卡、地址、网关、接口类型、状态
+   - `GetBestRoute2`：拿默认出口对应接口（或到目标地址的最佳路由）
+2. **更高层封装库**
+   - Rust/Node 会用封装库间接调用上述 API
+
+实践上会做：
+- 先找默认路由对应接口
+- 过滤掉 loopback、down、虚拟/TUN 适配器
+- 优先 Wi‑Fi（`IF_TYPE_IEEE80211`）
+- 再取该接口 IPv4
+
+---
+
+## 你项目里怎么落地（思路）
+你现在两端都在“拿接口 IP”，修复方向就是统一成：
+
+- **Android**：`WIFI && !VPN` 优先，active 仅兜底
+- **Windows/Desktop**：默认路由接口优先 + 适配器类型优先（Wi‑Fi）+ 排除虚拟网卡
+- 始终保留回退链，避免无网或异常 ROM/驱动时空值
+
+---
+
+所以回答你的问题：  
+**是有明确 API/工具的，而且是行业标准；只是平台不同，API 不同。**  
+如果你要，我可以下一步给你一份“安卓 + Windows 各 1 段可直接套入你当前代码结构的伪代码清单”。
+
+---
+
+_**User**_
+
+你分别帮我添加上，我来看看怎么样
+
+---
+
+_**Agent (default)**_
+
+我来直接落地两端“行业通用筛选策略”版本：  
+- 安卓：`WIFI 且 非 VPN` 优先，回退链也排除 VPN/TUN；  
+- Windows/桌面：网卡评分里显式排除 VPN/TUN/虚拟网卡，优先 Wi‑Fi，再以太网。  
+我先改代码再给你对比效果。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src/pages/proxies.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
 
 _**Agent (default)**_
 
@@ -2414,101 +2556,7 @@ _**Agent (default)**_
 
 _**Agent (default)**_
 
-<tool-use data-tool-type="unknown" data-tool-name="read_lints">
-<details>
-<summary>Tool use: **read_lints**</summary>
-
-
-Parameters:
-
-```json
-{
-  "paths": [
-    "F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt"
-  ]
-}
-```
-Result:
-
-```json
-{
-  "linterErrorsByFile": [
-    {
-      "relativeWorkspacePath": "F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt"
-    }
-  ]
-}
-```
-Status: **completed**
-
-
-</details>
-</tool-use>
-
-<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
-<summary>Tool use: **read_lints**</summary>
-
-</details></tool-use>
-
-_**Agent (default)**_
-
-你说的现象判断是对的：TUN 会引入虚拟网络路径，之前基于网络能力/链路属性的方式在部分机型上会被“带偏”。
-
-我已经改成了更稳的优先级（安卓端）：
-
-- **第一优先**：直接用 `WifiManager` 读取当前 Wi‑Fi IPv4  
-- **第二优先**：再走 `ConnectivityManager` 的 Wi‑Fi network  
-- **最后回退**：active network
-
-这样即使开了 TUN，也优先拿到真实 Wi‑Fi 局域网地址，不容易被虚拟接口干扰。
-
-改动文件：`app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt`  
-并且已检查，lint 无报错。
-
-你可以直接验证：
-1. 关 TUN 开局域网，记一次 IP。  
-2. 开 TUN 再开局域网，看 IP 是否仍保持 Wi‑Fi 网段（通常应一致）。  
-
-如果你愿意，我下一步再加一条显示“本次绑定来源：Wi‑Fi/回退网络”的提示，方便你现场确认命中分支。
-
----
-
-_**User**_
-
-电脑端会有这样的问题吗
-
----
-
-_**Agent (default)**_
-
-会有，但一般比安卓轻一些，取决于系统和网卡枚举顺序。
-
-你电脑端现在是“网卡名优先 Wi‑Fi（`Wi-Fi/WLAN/Wireless`）再取 IPv4”，所以大多数场景能避开 TUN 虚拟网卡。  
-但仍有两类风险：
-
-- 虚拟网卡名字也像无线/或被排在前面
-- 实际走的是以太网/桥接，Wi‑Fi 并非当前可达路径
-
-所以结论：
-
-- **有可能受影响**，但概率通常低于安卓之前那种情况。
-- 若要更稳，可以再加一层：
-  - 过滤常见虚拟网卡关键词（`tun/tap/wintun/wireguard/vpn/hyper-v/vethernet`）
-  - 或用“默认路由出口 IP”作为第一优先，Wi‑Fi 作为第二优先（取决于你更重视“局域网 Wi‑Fi”还是“当前实际出口”）。
-
-如果你要，我可以继续把电脑端这层“虚拟网卡排除”补上。
-
----
-
-_**User**_
-
-可以加一层 过滤常见虚拟网卡关键词
-
----
-
-_**Agent (default)**_
-
-我来给电脑端加一层虚拟网卡过滤：先排除常见关键词的接口，再做 Wi‑Fi 优先选 IP；如果全被过滤再自动回退，避免误伤。
+我先把安卓端改成了“强排 VPN、优先 Wi‑Fi、再回退非 VPN 网络”。接下来继续把 Windows/桌面端也改成显式排除 VPN/TUN/虚拟网卡并做网卡优先级评分。
 
 _**Agent (default)**_
 
@@ -2537,6 +2585,7 @@ Parameters:
 ```json
 {
   "paths": [
+    "F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt",
     "F:/work/ClashMetaForAndroid/clash-verge-rev/src/pages/proxies.tsx"
   ]
 }
@@ -2546,6 +2595,9 @@ Result:
 ```json
 {
   "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt"
+    },
     {
       "relativeWorkspacePath": "F:/work/ClashMetaForAndroid/clash-verge-rev/src/pages/proxies.tsx"
     }
@@ -2565,83 +2617,58 @@ Status: **completed**
 
 _**Agent (default)**_
 
-已加上这层过滤，电脑端现在会：
+已经按你说的“行业通用修法”分别加上了，安卓和 Windows/桌面都做了。
 
-- 先按网卡名排除常见虚拟接口（`tun/tap/wintun/wireguard/vpn/hyper-v/vEthernet/virtual/vmware/vbox/loopback`）
-- 再在剩余接口里优先 Wi‑Fi（`Wi-Fi/WLAN/Wireless`）选 IPv4
-- 如果全部都被过滤（极端场景），会自动回退到原始列表，避免选不到 IP
+### 安卓端已加
+文件：`app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt`
 
-修改文件：`clash-verge-rev/src/pages/proxies.tsx`  
-并且已做 lint 检查，无新增问题。
+现在选 IP 的顺序是：
+
+1. `activeNetwork` 且 `WIFI && !VPN`
+2. 遍历 `allNetworks` 找 `WIFI && !VPN`
+3. 再遍历 `allNetworks` 找任意 `!VPN` 的 IPv4
+4. 最后才回退（仍排除 VPN）
+
+也就是你担心的 TUN 干扰点（VPN transport）被明确排掉了。
+
+---
+
+### 电脑端（Windows/桌面）已加
+文件：`clash-verge-rev/src/pages/proxies.tsx`
+
+现在会对网卡名做评分与过滤：
+
+- 明确排除：`vpn/tun/tap/wireguard/tailscale/vmware/vbox/docker/...` 等虚拟接口
+- 优先：Wi‑Fi 接口（`wi-fi/wlan/wireless`）
+- 次优先：以太网接口（`ethernet/eth/en*`）
+- 其他最后
+
+开启局域网时写入 `bind-address` 用的就是这个“过滤+优先级”后的 IP；`mixed-port` 保持不变。
+
+---
+
+### 状态
+- 两处改动都已完成
+- lints 检查通过，无新增报错
+
+如果你愿意，我下一步可以再给你加一个“调试提示”（比如显示“本次绑定来源：WIFI/ETH + 接口名 + IP”），你现场一眼就能确认是否命中预期网卡。
 
 ---
 
 _**User**_
 
-tun:
-  enable: true
-  stack: mixed
-  device: newsilence
-  mtu: 1500
-  udp-timeout: 30
-  endpoint-independent-nat: true
-  auto-route: true
-  auto-redirect: true
-  auto-detect-interface: true
-  dns-hijack:
-  - any:53
-  - tcp://any:53
-  - udp://any:53
-  strict-route: true
-
-那配置中我是不是 device 改名字为 tun？
+现在 mixed port 端口，不知道为什么一直是 50488，即使我在配置文件中写了别的值。貌似被覆盖了
 
 ---
 
 _**Agent (default)**_
 
-我先快速查一下你这个仓库里 `tun.device` 的注释语义，再给你准确建议（是否该改成 `tun`）。
+我先帮你定位 `mixed-port` 被谁覆盖：会查“配置默认值、启动时同步、UI patch 写回、runtime merge”这几条路径，找到具体覆盖点再给你结论和修复方案。
 
 _**Agent (default)**_
 
-<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
-<details>
-<summary>Tool use: **ripgrep_raw_search**</summary>
+rg: : IO error for operation on : 系统找不到指定的路径。 (os error 3)
 
-
-Parameters:
-
-```json
-{
-  "caseInsensitive": false,
-  "outputMode": "content",
-  "path": "F:/work/ClashMetaForAndroid/core/src/foss/golang/clash/docs/config.yaml",
-  "pattern": "device:|auto-detect-interface|strict-route|tun:"
-}
-```
-Additional data:
-
-```json
-{
-  "isPruned": true,
-  "outputMode": "content",
-  "path": "F:/work/ClashMetaForAndroid/core/src/foss/golang/clash/docs/config.yaml",
-  "pattern": "device:|auto-detect-interface|strict-route|tun:",
-  "topFiles": [
-    {
-      "matchCount": 6,
-      "uri": "core/src/foss/golang/clash/docs/config.yaml"
-    }
-  ],
-  "totalFiles": 1,
-  "totalMatches": 6
-}
-```
-Status: **completed**
-
-
-</details>
-</tool-use>
 
 <tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
 <summary>Tool use: **ripgrep_raw_search**</summary>
@@ -2651,7 +2678,20 @@ Status: **completed**
 _**Agent (default)**_
 
 <tool-use data-tool-type="read" data-tool-name="read_file_v2">
-<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/core/src/foss/golang/clash/docs/config.yaml</summary>
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/config/clash.rs</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src/components/setting/mods/clash-port-viewer.tsx</summary>
 
 </details>
 </tool-use>
@@ -2674,8 +2714,7 @@ Parameters:
 {
   "caseInsensitive": false,
   "outputMode": "content",
-  "path": "F:/work/ClashMetaForAndroid/core/src/foss/golang/clash/docs/config.yaml",
-  "pattern": "tun:|device|dev|name"
+  "pattern": "50488|verge_mixed_port|DEFAULT_MIXED|patch_clash_config|patchClash\\(|verge_mixed_port"
 }
 ```
 Additional data:
@@ -2684,389 +2723,185 @@ Additional data:
 {
   "isPruned": true,
   "outputMode": "content",
-  "path": "F:/work/ClashMetaForAndroid/core/src/foss/golang/clash/docs/config.yaml",
-  "pattern": "tun:|device|dev|name",
+  "pattern": "50488|verge_mixed_port|DEFAULT_MIXED|patch_clash_config|patchClash\\(|verge_mixed_port",
   "topFiles": [
-    {
-      "matchCount": 120,
-      "uri": "core\\src\\foss\\golang\\clash\\docs\\config.yaml"
-    }
-  ],
-  "totalFiles": 1,
-  "totalMatches": 163
-}
-```
-Status: **completed**
-
-
-</details>
-</tool-use>
-
-<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
-<summary>Tool use: **ripgrep_raw_search**</summary>
-
-</details></tool-use>
-
-_**Agent (default)**_
-
-<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
-<details>
-<summary>Tool use: **ripgrep_raw_search**</summary>
-
-
-Parameters:
-
-```json
-{
-  "caseInsensitive": false,
-  "outputMode": "content",
-  "path": "F:/work/ClashMetaForAndroid/core/src/foss/golang/clash",
-  "pattern": "device\\s+string|\"device\"|Device|tun\\.device|Tun.*Device"
-}
-```
-Additional data:
-
-```json
-{
-  "isPruned": true,
-  "outputMode": "content",
-  "path": "F:/work/ClashMetaForAndroid/core/src/foss/golang/clash",
-  "pattern": "device\\s+string|\"device\"|Device|tun\\.device|Tun.*Device",
-  "topFiles": [
-    {
-      "matchCount": 1,
-      "uri": "core/src/foss/golang/clash\\component/dialer/bind_linux.go"
-    },
-    {
-      "matchCount": 15,
-      "uri": "core/src/foss/golang/clash\\config/config.go"
-    },
-    {
-      "matchCount": 12,
-      "uri": "core/src/foss/golang/clash\\adapter/outbound/wireguard.go"
-    },
-    {
-      "matchCount": 2,
-      "uri": "core/src/foss/golang/clash\\listener/inbound/tun.go"
-    },
     {
       "matchCount": 3,
-      "uri": "core/src/foss/golang/clash\\hub/route/configs.go"
+      "uri": ".specstory/history/2026-01-31_02-36-41Z-tun-模式管理员权限提示.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src-tauri/src/utils/server.rs"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-04-28_01-21-02Z-proxy-server-connection-issue.md"
     },
     {
       "matchCount": 2,
-      "uri": "core/src/foss/golang/clash\\listener/sing_tun/server.go"
+      "uri": "clash-verge-rev\\src\\pages\\proxies.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory\\history\\2026-04-28_01-21-02Z-proxy-server-connection-issue.md"
+    },
+    {
+      "matchCount": 9,
+      "uri": ".specstory/history/2026-01-30_11-41-24Z-clash-verge-rev-external-control-setting.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-02-03_11-38-07Z-手动节点切换失败.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src/pages/logs.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src-tauri/src/cmd/clash.rs"
     },
     {
       "matchCount": 14,
-      "uri": "core/src/foss/golang/clash\\adapter/outbound/masque.go"
+      "uri": ".specstory/history/2026-02-03_09-48-29Z-电脑端日志等级变更触发group-fallback.md"
+    },
+    {
+      "matchCount": 7,
+      "uri": ".specstory/history/2026-02-05_16-09-11Z-desktop-client-global-mode-timeout.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src/components/setting/mods/external-controller-cors.tsx"
     },
     {
       "matchCount": 2,
-      "uri": "core/src/foss/golang/clash\\listener/config/tun.go"
-    }
-  ],
-  "totalFiles": 8,
-  "totalMatches": 51
-}
-```
-Status: **completed**
-
-
-</details>
-</tool-use>
-
-<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
-<summary>Tool use: **ripgrep_raw_search**</summary>
-
-</details></tool-use>
-
-_**Agent (default)**_
-
-<tool-use data-tool-type="read" data-tool-name="read_file_v2">
-<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/core/src/foss/golang/clash/listener/sing_tun/server.go</summary>
-
-</details>
-</tool-use>
-
-<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
-<summary>Tool use: **read_file_v2**</summary>
-
-</details></tool-use>
-
-_**Agent (default)**_
-
-<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
-<details>
-<summary>Tool use: **ripgrep_raw_search**</summary>
-
-
-Parameters:
-
-```json
-{
-  "caseInsensitive": false,
-  "outputMode": "content",
-  "path": "F:/work/ClashMetaForAndroid/core/src/foss/golang/clash/listener/sing_tun",
-  "pattern": "func checkTunName|checkTunName\\("
-}
-```
-Additional data:
-
-```json
-{
-  "isPruned": true,
-  "outputMode": "content",
-  "path": "F:/work/ClashMetaForAndroid/core/src/foss/golang/clash/listener/sing_tun",
-  "pattern": "func checkTunName|checkTunName\\(",
-  "topFiles": [
-    {
-      "matchCount": 2,
-      "uri": "core/src/foss/golang/clash\\listener/sing_tun/server.go"
-    }
-  ],
-  "totalFiles": 1,
-  "totalMatches": 2
-}
-```
-Status: **completed**
-
-
-</details>
-</tool-use>
-
-<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
-<summary>Tool use: **ripgrep_raw_search**</summary>
-
-</details></tool-use>
-
-_**Agent (default)**_
-
-<tool-use data-tool-type="read" data-tool-name="read_file_v2">
-<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/core/src/foss/golang/clash/listener/sing_tun/server.go</summary>
-
-</details>
-</tool-use>
-
-<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
-<summary>Tool use: **read_file_v2**</summary>
-
-</details></tool-use>
-
-_**Agent (default)**_
-
-不建议。`device` 改成 `tun` **通常不是你这个问题的解法**。
-
-你这个仓库里的核心逻辑是：
-
-- `device` 只是 TUN 虚拟网卡“名字”；
-- 名字非法或不适配时，核心会自己重生成（不是靠你固定名字解决网络选择问题）；
-- 关键在这里：`core/src/foss/golang/clash/listener/sing_tun/server.go` 会校验并在需要时重设设备名。
-
-所以结论：
-
-- 把 `device: newsilence` 改成 `device: tun`，对“局域网连通/Wi‑Fi IP 选择”帮助很小。
-- 更应该关注 `strict-route`：你现在是 `strict-route: true`，文档注释明确它可能导致设备无法被其他设备访问（这正会影响局域网互连）。
-
-你这段配置里，真正可能影响局域网互连的是：
-
-- `strict-route: true`（高概率）
-- 而不是 `device` 名字
-
-建议你优先试：
-
-- 保持 `device` 不动（或留空让核心自动）
-- 把 `strict-route` 调为 `false` 再测试局域网访问
-
-如果你愿意，我可以基于你“要 TUN + 要局域网互连”的目标，给你一版最小变更配置清单。
-
----
-
-_**User**_
-
-strict-route: true 做了什么？
-
----
-
-_**Agent (default)**_
-
-`strict-route: true` 的作用可以一句话概括为：  
-**把流量更“强硬”地锁进 TUN 路由，尽量防止漏流量。**
-
-在你这个项目自带文档里，注释已经写得很直白：
-
-```142:143:core/src/foss/golang/clash/docs/config.yaml
-# strict-route: true # 将所有连接路由到 tun 来防止泄漏，但你的设备将无法其他设备被访问
-```
-
-也就是它带来的效果/代价：
-
-- **优点**：减少绕过 TUN 的流量，防泄漏更严格。
-- **副作用**：设备入站可达性变差，局域网里其他设备可能访问不到你（比如连你的代理端口失败）。
-
-结合你的场景（要局域网互连）：
-
-- 开 `strict-route: true` 往往会和“别人访问你设备上的代理端口”冲突。
-- 你要优先“局域网互连稳定”，通常应先尝试 `strict-route: false`。
-
----
-
-_**User**_
-
-哦，安卓和电脑端打开局域网的时候，手动把它设置为 false，关闭或者默认为 true
-
-_**User**_
-
-安卓端打开之后，进入网络界面闪退崩溃
-
-[main.tsx] Unhandled promise rejection: failed to parse config to yaml file
-console.error @ main-D_eJT0tg.js:2
-(匿名) @ main-D_eJT0tg.js:2
-profile:1  Uncaught (in promise) failed to parse config to yaml file
-
-这是电脑端报错，我觉得他们可能是同一个问题
-
----
-
-_**Agent (default)**_
-
-我先定位这个报错字符串在代码里的触发点，再检查我们刚改的 `tun` 字段是否把配置写坏了（很可能是这个方向）。稍等我快速查一下。
-
-_**Agent (default)**_
-
-<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
-<details>
-<summary>Tool use: **ripgrep_raw_search**</summary>
-
-
-Parameters:
-
-```json
-{
-  "caseInsensitive": false,
-  "outputMode": "content",
-  "path": "F:/work/ClashMetaForAndroid",
-  "pattern": "failed to parse config to yaml file|parse config to yaml|parse.*yaml"
-}
-```
-Additional data:
-
-```json
-{
-  "isPruned": true,
-  "outputMode": "content",
-  "path": "F:/work/ClashMetaForAndroid",
-  "pattern": "failed to parse config to yaml file|parse config to yaml|parse.*yaml",
-  "topFiles": [
-    {
-      "matchCount": 1,
-      "uri": ".specstory/history/2026-01-31_11-31-15Z-电脑端-tun-模式节点显示问题.md"
+      "uri": "clash-verge-rev\\src/components/setting/mods/tun-viewer.tsx"
     },
-    {
-      "matchCount": 1,
-      "uri": ".specstory/history/2026-04-27_22-15-22Z-二维码分享规则文件的技术探讨.md"
-    },
-    {
-      "matchCount": 1,
-      "uri": ".specstory/history/2026-01-28_12-42-36Z-图标和软件名称修改.md"
-    },
-    {
-      "matchCount": 1,
-      "uri": "clash-verge-rev\\scripts/cleanup-unused-i18n.mjs"
-    },
-    {
-      "matchCount": 1,
-      "uri": ".specstory/history/2026-02-07_03-44-19Z-新增规则集未显示.md"
-    },
-    {
-      "matchCount": 1,
-      "uri": "clash-verge-rev\\src/components/proxy/proxy-chain.tsx"
-    },
-    {
-      "matchCount": 3,
-      "uri": ".specstory/history/2026-01-31_10-15-19Z-电脑端节点选择与安卓逻辑.md"
-    },
-    {
-      "matchCount": 1,
-      "uri": ".specstory/history/2026-01-31_10-45-40Z-安卓端全局模式测速失败.md"
-    },
-    {
-      "matchCount": 1,
-      "uri": ".specstory/history/2026-01-27_10-29-34Z-fallback-notifications.md"
-    },
-    {
-      "matchCount": 2,
-      "uri": "clash-verge-rev\\src-tauri/src/cmd/runtime.rs"
-    },
-    {
-      "matchCount": 2,
-      "uri": ".specstory/history/2026-01-30_03-24-36Z-clash-verge-rev-fallback-组节点手动选择.md"
-    },
-    {
-      "matchCount": 2,
-      "uri": "clash-verge-rev\\src/components/setting/mods/dns-viewer.tsx"
-    },
-    {
-      "matchCount": 2,
-      "uri": ".specstory/history/2026-04-27_07-44-05Z-subscription-interface-configuration-management.md"
-    },
-    {
-      "matchCount": 3,
-      "uri": "clash-verge-rev\\src-tauri/src/enhance/mod.rs"
-    },
-    {
-      "matchCount": 2,
-      "uri": ".specstory/history/2026-04-10_06-30-25Z-dev-stream-branch-commit-history.md"
-    },
-    {
-      "matchCount": 1,
-      "uri": ".specstory/history/2026-02-05_03-20-27Z-代理规则仓库链接功能.md"
-    }
-  ],
-  "totalFiles": 16,
-  "totalMatches": 25
-}
-```
-Status: **completed**
-
-
-</details>
-</tool-use>
-
-<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
-<summary>Tool use: **ripgrep_raw_search**</summary>
-
-</details></tool-use>
-
-_**Agent (default)**_
-
-<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
-<details>
-<summary>Tool use: **ripgrep_raw_search**</summary>
-
-
-Parameters:
-
-```json
-{
-  "caseInsensitive": false,
-  "outputMode": "content",
-  "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src",
-  "pattern": "struct Tun|yaml:\\\"tun\\\"|strict-route|strict_route"
-}
-```
-Additional data:
-
-```json
-{
-  "isPruned": true,
-  "outputMode": "content",
-  "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src",
-  "pattern": "struct Tun|yaml:\\\"tun\\\"|strict-route|strict_route",
-  "topFiles": [
     {
       "matchCount": 1,
       "uri": "clash-verge-rev\\src-tauri/src/config/clash.rs"
+    },
+    {
+      "matchCount": 4,
+      "uri": "clash-verge-rev\\src/components/setting/mods/clash-port-viewer.tsx"
+    },
+    {
+      "matchCount": 3,
+      "uri": ".specstory/history/2026-01-30_14-12-11Z-clash-verge-rev-fallback-node-selection.md"
+    },
+    {
+      "matchCount": 15,
+      "uri": ".specstory/history/2026-01-30_04-35-28Z-clash-verge-rev-built-in-enhanced-features.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src/components/setting/mods/tunnels-viewer.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".specstory/history/2026-04-11_10-04-53Z-proxy-node-timeout-settings-issue.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "clash-verge-rev\\src/pages/proxies.tsx"
+    }
+  ],
+  "totalFiles": 44,
+  "totalMatches": 131
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src/components/setting/setting-clash.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/feat/config.rs</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src/providers/app-data-provider.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/feat/proxy.rs</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/feat/config.rs",
+  "pattern": "verge_mixed_port|mixed-port|patch\\.verge_mixed_port|map\\.insert\\(\"mixed-port\""
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/feat/config.rs",
+  "pattern": "verge_mixed_port|mixed-port|patch\\.verge_mixed_port|map\\.insert\\(\"mixed-port\"",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev/src-tauri/src/feat/config.rs"
     }
   ],
   "totalFiles": 1,
@@ -3087,7 +2922,20 @@ Status: **completed**
 _**Agent (default)**_
 
 <tool-use data-tool-type="read" data-tool-name="read_file_v2">
-<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/cmd/runtime.rs</summary>
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/feat/config.rs</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/feat/config.rs</summary>
 
 </details>
 </tool-use>
@@ -3110,8 +2958,8 @@ Parameters:
 {
   "caseInsensitive": false,
   "outputMode": "content",
-  "path": "F:/work/ClashMetaForAndroid/core/src/main/java",
-  "pattern": "ignoreUnknownKeys|Json\\s*\\{|kotlinx.serialization.json.Json"
+  "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src",
+  "pattern": "verge_mixed_port"
 }
 ```
 Additional data:
@@ -3120,15 +2968,341 @@ Additional data:
 {
   "isPruned": true,
   "outputMode": "content",
-  "path": "F:/work/ClashMetaForAndroid/core/src/main/java",
-  "pattern": "ignoreUnknownKeys|Json\\s*\\{|kotlinx.serialization.json.Json",
+  "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src",
+  "pattern": "verge_mixed_port",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src-tauri/src/core/sysopt.rs"
+    },
+    {
+      "matchCount": 3,
+      "uri": "clash-verge-rev\\src-tauri/src/config/verge.rs"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src-tauri/src/feat/proxy.rs"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src-tauri/src/utils/network.rs"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src-tauri/src/utils/server.rs"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src-tauri/src/feat/config.rs"
+    }
+  ],
+  "totalFiles": 6,
+  "totalMatches": 8
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/config/verge.rs</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/utils/network.rs</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/utils/server.rs</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src",
+  "pattern": "verge_socks_enabled|verge_http_enabled|verge_mixed_port|mixed-port\"\\.into\\(\\),.*verge|patch_config\\(\u0026mut mapping\\)|generate\\(\\)"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src",
+  "pattern": "verge_socks_enabled|verge_http_enabled|verge_mixed_port|mixed-port\"\\.into\\(\\),.*verge|patch_config\\(\u0026mut mapping\\)|generate\\(\\)",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src-tauri/src/core/sysopt.rs"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src-tauri/src/feat/proxy.rs"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src-tauri/src/core/manager/config.rs"
+    },
+    {
+      "matchCount": 2,
+      "uri": "clash-verge-rev\\src-tauri/src/cmd/clash.rs"
+    },
+    {
+      "matchCount": 4,
+      "uri": "clash-verge-rev\\src-tauri/src/enhance/mod.rs"
+    },
+    {
+      "matchCount": 9,
+      "uri": "clash-verge-rev\\src-tauri/src/config/verge.rs"
+    },
+    {
+      "matchCount": 3,
+      "uri": "clash-verge-rev\\src-tauri/src/config/config.rs"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src-tauri/src/utils/network.rs"
+    },
+    {
+      "matchCount": 5,
+      "uri": "clash-verge-rev\\src-tauri/src/feat/config.rs"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src-tauri/src/utils/server.rs"
+    }
+  ],
+  "totalFiles": 10,
+  "totalMatches": 28
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/enhance/mod.rs</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src",
+  "pattern": "sourcePort|source_port|metadata\\.source|lan.*connection|连接"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src",
+  "pattern": "sourcePort|source_port|metadata\\.source|lan.*connection|连接",
   "topFiles": [
     {
       "matchCount": 4,
-      "uri": "core/src/main/java/com/github/kr328/clash/core/Clash.kt"
+      "uri": "clash-verge-rev\\src/hooks/use-proxy-selection.ts"
+    },
+    {
+      "matchCount": 4,
+      "uri": "clash-verge-rev\\src/types/global.d.ts"
+    },
+    {
+      "matchCount": 4,
+      "uri": "clash-verge-rev\\src/hooks/use-fallback-switch-notify.ts"
+    },
+    {
+      "matchCount": 8,
+      "uri": "clash-verge-rev\\src/hooks/use-close-all-with-delay-check.ts"
+    },
+    {
+      "matchCount": 6,
+      "uri": "clash-verge-rev\\src/locales/zh/settings.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src/hooks/use-connection-setting.ts"
+    },
+    {
+      "matchCount": 5,
+      "uri": "clash-verge-rev\\src/components/proxy/proxy-chain.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src/components/connection/connection-detail.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src/locales/zh/tests.json"
+    },
+    {
+      "matchCount": 8,
+      "uri": "clash-verge-rev\\src/utils/close-connections.ts"
+    },
+    {
+      "matchCount": 5,
+      "uri": "clash-verge-rev\\src/locales/zh/proxies.json"
+    },
+    {
+      "matchCount": 3,
+      "uri": "clash-verge-rev\\src/locales/zh/connections.json"
+    },
+    {
+      "matchCount": 2,
+      "uri": "clash-verge-rev\\src/locales/zh/home.json"
+    },
+    {
+      "matchCount": 2,
+      "uri": "clash-verge-rev\\src/utils/closed-connections-storage.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src/utils/traffic-diagnostics.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src/components/connection/connection-table.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src/pages/proxies.tsx"
+    },
+    {
+      "matchCount": 9,
+      "uri": "clash-verge-rev\\src/pages/connections.tsx"
+    },
+    {
+      "matchCount": 4,
+      "uri": "clash-verge-rev\\src/hooks/use-connection-data.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src\\pages\\proxies.tsx"
     }
   ],
-  "totalFiles": 1,
+  "totalFiles": 20,
+  "totalMatches": 71
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/enhance",
+  "pattern": "mixed-port|socks-port|port\"\\]|verge_mixed_port|verge_socks_port|verge_port"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/enhance",
+  "pattern": "mixed-port|socks-port|port\"\\]|verge_mixed_port|verge_socks_port|verge_port",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "clash-verge-rev\\src-tauri/src/enhance/mod.rs"
+    },
+    {
+      "matchCount": 2,
+      "uri": "clash-verge-rev\\src-tauri/src/enhance/field.rs"
+    }
+  ],
+  "totalFiles": 2,
   "totalMatches": 4
 }
 ```
@@ -3142,3 +3316,71 @@ Status: **completed**
 <summary>Tool use: **ripgrep_raw_search**</summary>
 
 </details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/enhance/mod.rs</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+你这个现象很可能有两种情况，我帮你把代码链路确认了：
+
+## 1) 你看到的 `50488` 可能根本不是 `mixed-port`
+连接页里显示的是 **来源端口 `sourcePort`**，它本来就是随机临时端口。  
+代码里就是这么渲染的：
+
+```114:114:clash-verge-rev/src/components/connection/connection-detail.tsx
+value: `${metadata.sourceIP}:${metadata.sourcePort}`,
+```
+
+所以像 `50488` 这种高位端口，**很像客户端临时源端口**，不是代理监听端口。
+
+---
+
+## 2) 如果你改了某个“配置文件”里的 `mixed-port`，确实可能被覆盖
+桌面端最终运行配置会把 `clash_config` 再合并一次，`mixed-port` 来自应用侧配置，而不是你订阅/profile 原文件。  
+合并逻辑在：
+
+```394:458:clash-verge-rev/src-tauri/src/enhance/mod.rs
+for (key, value) in clash_config.into_iter() {
+  ...
+  config.insert(key, value);
+}
+```
+
+另外 UI“端口配置”优先显示的是 `verge_mixed_port`：
+
+```64:70:clash-verge-rev/src/components/setting/setting-clash.tsx
+value={verge_mixed_port ?? 7897}
+```
+
+并且端口弹窗保存时会同时写两份（`mixed-port` + `verge_mixed_port`）：
+
+```196:206:clash-verge-rev/src/components/setting/mods/clash-port-viewer.tsx
+const clashConfig = { "mixed-port": mixedPort, ... };
+const vergeConfig = { verge_mixed_port: mixedPort, ... };
+```
+
+---
+
+## 你现在该怎么判断是不是被覆盖
+看这两个值是否一致（以运行后为准）：
+
+- `verge.yaml` 里的 `verge_mixed_port`
+- `clash.yaml`（应用生成那份，不是订阅原文件）里的 `mixed-port`
+
+如果这两个是 7897/你设定值，但你页面看到 `:50488`，那就是第 1 种（来源端口，不是 mixed-port）。
+
+---
+
+如果你愿意，我下一步可以直接帮你加一个 UI 文案：  
+在局域网信息旁明确标注“监听端口(mixed-port)”和“连接来源端口(sourcePort)”两者区别，避免再混淆。

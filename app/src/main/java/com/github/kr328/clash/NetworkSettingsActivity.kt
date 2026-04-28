@@ -5,7 +5,6 @@ import android.content.ClipboardManager
 import android.net.ConnectivityManager
 import android.net.LinkProperties
 import android.net.NetworkCapabilities
-import android.net.wifi.WifiManager
 import androidx.core.content.getSystemService
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.common.util.intent
@@ -16,11 +15,8 @@ import com.github.kr328.clash.util.withClash
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.selects.select
 import java.net.Inet4Address
-import java.net.InetAddress
 import java.net.NetworkInterface
 import java.io.File
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
     override suspend fun main() {
@@ -117,15 +113,12 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
     }
 
     private fun resolvePreferredIpv4Address(): String? {
-        // 优先读取 Wi-Fi 接口地址，避免 TUN/VPN 虚拟网卡干扰“当前局域网 IP”判定。
-        resolveWifiIpv4Address()?.let { return it }
-
         val connectivityManager = getSystemService<ConnectivityManager>() ?: return null
         val activeNetwork = connectivityManager.activeNetwork
 
         if (activeNetwork != null) {
             val activeCaps = connectivityManager.getNetworkCapabilities(activeNetwork)
-            if (activeCaps?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true) {
+            if (isWifiNetwork(activeCaps) && !isVpnNetwork(activeCaps)) {
                 connectivityManager.getLinkProperties(activeNetwork)?.let { props ->
                     extractIpv4Address(props)?.let { return it }
                 }
@@ -134,35 +127,39 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
 
         for (network in connectivityManager.allNetworks) {
             val caps = connectivityManager.getNetworkCapabilities(network) ?: continue
-            if (!caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) continue
+            if (!isWifiNetwork(caps) || isVpnNetwork(caps)) continue
 
             connectivityManager.getLinkProperties(network)?.let { props ->
                 extractIpv4Address(props)?.let { return it }
             }
         }
 
-        if (activeNetwork != null) {
-            connectivityManager.getLinkProperties(activeNetwork)?.let { props ->
+        for (network in connectivityManager.allNetworks) {
+            val caps = connectivityManager.getNetworkCapabilities(network) ?: continue
+            if (isVpnNetwork(caps)) continue
+            connectivityManager.getLinkProperties(network)?.let { props ->
                 extractIpv4Address(props)?.let { return it }
+            }
+        }
+
+        if (activeNetwork != null) {
+            val activeCaps = connectivityManager.getNetworkCapabilities(activeNetwork)
+            if (activeCaps != null && !isVpnNetwork(activeCaps)) {
+                connectivityManager.getLinkProperties(activeNetwork)?.let { props ->
+                    extractIpv4Address(props)?.let { return it }
+                }
             }
         }
 
         return null
     }
 
-    private fun resolveWifiIpv4Address(): String? {
-        val wifiManager = applicationContext.getSystemService<WifiManager>() ?: return null
-        val ipInt = wifiManager.connectionInfo?.ipAddress ?: 0
-        if (ipInt == 0) return null
+    private fun isWifiNetwork(caps: NetworkCapabilities?): Boolean {
+        return caps?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+    }
 
-        val bytes = ByteBuffer
-            .allocate(4)
-            .order(ByteOrder.LITTLE_ENDIAN)
-            .putInt(ipInt)
-            .array()
-        val inetAddress = InetAddress.getByAddress(bytes) as? Inet4Address ?: return null
-        if (inetAddress.isLoopbackAddress || inetAddress.isLinkLocalAddress) return null
-        return inetAddress.hostAddress
+    private fun isVpnNetwork(caps: NetworkCapabilities?): Boolean {
+        return caps?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
     }
 
     private fun extractIpv4Address(linkProperties: LinkProperties): String? {
