@@ -7,6 +7,7 @@ import android.net.LinkProperties
 import android.net.NetworkCapabilities
 import android.net.wifi.WifiManager
 import androidx.core.content.getSystemService
+import com.github.kr328.clash.common.log.DebugLog
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.core.model.ConfigurationOverride
@@ -23,10 +24,17 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
+    private val debugTag = "NetworkSettings"
+
     override suspend fun main() {
+        DebugLog.i(debugTag, "进入网络设置页面")
         val serviceStore = ServiceStore(this)
         val persistOverride = withClash { queryOverride(Clash.OverrideSlot.Persist) }
         val sessionOverride = withClash { queryOverride(Clash.OverrideSlot.Session) }
+        DebugLog.d(
+            debugTag,
+            "读取 override: persist.allowLan=${persistOverride.allowLan}, persist.bindAddress=${persistOverride.bindAddress}, persist.strictRoute=${persistOverride.tun?.strictRoute}",
+        )
         val design = NetworkSettingsDesign(
             this,
             uiStore,
@@ -60,20 +68,27 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
                         NetworkSettingsDesign.Request.StartLanDevices ->
                             startActivity(ConnectionsActivity::class.intent)
                         is NetworkSettingsDesign.Request.UpdateAllowLan -> {
+                            DebugLog.i(debugTag, "切换允许局域网: enabled=${it.enabled}")
                             val turningOff = persistOverride.allowLan == true && !it.enabled
                             persistOverride.allowLan = it.enabled
                             // 局域网开启时放宽 strict-route 以保证可被同网段访问；关闭后恢复为默认严格模式。
                             val tunOverride = persistOverride.tun ?: ConfigurationOverride.Tun()
                             tunOverride.strictRoute = !it.enabled
                             persistOverride.tun = tunOverride
+                            DebugLog.d(
+                                debugTag,
+                                "更新 strict-route=${tunOverride.strictRoute}",
+                            )
                             if (it.enabled) {
                                 // 每次开启局域网时自动刷新 bind-address，避免网络切换后仍绑定旧 IP。
                                 resolvePreferredIpv4Address()?.let { ip ->
                                     persistOverride.bindAddress = ip
+                                    DebugLog.i(debugTag, "开启局域网时绑定地址: $ip")
                                 }
                             }
                             if (turningOff) {
                                 withClash { closeLanConnections() }
+                                DebugLog.d(debugTag, "关闭局域网时执行 closeLanConnections")
                             }
                         }
                         is NetworkSettingsDesign.Request.CopyLanAddress ->
@@ -97,6 +112,10 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
     ): List<String> {
         val port = resolveLanPort(serviceStore, sessionOverride, persistOverride)
         val preferredIpv4 = resolvePreferredIpv4Address()
+        DebugLog.d(
+            debugTag,
+            "解析局域网地址: port=$port, preferredIpv4=${preferredIpv4 ?: "null"}",
+        )
         val addresses = mutableListOf<String>()
         val networks = NetworkInterface.getNetworkInterfaces() ?: return emptyList()
         while (networks.hasMoreElements()) {
@@ -113,16 +132,21 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
         }
 
         // 优先展示系统当前活跃网络对应的 IPv4，降低多网卡/热点/VPN 场景下选错地址的概率。
-        return addresses.distinct().sortedWith { a, b ->
+        val sorted = addresses.distinct().sortedWith { a, b ->
             val pa = lanAddressSortKey(a, preferredIpv4)
             val pb = lanAddressSortKey(b, preferredIpv4)
             if (pa != pb) pa.compareTo(pb) else a.compareTo(b)
         }
+        DebugLog.d(debugTag, "候选局域网地址(${sorted.size}): ${sorted.joinToString()}")
+        return sorted
     }
 
     private fun resolvePreferredIpv4Address(): String? {
         // 优先读取 Wi-Fi 接口地址，避免 TUN/VPN 虚拟网卡干扰“当前局域网 IP”判定。
-        resolveWifiIpv4Address()?.let { return it }
+        resolveWifiIpv4Address()?.let {
+            DebugLog.d(debugTag, "IP来源: WifiManager=$it")
+            return it
+        }
 
         val connectivityManager = getSystemService<ConnectivityManager>() ?: return null
         val activeNetwork = connectivityManager.activeNetwork
@@ -131,7 +155,10 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
             val activeCaps = connectivityManager.getNetworkCapabilities(activeNetwork)
             if (activeCaps?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true) {
                 connectivityManager.getLinkProperties(activeNetwork)?.let { props ->
-                    extractIpv4Address(props)?.let { return it }
+                    extractIpv4Address(props)?.let {
+                        DebugLog.d(debugTag, "IP来源: activeNetwork(wifi)=$it")
+                        return it
+                    }
                 }
             }
         }
@@ -141,16 +168,23 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
             if (!caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) continue
 
             connectivityManager.getLinkProperties(network)?.let { props ->
-                extractIpv4Address(props)?.let { return it }
+                extractIpv4Address(props)?.let {
+                    DebugLog.d(debugTag, "IP来源: allNetworks(wifi)=$it")
+                    return it
+                }
             }
         }
 
         if (activeNetwork != null) {
             connectivityManager.getLinkProperties(activeNetwork)?.let { props ->
-                extractIpv4Address(props)?.let { return it }
+                extractIpv4Address(props)?.let {
+                    DebugLog.d(debugTag, "IP来源: activeNetwork(fallback)=$it")
+                    return it
+                }
             }
         }
 
+        DebugLog.w(debugTag, "未解析到可用IPv4地址")
         return null
     }
 
@@ -168,6 +202,8 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
             val inetAddress = InetAddress.getByAddress(bytes) as? Inet4Address ?: return null
             if (inetAddress.isLoopbackAddress || inetAddress.isLinkLocalAddress) return null
             inetAddress.hostAddress
+        }.onFailure { err ->
+            DebugLog.w(debugTag, "WifiManager读取IPv4失败: ${err.message}")
         }.getOrNull()
     }
 
