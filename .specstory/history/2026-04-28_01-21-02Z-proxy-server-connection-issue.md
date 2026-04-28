@@ -2384,3 +2384,539 @@ _**Agent (default)**_
 
 所以不是只看第一步。  
 如果你愿意，我可以再加一条 debug 日志，把“本次命中的 transport 类型 + 选中的 IP”打出来，这样你现场就能确认它到底走了哪条分支。
+
+---
+
+_**User**_
+
+现在安卓的问题是，我打开 tun 模式， ip就会改变，也就是自身干扰了获取 wifi ip
+
+---
+
+_**Agent (default)**_
+
+你这个反馈很关键：TUN 开启后系统网络栈会多出虚拟接口，确实可能干扰当前逻辑。我先把安卓获取逻辑改成“优先直接取 `WifiManager` 的 Wi‑Fi IPv4（不受 TUN 虚拟网卡影响）”，再回退现有方案。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+你说的现象判断是对的：TUN 会引入虚拟网络路径，之前基于网络能力/链路属性的方式在部分机型上会被“带偏”。
+
+我已经改成了更稳的优先级（安卓端）：
+
+- **第一优先**：直接用 `WifiManager` 读取当前 Wi‑Fi IPv4  
+- **第二优先**：再走 `ConnectivityManager` 的 Wi‑Fi network  
+- **最后回退**：active network
+
+这样即使开了 TUN，也优先拿到真实 Wi‑Fi 局域网地址，不容易被虚拟接口干扰。
+
+改动文件：`app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt`  
+并且已检查，lint 无报错。
+
+你可以直接验证：
+1. 关 TUN 开局域网，记一次 IP。  
+2. 开 TUN 再开局域网，看 IP 是否仍保持 Wi‑Fi 网段（通常应一致）。  
+
+如果你愿意，我下一步再加一条显示“本次绑定来源：Wi‑Fi/回退网络”的提示，方便你现场确认命中分支。
+
+---
+
+_**User**_
+
+电脑端会有这样的问题吗
+
+---
+
+_**Agent (default)**_
+
+会有，但一般比安卓轻一些，取决于系统和网卡枚举顺序。
+
+你电脑端现在是“网卡名优先 Wi‑Fi（`Wi-Fi/WLAN/Wireless`）再取 IPv4”，所以大多数场景能避开 TUN 虚拟网卡。  
+但仍有两类风险：
+
+- 虚拟网卡名字也像无线/或被排在前面
+- 实际走的是以太网/桥接，Wi‑Fi 并非当前可达路径
+
+所以结论：
+
+- **有可能受影响**，但概率通常低于安卓之前那种情况。
+- 若要更稳，可以再加一层：
+  - 过滤常见虚拟网卡关键词（`tun/tap/wintun/wireguard/vpn/hyper-v/vethernet`）
+  - 或用“默认路由出口 IP”作为第一优先，Wi‑Fi 作为第二优先（取决于你更重视“局域网 Wi‑Fi”还是“当前实际出口”）。
+
+如果你要，我可以继续把电脑端这层“虚拟网卡排除”补上。
+
+---
+
+_**User**_
+
+可以加一层 过滤常见虚拟网卡关键词
+
+---
+
+_**Agent (default)**_
+
+我来给电脑端加一层虚拟网卡过滤：先排除常见关键词的接口，再做 Wi‑Fi 优先选 IP；如果全被过滤再自动回退，避免误伤。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: F:/work/ClashMetaForAndroid/clash-verge-rev/src/pages/proxies.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "F:/work/ClashMetaForAndroid/clash-verge-rev/src/pages/proxies.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "F:/work/ClashMetaForAndroid/clash-verge-rev/src/pages/proxies.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+已加上这层过滤，电脑端现在会：
+
+- 先按网卡名排除常见虚拟接口（`tun/tap/wintun/wireguard/vpn/hyper-v/vEthernet/virtual/vmware/vbox/loopback`）
+- 再在剩余接口里优先 Wi‑Fi（`Wi-Fi/WLAN/Wireless`）选 IPv4
+- 如果全部都被过滤（极端场景），会自动回退到原始列表，避免选不到 IP
+
+修改文件：`clash-verge-rev/src/pages/proxies.tsx`  
+并且已做 lint 检查，无新增问题。
+
+---
+
+_**User**_
+
+tun:
+  enable: true
+  stack: mixed
+  device: newsilence
+  mtu: 1500
+  udp-timeout: 30
+  endpoint-independent-nat: true
+  auto-route: true
+  auto-redirect: true
+  auto-detect-interface: true
+  dns-hijack:
+  - any:53
+  - tcp://any:53
+  - udp://any:53
+  strict-route: true
+
+那配置中我是不是 device 改名字为 tun？
+
+---
+
+_**Agent (default)**_
+
+我先快速查一下你这个仓库里 `tun.device` 的注释语义，再给你准确建议（是否该改成 `tun`）。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/core/src/foss/golang/clash/docs/config.yaml",
+  "pattern": "device:|auto-detect-interface|strict-route|tun:"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/core/src/foss/golang/clash/docs/config.yaml",
+  "pattern": "device:|auto-detect-interface|strict-route|tun:",
+  "topFiles": [
+    {
+      "matchCount": 6,
+      "uri": "core/src/foss/golang/clash/docs/config.yaml"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 6
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/core/src/foss/golang/clash/docs/config.yaml</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/core/src/foss/golang/clash/docs/config.yaml",
+  "pattern": "tun:|device|dev|name"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/core/src/foss/golang/clash/docs/config.yaml",
+  "pattern": "tun:|device|dev|name",
+  "topFiles": [
+    {
+      "matchCount": 120,
+      "uri": "core\\src\\foss\\golang\\clash\\docs\\config.yaml"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 163
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/core/src/foss/golang/clash",
+  "pattern": "device\\s+string|\"device\"|Device|tun\\.device|Tun.*Device"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/core/src/foss/golang/clash",
+  "pattern": "device\\s+string|\"device\"|Device|tun\\.device|Tun.*Device",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "core/src/foss/golang/clash\\component/dialer/bind_linux.go"
+    },
+    {
+      "matchCount": 15,
+      "uri": "core/src/foss/golang/clash\\config/config.go"
+    },
+    {
+      "matchCount": 12,
+      "uri": "core/src/foss/golang/clash\\adapter/outbound/wireguard.go"
+    },
+    {
+      "matchCount": 2,
+      "uri": "core/src/foss/golang/clash\\listener/inbound/tun.go"
+    },
+    {
+      "matchCount": 3,
+      "uri": "core/src/foss/golang/clash\\hub/route/configs.go"
+    },
+    {
+      "matchCount": 2,
+      "uri": "core/src/foss/golang/clash\\listener/sing_tun/server.go"
+    },
+    {
+      "matchCount": 14,
+      "uri": "core/src/foss/golang/clash\\adapter/outbound/masque.go"
+    },
+    {
+      "matchCount": 2,
+      "uri": "core/src/foss/golang/clash\\listener/config/tun.go"
+    }
+  ],
+  "totalFiles": 8,
+  "totalMatches": 51
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/core/src/foss/golang/clash/listener/sing_tun/server.go</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/core/src/foss/golang/clash/listener/sing_tun",
+  "pattern": "func checkTunName|checkTunName\\("
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/core/src/foss/golang/clash/listener/sing_tun",
+  "pattern": "func checkTunName|checkTunName\\(",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "core/src/foss/golang/clash\\listener/sing_tun/server.go"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/core/src/foss/golang/clash/listener/sing_tun/server.go</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+不建议。`device` 改成 `tun` **通常不是你这个问题的解法**。
+
+你这个仓库里的核心逻辑是：
+
+- `device` 只是 TUN 虚拟网卡“名字”；
+- 名字非法或不适配时，核心会自己重生成（不是靠你固定名字解决网络选择问题）；
+- 关键在这里：`core/src/foss/golang/clash/listener/sing_tun/server.go` 会校验并在需要时重设设备名。
+
+所以结论：
+
+- 把 `device: newsilence` 改成 `device: tun`，对“局域网连通/Wi‑Fi IP 选择”帮助很小。
+- 更应该关注 `strict-route`：你现在是 `strict-route: true`，文档注释明确它可能导致设备无法被其他设备访问（这正会影响局域网互连）。
+
+你这段配置里，真正可能影响局域网互连的是：
+
+- `strict-route: true`（高概率）
+- 而不是 `device` 名字
+
+建议你优先试：
+
+- 保持 `device` 不动（或留空让核心自动）
+- 把 `strict-route` 调为 `false` 再测试局域网访问
+
+如果你愿意，我可以基于你“要 TUN + 要局域网互连”的目标，给你一版最小变更配置清单。
+
+---
+
+_**User**_
+
+strict-route: true 做了什么？
+
+---
+
+_**Agent (default)**_
+
+`strict-route: true` 的作用可以一句话概括为：  
+**把流量更“强硬”地锁进 TUN 路由，尽量防止漏流量。**
+
+在你这个项目自带文档里，注释已经写得很直白：
+
+```142:143:core/src/foss/golang/clash/docs/config.yaml
+# strict-route: true # 将所有连接路由到 tun 来防止泄漏，但你的设备将无法其他设备被访问
+```
+
+也就是它带来的效果/代价：
+
+- **优点**：减少绕过 TUN 的流量，防泄漏更严格。
+- **副作用**：设备入站可达性变差，局域网里其他设备可能访问不到你（比如连你的代理端口失败）。
+
+结合你的场景（要局域网互连）：
+
+- 开 `strict-route: true` 往往会和“别人访问你设备上的代理端口”冲突。
+- 你要优先“局域网互连稳定”，通常应先尝试 `strict-route: false`。
+
+---
+
+_**User**_
+
+哦，安卓和电脑端打开局域网的时候，手动把它设置为 false，关闭或者默认为 true
+
+---
+
+_**Agent (default)**_
+
+我来改成你要的行为：开启局域网时强制 `strict-route=false`，关闭局域网时恢复为 `true`；同时桌面端开关也做同样处理。改完我会做 lint 检查。

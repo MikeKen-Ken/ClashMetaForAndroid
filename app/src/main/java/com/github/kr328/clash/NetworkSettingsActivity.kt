@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.net.ConnectivityManager
 import android.net.LinkProperties
 import android.net.NetworkCapabilities
+import android.net.wifi.WifiManager
 import androidx.core.content.getSystemService
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.common.util.intent
@@ -15,8 +16,11 @@ import com.github.kr328.clash.util.withClash
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.selects.select
 import java.net.Inet4Address
+import java.net.InetAddress
 import java.net.NetworkInterface
 import java.io.File
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
     override suspend fun main() {
@@ -58,6 +62,8 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
                         is NetworkSettingsDesign.Request.UpdateAllowLan -> {
                             val turningOff = persistOverride.allowLan == true && !it.enabled
                             persistOverride.allowLan = it.enabled
+                            // 局域网开启时放宽 strict-route 以保证可被同网段访问；关闭后恢复为默认严格模式。
+                            persistOverride.tun.strictRoute = !it.enabled
                             if (it.enabled) {
                                 // 每次开启局域网时自动刷新 bind-address，避免网络切换后仍绑定旧 IP。
                                 resolvePreferredIpv4Address()?.let { ip ->
@@ -113,6 +119,9 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
     }
 
     private fun resolvePreferredIpv4Address(): String? {
+        // 优先读取 Wi-Fi 接口地址，避免 TUN/VPN 虚拟网卡干扰“当前局域网 IP”判定。
+        resolveWifiIpv4Address()?.let { return it }
+
         val connectivityManager = getSystemService<ConnectivityManager>() ?: return null
         val activeNetwork = connectivityManager.activeNetwork
 
@@ -141,6 +150,21 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
         }
 
         return null
+    }
+
+    private fun resolveWifiIpv4Address(): String? {
+        val wifiManager = applicationContext.getSystemService<WifiManager>() ?: return null
+        val ipInt = wifiManager.connectionInfo?.ipAddress ?: 0
+        if (ipInt == 0) return null
+
+        val bytes = ByteBuffer
+            .allocate(4)
+            .order(ByteOrder.LITTLE_ENDIAN)
+            .putInt(ipInt)
+            .array()
+        val inetAddress = InetAddress.getByAddress(bytes) as? Inet4Address ?: return null
+        if (inetAddress.isLoopbackAddress || inetAddress.isLinkLocalAddress) return null
+        return inetAddress.hostAddress
     }
 
     private fun extractIpv4Address(linkProperties: LinkProperties): String? {
