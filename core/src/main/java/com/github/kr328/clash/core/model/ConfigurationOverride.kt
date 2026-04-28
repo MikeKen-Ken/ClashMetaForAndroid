@@ -77,9 +77,6 @@ data class ConfigurationOverride(
     @SerialName("tun")
     var tun: Tun = Tun(),
 
-    @SerialName("tun")
-    var tun: Tun = Tun(),
-
     @SerialName("sniffer")
     val sniffer: Sniffer = Sniffer(),
 
@@ -170,12 +167,6 @@ data class ConfigurationOverride(
 
         @SerialName("lan-silent-threshold-seconds")
         var lanSilentThresholdSeconds: Int? = null,
-    )
-
-    @Serializable
-    data class Tun(
-        @SerialName("strict-route")
-        var strictRoute: Boolean? = null,
     )
 
     @Serializable
