@@ -63,7 +63,9 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
                             val turningOff = persistOverride.allowLan == true && !it.enabled
                             persistOverride.allowLan = it.enabled
                             // 局域网开启时放宽 strict-route 以保证可被同网段访问；关闭后恢复为默认严格模式。
-                            persistOverride.tun.strictRoute = !it.enabled
+                            val tunOverride = persistOverride.tun ?: ConfigurationOverride.Tun()
+                            tunOverride.strictRoute = !it.enabled
+                            persistOverride.tun = tunOverride
                             if (it.enabled) {
                                 // 每次开启局域网时自动刷新 bind-address，避免网络切换后仍绑定旧 IP。
                                 resolvePreferredIpv4Address()?.let { ip ->
@@ -153,18 +155,20 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
     }
 
     private fun resolveWifiIpv4Address(): String? {
-        val wifiManager = applicationContext.getSystemService<WifiManager>() ?: return null
-        val ipInt = wifiManager.connectionInfo?.ipAddress ?: 0
-        if (ipInt == 0) return null
+        return runCatching {
+            val wifiManager = applicationContext.getSystemService<WifiManager>() ?: return null
+            val ipInt = wifiManager.connectionInfo?.ipAddress ?: 0
+            if (ipInt == 0) return null
 
-        val bytes = ByteBuffer
-            .allocate(4)
-            .order(ByteOrder.LITTLE_ENDIAN)
-            .putInt(ipInt)
-            .array()
-        val inetAddress = InetAddress.getByAddress(bytes) as? Inet4Address ?: return null
-        if (inetAddress.isLoopbackAddress || inetAddress.isLinkLocalAddress) return null
-        return inetAddress.hostAddress
+            val bytes = ByteBuffer
+                .allocate(4)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(ipInt)
+                .array()
+            val inetAddress = InetAddress.getByAddress(bytes) as? Inet4Address ?: return null
+            if (inetAddress.isLoopbackAddress || inetAddress.isLinkLocalAddress) return null
+            inetAddress.hostAddress
+        }.getOrNull()
     }
 
     private fun extractIpv4Address(linkProperties: LinkProperties): String? {

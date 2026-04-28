@@ -390,6 +390,80 @@ Parameters:
 {
   "caseInsensitive": false,
   "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src",
+  "pattern": "start_runtime_config_lan_share|RuntimeLanShareInfo|runtime lan|局域网|lan share"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src",
+  "pattern": "start_runtime_config_lan_share|RuntimeLanShareInfo|runtime lan|局域网|lan share",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src\\components\\setting\\mods\\runtime-lan-share-dialog.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src/locales/zh/settings.json"
+    },
+    {
+      "matchCount": 2,
+      "uri": "clash-verge-rev\\src\\features\\lan-devices\\model.ts"
+    },
+    {
+      "matchCount": 3,
+      "uri": "clash-verge-rev\\src\\locales\\zh\\profiles.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src\\services\\cmds.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src\\components\\setting\\mods\\config-viewer.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src\\types\\global.d.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src\\utils\\close-connections.ts"
+    }
+  ],
+  "totalFiles": 8,
+  "totalMatches": 11
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
   "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src",
   "pattern": "default.*ip|local.*ip|get.*ip|NetworkInterface::show|route|gateway|interface"
 }
@@ -450,80 +524,6 @@ Additional data:
   ],
   "totalFiles": 11,
   "totalMatches": 34
-}
-```
-Status: **completed**
-
-
-</details>
-</tool-use>
-
-<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
-<summary>Tool use: **ripgrep_raw_search**</summary>
-
-</details></tool-use>
-
-_**Agent (default)**_
-
-<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
-<details>
-<summary>Tool use: **ripgrep_raw_search**</summary>
-
-
-Parameters:
-
-```json
-{
-  "caseInsensitive": false,
-  "outputMode": "content",
-  "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src",
-  "pattern": "start_runtime_config_lan_share|RuntimeLanShareInfo|runtime lan|局域网|lan share"
-}
-```
-Additional data:
-
-```json
-{
-  "isPruned": true,
-  "outputMode": "content",
-  "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src",
-  "pattern": "start_runtime_config_lan_share|RuntimeLanShareInfo|runtime lan|局域网|lan share",
-  "topFiles": [
-    {
-      "matchCount": 1,
-      "uri": "clash-verge-rev\\src\\components\\setting\\mods\\runtime-lan-share-dialog.tsx"
-    },
-    {
-      "matchCount": 1,
-      "uri": "clash-verge-rev\\src/locales/zh/settings.json"
-    },
-    {
-      "matchCount": 2,
-      "uri": "clash-verge-rev\\src\\features\\lan-devices\\model.ts"
-    },
-    {
-      "matchCount": 3,
-      "uri": "clash-verge-rev\\src\\locales\\zh\\profiles.json"
-    },
-    {
-      "matchCount": 1,
-      "uri": "clash-verge-rev\\src\\services\\cmds.ts"
-    },
-    {
-      "matchCount": 1,
-      "uri": "clash-verge-rev\\src\\components\\setting\\mods\\config-viewer.tsx"
-    },
-    {
-      "matchCount": 1,
-      "uri": "clash-verge-rev\\src\\types\\global.d.ts"
-    },
-    {
-      "matchCount": 1,
-      "uri": "clash-verge-rev\\src\\utils\\close-connections.ts"
-    }
-  ],
-  "totalFiles": 8,
-  "totalMatches": 11
 }
 ```
 Status: **completed**
@@ -700,8 +700,8 @@ Parameters:
 {
   "caseInsensitive": false,
   "outputMode": "content",
-  "path": "F:/work/ClashMetaForAndroid/app/src/main/java",
-  "pattern": "ConnectivityManager|activeNetwork|LinkProperties|NetworkCapabilities"
+  "path": "F:/work/ClashMetaForAndroid/app/build.gradle.kts",
+  "pattern": "minSdk|targetSdk|compileSdk"
 }
 ```
 Additional data:
@@ -710,8 +710,8 @@ Additional data:
 {
   "isPruned": true,
   "outputMode": "content",
-  "path": "F:/work/ClashMetaForAndroid/app/src/main/java",
-  "pattern": "ConnectivityManager|activeNetwork|LinkProperties|NetworkCapabilities",
+  "path": "F:/work/ClashMetaForAndroid/app/build.gradle.kts",
+  "pattern": "minSdk|targetSdk|compileSdk",
   "topFiles": [],
   "totalFiles": 0,
   "totalMatches": 0
@@ -741,8 +741,8 @@ Parameters:
 {
   "caseInsensitive": false,
   "outputMode": "content",
-  "path": "F:/work/ClashMetaForAndroid/app/build.gradle.kts",
-  "pattern": "minSdk|targetSdk|compileSdk"
+  "path": "F:/work/ClashMetaForAndroid/app/src/main/java",
+  "pattern": "ConnectivityManager|activeNetwork|LinkProperties|NetworkCapabilities"
 }
 ```
 Additional data:
@@ -751,8 +751,8 @@ Additional data:
 {
   "isPruned": true,
   "outputMode": "content",
-  "path": "F:/work/ClashMetaForAndroid/app/build.gradle.kts",
-  "pattern": "minSdk|targetSdk|compileSdk",
+  "path": "F:/work/ClashMetaForAndroid/app/src/main/java",
+  "pattern": "ConnectivityManager|activeNetwork|LinkProperties|NetworkCapabilities",
   "topFiles": [],
   "totalFiles": 0,
   "totalMatches": 0
@@ -1079,16 +1079,6 @@ _**Agent (default)**_
 
 _**Agent (default)**_
 
-rg: : IO error for operation on : 系统找不到指定的路径。 (os error 3)
-
-
-<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
-<summary>Tool use: **ripgrep_raw_search**</summary>
-
-</details></tool-use>
-
-_**Agent (default)**_
-
 <tool-use data-tool-type="read" data-tool-name="read_file_v2">
 <details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src-tauri/src/cmd/runtime_share.rs</summary>
 
@@ -1097,6 +1087,16 @@ _**Agent (default)**_
 
 <tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
 <summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+rg: : IO error for operation on : 系统找不到指定的路径。 (os error 3)
+
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
 
 </details></tool-use>
 
@@ -2920,3 +2920,684 @@ _**User**_
 _**Agent (default)**_
 
 我来改成你要的行为：开启局域网时强制 `strict-route=false`，关闭局域网时恢复为 `true`；同时桌面端开关也做同样处理。改完我会做 lint 检查。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/app/src/main/java",
+  "pattern": "strict-route|strict_route|tun\\.|\"tun\"|patchClash\\("
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/app/src/main/java",
+  "pattern": "strict-route|strict_route|tun\\.|\"tun\"|patchClash\\(",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/core/src/main/java",
+  "pattern": "strict-route|Tun|tun struct|yaml:\"strict-route\""
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/core/src/main/java",
+  "pattern": "strict-route|Tun|tun struct|yaml:\"strict-route\"",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "core/src/main/java/com/github/kr328/clash/core/bridge/TunInterface.kt"
+    },
+    {
+      "matchCount": 7,
+      "uri": "core/src/main/java/com/github/kr328/clash/core/Clash.kt"
+    },
+    {
+      "matchCount": 7,
+      "uri": "core\\src\\main\\java\\com\\github\\kr328\\clash\\core\\Clash.kt"
+    },
+    {
+      "matchCount": 3,
+      "uri": "core/src/main/java/com/github/kr328/clash/core/bridge/Bridge.kt"
+    },
+    {
+      "matchCount": 1,
+      "uri": "core/src/main/java/com/github/kr328/clash/core/model/ConfigurationOverride.kt"
+    },
+    {
+      "matchCount": 1,
+      "uri": "core\\src\\main\\java\\com\\github\\kr328\\clash\\core\\model\\ConfigurationOverride.kt"
+    },
+    {
+      "matchCount": 4,
+      "uri": "core/src/main/java/com/github/kr328/clash/core/model/TunnelState.kt"
+    }
+  ],
+  "totalFiles": 7,
+  "totalMatches": 24
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src",
+  "pattern": "strict-route|patchClash\\(|allow-lan"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/clash-verge-rev/src",
+  "pattern": "strict-route|patchClash\\(|allow-lan",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "clash-verge-rev\\src\\pages\\proxies.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src/components/setting/mods/tunnels-viewer.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src/pages/logs.tsx"
+    },
+    {
+      "matchCount": 3,
+      "uri": "clash-verge-rev\\src\\pages\\connections.tsx"
+    },
+    {
+      "matchCount": 5,
+      "uri": "clash-verge-rev\\src/pages/proxies.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src/components/setting/setting-clash.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "clash-verge-rev\\src/components/setting/mods/external-controller-cors.tsx"
+    },
+    {
+      "matchCount": 5,
+      "uri": "clash-verge-rev\\src/components/setting/mods/tun-viewer.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": "clash-verge-rev\\src/types/global.d.ts"
+    },
+    {
+      "matchCount": 2,
+      "uri": "clash-verge-rev\\src\\types\\global.d.ts"
+    }
+  ],
+  "totalFiles": 10,
+  "totalMatches": 26
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/app/src/main/java",
+  "pattern": "strict-route|strictRoute|tun\\[\"strict-route\"\\]|patchOverride\\(|queryOverride\\("
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/app/src/main/java",
+  "pattern": "strict-route|strictRoute|tun\\[\"strict-route\"\\]|patchOverride\\(|queryOverride\\(",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "app\\src\\main\\java\\com\\github\\kr328\\clash\\NetworkSettingsActivity.kt"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/src/main/java/com/github/kr328/clash/OverrideSettingsActivity.kt"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/src/main/java/com/github/kr328/clash/LogsActivity.kt"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app\\src\\main\\java\\com\\github\\kr328\\clash\\ConnectionsActivity.kt"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/src/main/java/com/github/kr328/clash/MetaFeatureSettingsActivity.kt"
+    },
+    {
+      "matchCount": 8,
+      "uri": "app/src/main/java/com/github/kr328/clash/ProxyActivity.kt"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/src/main/java/com/github/kr328/clash/ConnectionsActivity.kt"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt"
+    }
+  ],
+  "totalFiles": 8,
+  "totalMatches": 34
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash",
+  "pattern": "tun|strictRoute|autoRoute|dnsHijack"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash",
+  "pattern": "tun|strictRoute|autoRoute|dnsHijack",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app/src/main/java/com/github/kr328/clash/MainActivity.kt"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+我开始落地：桌面端开关会同步改 `tun.strict-route`（开 LAN 置 `false`，关 LAN 置 `true`）；安卓端我会补 `ConfigurationOverride` 的 `tun.strict-route` 字段并在同一开关里联动设置。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/core/src/main/java/com/github/kr328/clash/core/model/ConfigurationOverride.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src/types/global.d.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/clash-verge-rev/src/pages/proxies.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Failed to find context:
+    @SerialName("clash-for-android")
+    val app: App = App(),
+
+    @SerialName("sniffer")
+    val sniffer: Sniffer = Sniffer(),
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/core/src/main/java/com/github/kr328/clash/core/model/ConfigurationOverride.kt",
+  "pattern": "@SerialName\\(\"clash-for-android\"\\)|@SerialName\\(\"sniffer\"\\)|val app|val sniffer"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "F:/work/ClashMetaForAndroid/core/src/main/java/com/github/kr328/clash/core/model/ConfigurationOverride.kt",
+  "pattern": "@SerialName\\(\"clash-for-android\"\\)|@SerialName\\(\"sniffer\"\\)|val app|val sniffer",
+  "topFiles": [
+    {
+      "matchCount": 4,
+      "uri": "core\\src\\main\\java\\com\\github\\kr328\\clash\\core\\model\\ConfigurationOverride.kt"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 4
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: F:/work/ClashMetaForAndroid/core/src/main/java/com/github/kr328/clash/core/model/ConfigurationOverride.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: F:/work/ClashMetaForAndroid/clash-verge-rev/src/pages/proxies.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt",
+    "F:/work/ClashMetaForAndroid/core/src/main/java/com/github/kr328/clash/core/model/ConfigurationOverride.kt",
+    "F:/work/ClashMetaForAndroid/clash-verge-rev/src/pages/proxies.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt"
+    },
+    {
+      "relativeWorkspacePath": "F:/work/ClashMetaForAndroid/core/src/main/java/com/github/kr328/clash/core/model/ConfigurationOverride.kt"
+    },
+    {
+      "relativeWorkspacePath": "F:/work/ClashMetaForAndroid/clash-verge-rev/src/pages/proxies.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+已按你的要求改好，行为是：
+
+- **开启局域网**：强制 `tun.strict-route = false`
+- **关闭局域网**：恢复 `tun.strict-route = true`（你说的“关闭或者默认为 true”）
+
+### 已改位置
+
+- 安卓逻辑：`app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt`
+  - 在 `UpdateAllowLan` 里联动设置：
+    - `persistOverride.tun.strictRoute = !it.enabled`
+  - 也就是开 LAN 变 `false`，关 LAN 变 `true`。
+
+- 安卓配置模型：`core/src/main/java/com/github/kr328/clash/core/model/ConfigurationOverride.kt`
+  - 新增了 `tun` 字段映射（包含 `strict-route`），让上面的联动可序列化下发。
+
+- 电脑端逻辑：`clash-verge-rev/src/pages/proxies.tsx`
+  - `allow-lan` 开关提交 `patchClash` 时同步带上：
+    - `tun["strict-route"] = !v`
+  - 本地 `mutateClash` 状态也同步更新，界面状态一致。
+
+### 校验
+
+- 以上 3 个文件已做 lint 检查，**无新增报错**。
+
+如果你要，我下一步可以再加一个小提示：当你开启 LAN 时弹一句“已自动关闭 strict-route 以保证局域网可访问”。
+
+---
+
+_**User**_
+
+安卓端打开之后，进入网络界面闪退崩溃
+
+---
+
+_**Agent (default)**_
+
+我先做一版“防崩溃兜底”修复：重点回退最近风险点（`tun` 字段解码兼容 + WiFi IP 获取异常保护），这样先把网络页闪退止住。接着你再复测。
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/core/src/main/java/com/github/kr328/clash/core/model/ConfigurationOverride.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: F:/work/ClashMetaForAndroid/core/src/main/java/com/github/kr328/clash/core/model/ConfigurationOverride.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "F:/work/ClashMetaForAndroid/core/src/main/java/com/github/kr328/clash/core/model/ConfigurationOverride.kt",
+    "F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "F:/work/ClashMetaForAndroid/core/src/main/java/com/github/kr328/clash/core/model/ConfigurationOverride.kt"
+    },
+    {
+      "relativeWorkspacePath": "F:/work/ClashMetaForAndroid/app/src/main/java/com/github/kr328/clash/NetworkSettingsActivity.kt"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+这个崩溃我已经先做了“高概率修复”，重点是把最近两处容易触发闪退的点做了兼容处理。
+
+修复内容：
+
+- `ConfigurationOverride` 里新增的 `tun` 字段改为可空  
+  - 从 `var tun: Tun = Tun()` 改成 `var tun: Tun? = null`
+  - 避免旧配置/异常配置反序列化时出现类型不兼容导致页面初始化崩溃。
+
+- `NetworkSettingsActivity` 里访问 `tun.strictRoute` 改为安全写法  
+  - 先 `persistOverride.tun ?: ConfigurationOverride.Tun()` 再赋值
+  - 防止 `tun` 为空引发 NPE。
+
+- Wi‑Fi IP 读取增加 `runCatching` 兜底  
+  - 某些 ROM/权限状态下 `WifiManager` 取值可能抛异常，现已吞掉异常并回退后续逻辑，不会再直接崩溃。
+
+我已经检查过这两个文件，lint 没报错。
+
+你现在可以直接复测：  
+打开安卓端 → 进入网络界面，看是否还闪退。  
+如果仍崩，请把这次崩溃日志（`FATAL EXCEPTION` 堆栈前 30~50 行）给我，我可以继续精确定位到具体行。

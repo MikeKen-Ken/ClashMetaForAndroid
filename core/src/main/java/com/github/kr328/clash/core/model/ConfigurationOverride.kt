@@ -75,7 +75,7 @@ data class ConfigurationOverride(
     val app: App = App(),
 
     @SerialName("tun")
-    var tun: Tun = Tun(),
+    var tun: Tun? = null,
 
     @SerialName("sniffer")
     val sniffer: Sniffer = Sniffer(),
