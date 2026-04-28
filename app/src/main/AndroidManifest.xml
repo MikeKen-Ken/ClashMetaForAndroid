@@ -163,6 +163,11 @@
             android:exported="false"
             android:label="@string/app" />
         <activity
+            android:name=".RunningConfigActivity"
+            android:configChanges="uiMode"
+            android:exported="false"
+            android:label="@string/running_config" />
+        <activity
             android:name=".OverrideSettingsActivity"
             android:configChanges="uiMode"
             android:exported="false"
