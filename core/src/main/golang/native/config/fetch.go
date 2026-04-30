@@ -112,41 +112,9 @@ func FetchAndValid(
 		return err
 	}
 
-	forEachProviders(rawCfg, func(index int, total int, name string, provider map[string]any, prefix string) {
-		bytes, _ := json.Marshal(&Status{
-			Action:      "FetchProviders",
-			Args:        []string{name},
-			Progress:    index,
-			MaxProgress: total,
-		})
-
-		reportStatus(string(bytes))
-
-		u, uok := provider["url"]
-		p, pok := provider["path"]
-
-		if !uok || !pok {
-			return
-		}
-
-		us, uok := u.(string)
-		ps, pok := p.(string)
-
-		if !uok || !pok {
-			return
-		}
-
-		if _, err := os.Stat(ps); err == nil {
-			return
-		}
-
-		url, err := U.Parse(us)
-		if err != nil {
-			return
-		}
-
-		_ = fetch(url, ps)
-	})
+	// 不在导入/更新阶段预拉取 proxy-providers、rule-providers：此前使用直连 HTTP，未启动代理时易失败或徒增等待；
+	// 与桌面端一致，主配置落盘后由 hub 加载配置时通过 HTTPVehicle 再拉取（可走代理链）。
+	// Parse 仅校验规则引用的 provider 名称存在，不要求本地缓存文件已就绪。
 
 	bytes, _ := json.Marshal(&Status{
 		Action:      "Verifying",
