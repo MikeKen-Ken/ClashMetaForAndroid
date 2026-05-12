@@ -97,8 +97,8 @@ class ClashManager(private val context: Context) : IClashManager,
                     OverrideRuntimeApplier.apply(previous, configuration)
             }
             // 与 ConfigurationModule 一致：运行配置/导出 YAML 合并时 Session 会参与；
-            // 仅写 Persist 不同步 Session 会导致「已开局域网但运行配置仍 allow-lan: false」直到下次整包 load。
-            syncPersistConnectivityHintsToSession(configuration)
+            // 仅写 Persist 不同步 Session 会导致 Persist 已更新但运行配置仍显示旧值，直到下次整包 load。
+            syncPersistMirroredFieldsToSession(configuration)
             return
         }
 
@@ -118,13 +118,19 @@ class ClashManager(private val context: Context) : IClashManager,
     }
 
     /**
-     * 将 Persist 中与入站相关的字段镜像到 Session，语义对齐 [ConfigurationModule] 在 load 前的处理。
-     * 避免仅 Binder 更新 Persist 时 Session 残留旧 allow-lan/bind-address。
+     * 将 Persist 中在 [ConfigurationModule] load 前会写入 Session 的字段做镜像，
+     * 避免仅 Binder 更新 Persist 时 Session 残留旧值（运行配置 YAML 与真实合并态不一致）。
      */
-    private fun syncPersistConnectivityHintsToSession(persist: ConfigurationOverride) {
+    private fun syncPersistMirroredFieldsToSession(persist: ConfigurationOverride) {
         val prevSession = Clash.queryOverride(Clash.OverrideSlot.Session)
         var nextSession = prevSession
         var dirty = false
+        persist.logLevel?.let { v ->
+            if (nextSession.logLevel != v) {
+                nextSession = nextSession.copy(logLevel = v)
+                dirty = true
+            }
+        }
         persist.allowLan?.let { v ->
             if (nextSession.allowLan != v) {
                 nextSession = nextSession.copy(allowLan = v)
@@ -134,6 +140,12 @@ class ClashManager(private val context: Context) : IClashManager,
         persist.bindAddress?.trim()?.takeIf { it.isNotEmpty() }?.let { v ->
             if (nextSession.bindAddress?.trim().orEmpty() != v) {
                 nextSession = nextSession.copy(bindAddress = v)
+                dirty = true
+            }
+        }
+        persist.tun.strictRoute?.let { v ->
+            if (nextSession.tun.strictRoute != v) {
+                nextSession = nextSession.copy(tun = nextSession.tun.copy(strictRoute = v))
                 dirty = true
             }
         }
