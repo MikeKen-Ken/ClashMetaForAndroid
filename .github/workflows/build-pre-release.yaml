@@ -1,0 +1,160 @@
+name: Build Pre-Release
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  BuildPreRelease:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      
+      - name: Checkout submodules
+        env:
+          # Cross-repo private submodules require a PAT/fine-grained token.
+          SUBMODULE_TOKEN: ${{ secrets.MIHOMO_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -z "$SUBMODULE_TOKEN" ]; then
+            echo "Missing token for private submodules. Set MIHOMO_REPO_TOKEN."
+            exit 1
+          fi
+          git config --global url."https://x-access-token:${SUBMODULE_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git submodule sync --recursive
+          git submodule update --init --recursive --remote --force
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26"
+          check-latest: true # Always check for the latest patch release
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Update CA
+        run: |
+          sudo apt-get update && sudo apt-get install ca-certificates
+          sudo update-ca-certificates
+          cp -f /etc/ssl/certs/ca-certificates.crt core/src/foss/golang/clash/component/ca/ca-certificates.crt
+
+      - name: Tidy Go modules
+        run: |
+          cd core/src/foss/golang && go mod tidy
+
+      - name: Setup fixed signing
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          # 方案 A：完全由 Secrets 提供 keystore 与签名参数
+          if [ -z "$SIGNING_KEYSTORE_BASE64" ] || [ -z "$SIGNING_STORE_PASSWORD" ] || [ -z "$SIGNING_KEY_ALIAS" ] || [ -z "$SIGNING_KEY_PASSWORD" ]; then
+            echo "Required signing secrets are missing. Need SIGNING_KEYSTORE_BASE64 / SIGNING_STORE_PASSWORD / SIGNING_KEY_ALIAS / SIGNING_KEY_PASSWORD."
+            exit 1
+          fi
+
+          if ! printf '%s' "$SIGNING_KEYSTORE_BASE64" | base64 -d > release.keystore; then
+            echo "Failed to decode SIGNING_KEYSTORE_BASE64. Please re-generate the base64 from keystore file."
+            exit 1
+          fi
+
+          if [ ! -s release.keystore ]; then
+            echo "Decoded keystore is empty."
+            exit 1
+          fi
+
+          if ! keytool -list -keystore release.keystore -storepass "$SIGNING_STORE_PASSWORD" >/dev/null 2>&1; then
+            echo "Keystore cannot be opened. Check SIGNING_STORE_PASSWORD and keystore content."
+            exit 1
+          fi
+
+          # 验证 alias 与密码是否匹配
+          if ! keytool -list -keystore release.keystore -storepass "$SIGNING_STORE_PASSWORD" -alias "$SIGNING_KEY_ALIAS" >/dev/null 2>&1; then
+            echo "Alias not found in keystore: $SIGNING_KEY_ALIAS"
+            echo "Available aliases:"
+            keytool -list -keystore release.keystore -storepass "$SIGNING_STORE_PASSWORD" | sed -n 's/^.*, //p' || true
+            exit 1
+          fi
+
+          # 生成 signing.properties 给 Gradle 使用
+          {
+            echo "keystore.password=$SIGNING_STORE_PASSWORD"
+            echo "key.alias=$SIGNING_KEY_ALIAS"
+            echo "key.password=$SIGNING_KEY_PASSWORD"
+          } > signing.properties
+
+          echo "Signing properties generated."
+
+      - name: Clean Build
+        run: |
+          ./gradlew --no-daemon clean
+          # Remove build directories to ensure fresh build
+          rm -rf app/build
+          rm -rf .gradle
+          # Clear Gradle cache for resources
+          rm -rf ~/.gradle/caches/
+      
+      - name: Pre-release Build
+        if: success()
+        run: ./gradlew --no-daemon --no-build-cache app:assembleAlphaRelease
+
+      # Delete old Prerelease-alpha
+      - uses: dev-drprasad/delete-tag-and-release@v1.1
+        with:
+          tag_name: Prerelease-alpha
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          delete_release: true
+
+      - name: Tag Repo
+        uses: richardsimko/update-tag@v1
+        with:
+          tag_name: Prerelease-alpha
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check tags
+        id: check-tags
+        run: |
+          if git tag -l | grep -q .; then
+            echo "has_tags=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_tags=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload Alpha
+        uses: softprops/action-gh-release@v2
+        if: ${{  success() }}
+        with:
+          tag_name: Prerelease-alpha
+          files: app/build/outputs/apk/alpha/release/*
+          prerelease: true
+          generate_release_notes: true
+
+      - name: Release Changelog Builder
+        uses: mikepenz/release-changelog-builder-action@v4
+        if: ${{ steps.check-tags.outputs.has_tags == 'true' }}
+        continue-on-error: true

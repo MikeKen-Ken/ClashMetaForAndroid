@@ -1,0 +1,72 @@
+package com.github.kr328.clash.design.component
+
+import android.view.View
+import android.view.ViewGroup
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.github.kr328.clash.design.view.VerticalScrollableHost
+import kotlin.math.roundToInt
+
+class ProxyPageFactory(private val config: ProxyViewConfig) {
+    class Holder(
+        val recyclerView: RecyclerView,
+        val root: View,
+    ) : RecyclerView.ViewHolder(root)
+
+    private val childrenPool = RecyclerView.RecycledViewPool()
+
+    fun newInstance(): Holder {
+        val root = VerticalScrollableHost(config.context).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        }
+
+        val recyclerView = RecyclerView(config.context).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        }
+
+        root.addView(recyclerView)
+
+        recyclerView.apply {
+            // 这个 RecyclerView 就是“节点窗口”的滚动区域本体。
+            // 给顶部/底部留白，避免首行/末行贴边看起来发挤。
+            val outerPaddingPx = config.layoutPadding.roundToInt()
+            setPadding(
+                paddingLeft,
+                outerPaddingPx,
+                paddingRight,
+                outerPaddingPx,
+            )
+            layoutManager = GridLayoutManager(config.context, 6).apply {
+                spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                    override fun getSpanSize(position: Int): Int {
+                        val grids = when (config.proxyLine) {
+                            1 -> 6
+                            2 -> 3
+                            3 -> 2
+                            else -> 2
+                        }
+                        return grids
+                    }
+                }
+            }
+
+            setRecycledViewPool(childrenPool)
+
+            clipToPadding = false
+        }
+
+        return Holder(recyclerView, root).apply {
+            root.tag = this
+        }
+    }
+
+    fun fromRoot(root: View): Holder {
+        return root.tag!! as Holder
+    }
+}

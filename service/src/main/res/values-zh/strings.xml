@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="clash_service_status_channel">Clash 状态</string>
+    <string name="running">正在运行</string>
+    <string name="format_update_complete">更新 %s 成功</string>
+    <string name="format_update_failure">"更新 %1$s: %2$s "</string>
+    <string name="clash_meta_for_android">Speed X</string>
+    <string name="profiles_and_providers">配置文件和外部资源</string>
+    <string name="configuration_yaml">配置文件.yaml</string>
+    <string name="provider_files">外部资源文件列表</string>
+    <string name="loading">载入中</string>
+    <string name="profile_process_status">配置文件处理状态</string>
+    <string name="update_successfully">更新成功</string>
+    <string name="update_failure">更新失败</string>
+    <string name="profile_updater">配置更新服务</string>
+    <string name="profile_updating">配置更新中</string>
+    <string name="profile_service_status">配置文件服务状态</string>
+    <string name="profile_process_result">配置文件处理结果</string>
+    <string name="health_check_notification_channel">健康检查</string>
+    <string name="health_check_notification_channel_description">当 Fallback 组触发健康检查时的通知</string>
+    <string name="health_check_triggered_title">Fallback 健康检查</string>
+    <string name="health_check_triggered_message">组 \"%s\" 触发了健康检查</string>
+    <string name="max_connect_times_test_triggered_title">请求次数测速</string>
+    <string name="max_connect_times_test_triggered_message">组 \"%1$s\" 达到请求次数阈值，正在测速当前节点 \"%2$s\"</string>
+</resources>

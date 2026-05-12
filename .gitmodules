@@ -1,0 +1,12 @@
+[submodule "clash-foss"]
+	path = core/src/foss/golang/clash
+	url = https://github.com/MikeKen-Ken/mihomo
+	branch = Alpha
+[submodule "clash-verge-rev"]
+	path = clash-verge-rev
+	url = ../clash-verge-rev.git
+	branch = dev
+[submodule ".cursor"]
+	path = .cursor
+	url = https://github.com/MikeKen-Ken/cursor-rule.git
+	update = none

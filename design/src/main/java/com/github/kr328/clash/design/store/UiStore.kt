@@ -1,0 +1,105 @@
+package com.github.kr328.clash.design.store
+
+import android.content.Context
+import com.github.kr328.clash.common.store.Store
+import com.github.kr328.clash.common.store.asStoreProvider
+import com.github.kr328.clash.core.model.ProxySort
+import com.github.kr328.clash.core.model.TunnelState
+import com.github.kr328.clash.design.model.AppInfoSort
+import com.github.kr328.clash.design.model.DarkMode
+
+class UiStore(context: Context) {
+    private val store = Store(
+        context
+            .getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE)
+            .asStoreProvider()
+    )
+
+    var enableVpn: Boolean by store.boolean(
+        key = "enable_vpn",
+        defaultValue = true
+    )
+
+    var darkMode: DarkMode by store.enum(
+        key = "dark_mode",
+        defaultValue = DarkMode.Auto,
+        values = DarkMode.values()
+    )
+
+    var hideAppIcon: Boolean by store.boolean(
+        key = "hide_app_icon",
+        defaultValue = false
+    )
+
+    var proxyExcludeNotSelectable by store.boolean(
+        key = "proxy_exclude_not_selectable",
+        defaultValue = false,
+    )
+
+    var proxyLine: Int by store.int(
+        key = "proxy_line",
+        defaultValue = 3
+    )
+
+    var proxySort: ProxySort by store.enum(
+        key = "proxy_sort",
+        defaultValue = ProxySort.Default,
+        values = ProxySort.values()
+    )
+
+    var proxyLastGroup: String by store.string(
+        key = "proxy_last_group",
+        defaultValue = ""
+    )
+
+    /** 前端自己记录代理页模式（规则/全局/直连），用于按钮选中状态，与电脑端一致不依赖 core 返回的 mode */
+    var proxyUiMode: TunnelState.Mode by store.enum(
+        key = "proxy_ui_mode",
+        defaultValue = TunnelState.Mode.Rule,
+        values = TunnelState.Mode.values()
+    )
+
+    var accessControlSort: AppInfoSort by store.enum(
+        key = "access_control_sort",
+        defaultValue = AppInfoSort.Label,
+        values = AppInfoSort.values(),
+    )
+
+    var accessControlReverse: Boolean by store.boolean(
+        key = "access_control_reverse",
+        defaultValue = false
+    )
+
+    var accessControlSystemApp: Boolean by store.boolean(
+        key = "access_control_system_app",
+        defaultValue = false,
+    )
+
+    /** 已关闭连接保留时间（小时），可选 1、3、8、24，默认 8 */
+    var connectionsClosedRetentionHours: Int by store.int(
+        key = "connections_closed_retention_hours",
+        defaultValue = 8,
+    )
+
+    /** 已禁用的局域网来源 IP（用于设备级拦截） */
+    var lanBlockedSourceIps: Set<String> by store.stringSet(
+        key = "lan_blocked_source_ips",
+        defaultValue = emptySet(),
+    )
+
+    /** 延迟测速超时时间（毫秒），可选 250、500、1000、3000、5000，默认 5000 */
+    var proxyDelayTestTimeoutMs: Int by store.int(
+        key = "proxy_delay_test_timeout_ms",
+        defaultValue = 5000,
+    )
+
+    /** 延迟测速并发节点数，可选 30、50、100、150、200（与订阅健康检查共用），默认 30 */
+    var proxyDelayTestConcurrency: Int by store.int(
+        key = "proxy_delay_test_concurrency",
+        defaultValue = 30,
+    )
+
+    companion object {
+        private const val PREFERENCE_NAME = "ui"
+    }
+}

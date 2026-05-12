@@ -1,0 +1,78 @@
+#--常用开关--#
+# .assets/
+# assets/
+# Assets/
+bat-tools/
+
+**/build/
+**/Build/
+
+*.java
+
+# ------------------------------------------------------------#
+extensions/
+native/
+profiles/
+settings/
+
+# --- Spine 文件 ---
+**/Spine/
+**/spine/
+
+# --- 字体文件 ---
+*.ttf
+*.otf
+*.woff
+*.woff2
+*.eot
+*.fnt
+
+
+# --- 构建与临时文件 ---
+bin/
+obj/
+dist/
+temp/
+out/
+.cache/
+
+# --- 资源文件 (建议根据你的游戏引擎微调) ---
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.psd
+# *.wav
+# *.mp3
+*.mp4
+*.fui
+*.atlas
+*.zip
+*.rar
+*.7z
+*.exe
+*.apk
+*.ipa
+*.app
+*.tar.gz
+
+
+# --- 编辑器与系统 ---
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.user
+
+# --- 敏感文件 ---
+.env
+*.key
+*.pem
+
+# --- 依赖与库 ---
+node_modules/
+Library/
+Packages/
+vendor/
+.creator/
+.specstory/

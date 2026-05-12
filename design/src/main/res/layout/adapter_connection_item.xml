@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <data>
+        <import type="android.view.View" />
+        <variable
+            name="connection"
+            type="com.github.kr328.clash.core.model.Connection" />
+        <variable
+            name="ruleDisplayText"
+            type="String" />
+        <variable
+            name="trafficDisplayText"
+            type="String" />
+        <variable
+            name="startTimeDisplayText"
+            type="String" />
+        <variable
+            name="networkDisplayText"
+            type="String" />
+    </data>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/item_tailing_margin"
+        android:paddingEnd="@dimen/item_tailing_margin"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp">
+
+        <ImageView
+            android:id="@+id/app_icon_view"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginEnd="@dimen/item_text_margin"
+            android:contentDescription="@null"
+            android:scaleType="centerCrop"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:minHeight="44dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="@{connection != null ? (connection.metadata != null ? connection.metadata.host : connection.chains) : &quot;&quot;}"
+                    android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/network_view"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="@{networkDisplayText != null ? networkDisplayText : &quot;&quot;}"
+                    android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+                    android:textColor="?attr/colorControlActivated"
+                    android:textSize="12sp"
+                    android:visibility="@{networkDisplayText != null &amp;&amp; networkDisplayText.length() > 0 ? View.VISIBLE : View.GONE}" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/start_time_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="@{startTimeDisplayText != null ? startTimeDisplayText : &quot;&quot;}"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="12sp"
+                android:visibility="@{startTimeDisplayText != null &amp;&amp; startTimeDisplayText.length() > 0 ? View.VISIBLE : View.GONE}" />
+
+            <TextView
+                android:id="@+id/process_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+                android:textColor="?attr/colorControlActivated"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/traffic_display_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="@{trafficDisplayText != null ? trafficDisplayText : &quot;&quot;}"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/rule_display_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:text="@{ruleDisplayText != null ? ruleDisplayText : &quot;&quot;}"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+                android:textColor="?attr/colorControlActivated"
+                android:textSize="11sp"
+                android:fontFamily="monospace" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/close_view"
+            android:layout_width="@dimen/item_tailing_component_size"
+            android:layout_height="@dimen/item_tailing_component_size"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="@dimen/item_text_margin"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/delete"
+            android:padding="@dimen/toolbar_image_action_padding"
+            android:src="@drawable/ic_baseline_close" />
+    </LinearLayout>
+</layout>

@@ -1,0 +1,130 @@
+package main
+
+import (
+	"net/netip"
+	"time"
+
+	"github.com/metacubex/mihomo/tunnel/statistic"
+)
+
+// connectionDTO is JSON-serializable (atomic types copied to int64, etc.)
+type connectionDTO struct {
+	Id            string       `json:"id"`
+	Metadata      *metadataDTO `json:"metadata"`
+	Upload        int64        `json:"upload"`
+	Download      int64        `json:"download"`
+	Start         string       `json:"start"`
+	Chains        string       `json:"chains"`
+	ProviderChains string      `json:"providerChains,omitempty"`
+	Rule          string       `json:"rule"`
+	RulePayload   string       `json:"rulePayload"`
+	RuleDetail    string       `json:"ruleDetail,omitempty"`
+}
+
+type metadataDTO struct {
+	Network  string `json:"network"`
+	Host     string `json:"host"`
+	Process  string `json:"process"`
+	SourceIP string `json:"sourceIP"`
+	DstPort  uint16 `json:"destinationPort,string"`
+}
+
+type connectionsSnapshotDTO struct {
+	DownloadTotal int64           `json:"downloadTotal"`
+	UploadTotal   int64           `json:"uploadTotal"`
+	Connections   []connectionDTO `json:"connections"`
+}
+
+func queryConnectionsSnapshot() *connectionsSnapshotDTO {
+	snap := statistic.DefaultManager.Snapshot()
+	if snap == nil {
+		return &connectionsSnapshotDTO{Connections: []connectionDTO{}}
+	}
+	out := &connectionsSnapshotDTO{
+		DownloadTotal: snap.DownloadTotal,
+		UploadTotal:   snap.UploadTotal,
+		Connections:   make([]connectionDTO, 0, len(snap.Connections)),
+	}
+	for _, info := range snap.Connections {
+		if info == nil {
+			continue
+		}
+		dto := connectionDTO{
+			Id:          info.UUID.String(),
+			Upload:      info.UploadTotal.Load(),
+			Download:    info.DownloadTotal.Load(),
+			Start:       info.Start.Format(time.RFC3339),
+			Chains:      info.Chain.String(),
+			Rule:        info.Rule,
+			RulePayload: info.RulePayload,
+			RuleDetail:  info.RuleDetail,
+		}
+		if len(info.ProviderChain) > 0 {
+			dto.ProviderChains = info.ProviderChain.String()
+		}
+		if info.Metadata != nil {
+			m := info.Metadata
+			dto.Metadata = &metadataDTO{
+				Network:  m.NetWork.String(),
+				Host:     m.Host,
+				Process:  m.Process,
+				SourceIP: m.SrcIP.String(),
+				DstPort:  m.DstPort,
+			}
+		}
+		out.Connections = append(out.Connections, dto)
+	}
+	return out
+}
+
+func closeConnectionByID(id string) bool {
+	c := statistic.DefaultManager.Get(id)
+	if c == nil {
+		return false
+	}
+	_ = c.Close()
+	return true
+}
+
+// closeAllConnections closes every tracked connection so traffic is re-established with the latest rules (e.g. after mode switch).
+func closeAllConnections() {
+	statistic.DefaultManager.Range(func(c statistic.Tracker) bool {
+		_ = c.Close()
+		return true
+	})
+}
+
+func closeConnectionsExcludingDirect() {
+	statistic.DefaultManager.CloseConnectionsExcludingDirect()
+}
+
+func closeConnectionsUsingProxyGroup(group string) {
+	statistic.DefaultManager.CloseConnectionsUsingProxyGroup(group)
+}
+
+func closeLanConnections() {
+	statistic.DefaultManager.Range(func(c statistic.Tracker) bool {
+		info := c.Info()
+		if info == nil || info.Metadata == nil {
+			return true
+		}
+		if isLanSourceIP(info.Metadata.SrcIP) {
+			_ = c.Close()
+		}
+		return true
+	})
+}
+
+func isLanSourceIP(addr netip.Addr) bool {
+	if !addr.IsValid() {
+		return false
+	}
+	addr = addr.Unmap()
+	if addr.IsLoopback() || addr.IsUnspecified() || addr.IsMulticast() {
+		return false
+	}
+	if addr.IsPrivate() {
+		return true
+	}
+	return addr.Is6() && addr.IsLinkLocalUnicast()
+}

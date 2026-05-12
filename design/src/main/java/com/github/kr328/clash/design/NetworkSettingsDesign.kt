@@ -1,0 +1,239 @@
+package com.github.kr328.clash.design
+
+import android.content.Context
+import android.os.Build
+import android.view.View
+import com.github.kr328.clash.design.databinding.DesignSettingsCommonBinding
+import com.github.kr328.clash.design.preference.*
+import com.github.kr328.clash.design.store.UiStore
+import com.github.kr328.clash.design.ui.ToastDuration
+import com.github.kr328.clash.design.util.applyFrom
+import com.github.kr328.clash.design.util.bindAppBarElevation
+import com.github.kr328.clash.design.util.layoutInflater
+import com.github.kr328.clash.design.util.root
+import com.github.kr328.clash.service.model.AccessControlMode
+import com.github.kr328.clash.service.store.ServiceStore
+import kotlinx.coroutines.launch
+
+class NetworkSettingsDesign(
+    context: Context,
+    uiStore: UiStore,
+    srvStore: ServiceStore,
+    running: Boolean,
+    allowLan: Boolean,
+    strictRoute: Boolean,
+    lanAddresses: List<String>,
+) : Design<NetworkSettingsDesign.Request>(context) {
+    private class AllowLanState(initialEnabled: Boolean) {
+        var enabled: Boolean = initialEnabled
+    }
+
+    private class StrictRouteState(initialEnabled: Boolean) {
+        var enabled: Boolean = initialEnabled
+    }
+
+    sealed class Request {
+        object StartAccessControlList : Request()
+        object StartLanDevices : Request()
+        data class UpdateAllowLan(val enabled: Boolean) : Request()
+        data class UpdateStrictRoute(val enabled: Boolean) : Request()
+        data class CopyLanAddress(val address: String) : Request()
+    }
+
+    private val binding = DesignSettingsCommonBinding
+        .inflate(context.layoutInflater, context.root, false)
+
+    override val root: View
+        get() = binding.root
+
+    init {
+        binding.surface = surface
+
+        binding.activityBarLayout.applyFrom(context)
+
+        binding.scrollRoot.bindAppBarElevation(binding.activityBarLayout)
+
+        val screen = preferenceScreen(context) {
+            val vpnDependencies: MutableList<Preference> = mutableListOf()
+            val allowLanState = AllowLanState(allowLan)
+            val strictRouteState = StrictRouteState(strictRoute)
+
+            val vpn = switch(
+                value = uiStore::enableVpn,
+                icon = R.drawable.ic_baseline_vpn_lock,
+                title = R.string.route_system_traffic,
+                summary = R.string.routing_via_vpn_service
+            ) {
+                listener = OnChangedListener {
+                    vpnDependencies.forEach {
+                        it.enabled = uiStore.enableVpn
+                    }
+                }
+            }
+
+            category(R.string.vpn_service_options)
+
+            val lanSwitch = switch(
+                value = allowLanState::enabled,
+                title = R.string.allow_lan,
+                summary = R.string.allow_lan_summary,
+            ) {
+                listener = OnChangedListener {
+                    requests.trySend(Request.UpdateAllowLan(allowLanState.enabled))
+                }
+            }
+
+            switch(
+                value = strictRouteState::enabled,
+                title = R.string.strict_route,
+                summary = R.string.strict_route_summary,
+            ) {
+                listener = OnChangedListener {
+                    requests.trySend(Request.UpdateStrictRoute(strictRouteState.enabled))
+                }
+            }
+
+            val lanAddress = clickable(
+                title = R.string.lan_address,
+                summary = if (allowLanState.enabled) R.string.tap_to_copy else R.string.lan_address_disabled,
+            ) {
+                enabled = allowLanState.enabled && lanAddresses.isNotEmpty()
+                clicked {
+                    val firstAddress = lanAddresses.firstOrNull() ?: return@clicked
+                    requests.trySend(Request.CopyLanAddress(firstAddress))
+                    this@NetworkSettingsDesign.launch {
+                        showToast(R.string.copied, ToastDuration.Short)
+                    }
+                }
+            }
+
+            val lanDevices = clickable(
+                title = R.string.lan_connected_devices,
+                summary = R.string.connections_devices,
+            ) {
+                enabled = allowLanState.enabled
+                clicked {
+                    requests.trySend(Request.StartLanDevices)
+                }
+            }
+
+            if (allowLanState.enabled && lanAddresses.isNotEmpty()) {
+                lanAddress.summary = lanAddresses.first()
+            } else if (allowLanState.enabled) {
+                lanAddress.summary = context.getString(R.string.lan_address_unavailable)
+                lanAddress.enabled = false
+            }
+
+            lanSwitch.listener = OnChangedListener {
+                requests.trySend(Request.UpdateAllowLan(allowLanState.enabled))
+                if (!allowLanState.enabled) {
+                    lanAddress.summary = context.getString(R.string.lan_address_disabled)
+                    lanAddress.enabled = false
+                    lanDevices.enabled = false
+                } else {
+                    lanDevices.enabled = true
+                    val firstAddress = lanAddresses.firstOrNull()
+                    if (firstAddress == null) {
+                        lanAddress.summary = context.getString(R.string.lan_address_unavailable)
+                        lanAddress.enabled = false
+                    } else {
+                        lanAddress.summary = firstAddress
+                        lanAddress.enabled = true
+                    }
+                }
+            }
+
+            switch(
+                value = srvStore::bypassPrivateNetwork,
+                title = R.string.bypass_private_network,
+                summary = R.string.bypass_private_network_summary,
+                configure = vpnDependencies::add,
+            )
+
+            switch(
+                value = srvStore::dnsHijacking,
+                title = R.string.dns_hijacking,
+                summary = R.string.dns_hijacking_summary,
+                configure = vpnDependencies::add,
+            )
+
+            switch(
+                value = srvStore::allowBypass,
+                title = R.string.allow_bypass,
+                summary = R.string.allow_bypass_summary,
+                configure = vpnDependencies::add,
+            )
+
+            switch(
+                value = srvStore::allowIpv6,
+                title = R.string.allow_ipv6,
+                summary = R.string.allow_ipv6_summary,
+                configure = vpnDependencies::add,
+            )
+
+            if (Build.VERSION.SDK_INT >= 29) {
+                switch(
+                    value = srvStore::systemProxy,
+                    title = R.string.system_proxy,
+                    summary = R.string.system_proxy_summary,
+                    configure = vpnDependencies::add,
+                )
+            }
+
+            selectableList(
+                value = srvStore::tunStackMode,
+                values = arrayOf(
+                    "system",
+                    "gvisor",
+                    "mixed"
+                ),
+                valuesText = arrayOf(
+                    R.string.tun_stack_system,
+                    R.string.tun_stack_gvisor,
+                    R.string.tun_stack_mixed
+                ),
+                title = R.string.tun_stack_mode,
+                configure = vpnDependencies::add,
+            )
+
+            selectableList(
+                value = srvStore::accessControlMode,
+                values = AccessControlMode.values(),
+                valuesText = arrayOf(
+                    R.string.allow_all_apps,
+                    R.string.allow_selected_apps,
+                    R.string.deny_selected_apps
+                ),
+                title = R.string.access_control_mode,
+                configure = vpnDependencies::add,
+            )
+
+            clickable(
+                title = R.string.access_control_packages,
+                summary = R.string.access_control_packages_summary,
+            ) {
+                clicked {
+                    requests.trySend(Request.StartAccessControlList)
+                }
+            }
+
+            if (running) {
+                vpn.enabled = false
+
+                vpnDependencies.forEach {
+                    it.enabled = false
+                }
+            } else {
+                vpn.listener?.onChanged()
+            }
+        }
+
+        binding.content.addView(screen.root)
+
+        if (running) {
+            launch {
+                showToast(R.string.options_unavailable, ToastDuration.Indefinite)
+            }
+        }
+    }
+}

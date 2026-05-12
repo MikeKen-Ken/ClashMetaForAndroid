@@ -1,0 +1,119 @@
+allow-lan: false
+# bind-address: "192.168.1.23"   # 你的手机当前Wi-Fi实际IP
+mixed-port: 7890              # 合法端口
+# authentication:
+#   - "myuser:strong-password-123"
+
+mode: rule
+dns:
+  enable: true
+  ipv6: true
+  prefer-h3: true
+  listen: 127.0.0.1:53
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  cache-algorithm: arc
+  use-hosts: false
+  use-system-hosts: false
+  fake-ip-filter:
+    - "rule-set:fakeip-filter"
+    - "127.0.0.1"
+  default-nameserver:
+    - 1.1.1.1
+    - 8.8.8.8
+    - 9.9.9.9
+    - tls://1.0.0.1:853
+
+  nameserver: &intl-dns
+    - https://1.1.1.1/dns-query
+    - https://8.8.8.8/dns-query
+    - https://9.9.9.9/dns-query
+    - tls://1.0.0.1:853
+
+  direct-nameserver: &china-dns
+    - https://dns.alidns.com/dns-query
+    - https://120.53.53.53/dns-query
+    - tls://119.29.29.29:853
+  direct-nameserver-follow-policy: true
+
+  nameserver-policy:
+    "rule-set:custome-reject": rcode://success
+    "rule-set:custome-whitelist-direct": *china-dns
+    "rule-set:custome-whitelist-proxy": *intl-dns
+
+    "rule-set:private": *china-dns
+    "rule-set:trackerslist": rcode://success
+    "rule-set:ads": rcode://success
+
+    "rule-set:custome-noHK": *intl-dns
+    "rule-set:custome-HK": *intl-dns
+    "rule-set:custome-proxy": *intl-dns
+    "rule-set:custome-direct": *china-dns
+
+    "rule-set:spotify": *intl-dns
+    "rule-set:ai": *intl-dns
+    "rule-set:networktest": *china-dns
+    "rule-set:applications": *china-dns
+    "rule-set:microsoft-cn": *china-dns
+    "rule-set:apple-cn": *china-dns
+    "rule-set:games-cn": *china-dns
+    "rule-set:bilibili": *china-dns
+
+    "rule-set:cn": *china-dns
+
+
+tun:
+  enable: true
+  stack: mixed # mixed # gvisor # system
+  device: newsilence
+  mtu: 1500
+  udp-timeout: 300
+  endpoint-independent-nat: true
+  auto-route: true
+  auto-redirect: true
+  auto-detect-interface: true
+  dns-hijack:
+    - any:53
+    - tcp://any:53
+    - udp://any:53
+  strict-route: true
+
+geodata-mode: false
+# geodata-mode: true
+# geo-auto-update: true
+# geo-update-interval: 24
+# geodata-loader: standard
+# geox-url:
+#   geosite: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@mihomo-geodata/geosite.dat"
+#   geoip: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@mihomo-geodata/geoip-all.dat"
+#   mmdb: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@mihomo-geodata/Country.mmdb"
+#   asn: "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@mihomo-geodata/Country-ASN.mmdb"
+
+sniffer:
+  enable: true
+  force-dns-mapping: true
+  parse-pure-ip: true
+  override-destination: true
+  sniff:
+    HTTP:
+      ports: [80, 8080-8880]
+    TLS:
+      ports: [443, 8443]
+    QUIC:
+      ports: [443, 8443]
+  skip-domain:
+    - "Mijia Cloud"
+
+profile:
+  store-selected: false
+  # fake-ip 映射持久化，避免重启或缓存清理后旧 fake-ip 成为"孤儿"导致连接被静默丢弃
+  store-fake-ip: true
+
+find-process-mode: always
+tcp-concurrent: true
+unified-delay: false
+keep-alive-interval: 5
+keep-alive-idle: 5
+disable-keep-alive: false
+etag-support: true
+# pool-size: 150

@@ -1,0 +1,94 @@
+package com.github.kr328.clash.design
+
+import android.content.Context
+import android.view.View
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import com.github.kr328.clash.core.model.LogMessage
+import com.github.kr328.clash.design.adapter.LogFileAdapter
+import com.github.kr328.clash.design.databinding.DesignLogsBinding
+import com.github.kr328.clash.design.model.LogFile
+import com.github.kr328.clash.design.util.*
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.resume
+
+class LogsDesign(
+    context: Context,
+    initialLogLevel: LogMessage.Level?,
+) : Design<LogsDesign.Request>(context) {
+    sealed class Request {
+        object StartLogcat : Request()
+        object DeleteAll : Request()
+        data class ChangeLogLevel(val level: LogMessage.Level) : Request()
+        data class OpenFile(val file: LogFile) : Request()
+    }
+
+    private val binding = DesignLogsBinding
+        .inflate(context.layoutInflater, context.root, false)
+    private val adapter = LogFileAdapter(context) {
+        requests.trySend(Request.OpenFile(it))
+    }
+
+    override val root: View
+        get() = binding.root
+
+    suspend fun patchLogs(logs: List<LogFile>) {
+        adapter.patchDataSet(adapter::logs, logs, false, LogFile::fileName)
+    }
+
+    suspend fun requestDeleteAll(): Boolean {
+        return withContext(Dispatchers.Main) {
+            suspendCancellableCoroutine { ctx ->
+                MaterialAlertDialogBuilder(context)
+                    .setTitle(R.string.delete_all_logs)
+                    .setMessage(R.string.delete_all_logs_warn)
+                    .setPositiveButton(R.string.ok) { _, _ -> ctx.resume(true) }
+                    .setNegativeButton(R.string.cancel) { _, _ -> }
+                    .show()
+                    .setOnDismissListener { if (!ctx.isCompleted) ctx.resume(false) }
+            }
+        }
+    }
+
+    init {
+        binding.self = this
+
+        binding.activityBarLayout.applyFrom(context)
+
+        binding.recyclerList.applyLinearAdapter(context, adapter)
+
+        val logLevels = arrayOf(
+            LogMessage.Level.Debug,
+            LogMessage.Level.Info,
+            LogMessage.Level.Warning,
+            LogMessage.Level.Error,
+            LogMessage.Level.Silent,
+        )
+        val levelStrings = arrayOf(
+            context.getString(R.string.debug),
+            context.getString(R.string.info),
+            context.getString(R.string.warning),
+            context.getString(R.string.error),
+            context.getString(R.string.silent),
+        )
+        val levelAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, levelStrings).apply {
+            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
+        binding.logLevelSpinner.adapter = levelAdapter
+        val initialIndex = logLevels.indexOf(initialLogLevel).coerceAtLeast(0)
+        // 避免 setSelection 触发 onItemSelected：否则每次进入日志页都会 patchOverride，易引发无谓的原生调用或竞态。
+        var logLevelSpinnerQuiet = true
+        binding.logLevelSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if (logLevelSpinnerQuiet) return
+                requests.trySend(Request.ChangeLogLevel(logLevels[position]))
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+        binding.logLevelSpinner.setSelection(initialIndex)
+        logLevelSpinnerQuiet = false
+    }
+}
