@@ -400,7 +400,7 @@ func insertNameServerPolicyPairAt(m *orderedmap.OrderedMap[string, any], insertA
 	out = append(out, pairs[:insertAt]...)
 	out = append(out, orderedmap.Pair[string, any]{Key: key, Value: value})
 	out = append(out, pairs[insertAt:]...)
-	return orderedmap.New(orderedmap.WithInitialData(out...))
+	return orderedmap.New[string, any](orderedmap.WithInitialData(out...))
 }
 
 func intMin(a, b int) int {
