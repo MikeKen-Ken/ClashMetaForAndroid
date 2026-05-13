@@ -135,6 +135,7 @@
     <string name="allow_lan">允许来自局域网的连接</string>
     <string name="strict_route">严格路由</string>
     <string name="strict_route_summary">强制所有流量通过 TUN 路由，降低泄漏风险</string>
+    <string name="strict_route_summary_mutex_with_allow_lan">「允许来自局域网的连接」开启时不可用，二者互斥。</string>
     <string name="bind_address">监听地址</string>
     <string name="log_level">日志级别</string>
     <string name="ipv6">IPv6</string>

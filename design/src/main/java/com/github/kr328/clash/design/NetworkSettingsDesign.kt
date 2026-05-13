@@ -56,7 +56,7 @@ class NetworkSettingsDesign(
         val screen = preferenceScreen(context) {
             val vpnDependencies: MutableList<Preference> = mutableListOf()
             val allowLanState = AllowLanState(allowLan)
-            val strictRouteState = StrictRouteState(strictRoute)
+            val strictRouteState = StrictRouteState(if (allowLan) false else strictRoute)
 
             val vpn = switch(
                 value = uiStore::enableVpn,
@@ -77,19 +77,17 @@ class NetworkSettingsDesign(
                 value = allowLanState::enabled,
                 title = R.string.allow_lan,
                 summary = R.string.allow_lan_summary,
-            ) {
-                listener = OnChangedListener {
-                    requests.trySend(Request.UpdateAllowLan(allowLanState.enabled))
-                }
-            }
+            )
 
-            switch(
+            val strictRouteSwitch = switch(
                 value = strictRouteState::enabled,
                 title = R.string.strict_route,
                 summary = R.string.strict_route_summary,
             ) {
                 listener = OnChangedListener {
-                    requests.trySend(Request.UpdateStrictRoute(strictRouteState.enabled))
+                    if (!allowLanState.enabled) {
+                        requests.trySend(Request.UpdateStrictRoute(strictRouteState.enabled))
+                    }
                 }
             }
 
@@ -130,6 +128,10 @@ class NetworkSettingsDesign(
                     lanAddress.summary = context.getString(R.string.lan_address_disabled)
                     lanAddress.enabled = false
                     lanDevices.enabled = false
+                    strictRouteState.enabled = true
+                    strictRouteSwitch.checked = true
+                    strictRouteSwitch.enabled = true
+                    strictRouteSwitch.summary = context.getString(R.string.strict_route_summary)
                 } else {
                     lanDevices.enabled = true
                     val firstAddress = lanAddresses.firstOrNull()
@@ -140,7 +142,18 @@ class NetworkSettingsDesign(
                         lanAddress.summary = firstAddress
                         lanAddress.enabled = true
                     }
+                    strictRouteState.enabled = false
+                    strictRouteSwitch.checked = false
+                    strictRouteSwitch.enabled = false
+                    strictRouteSwitch.summary =
+                        context.getString(R.string.strict_route_summary_mutex_with_allow_lan)
                 }
+            }
+
+            if (allowLanState.enabled) {
+                strictRouteSwitch.enabled = false
+                strictRouteSwitch.summary =
+                    context.getString(R.string.strict_route_summary_mutex_with_allow_lan)
             }
 
             switch(

@@ -24,13 +24,22 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
         val serviceStore = ServiceStore(this)
         val persistOverride = withClash { queryOverride(Clash.OverrideSlot.Persist) }
         val sessionOverride = withClash { queryOverride(Clash.OverrideSlot.Session) }
+        val allowLanEffective = persistOverride.allowLan ?: false
+        if (allowLanEffective && persistOverride.tun.strictRoute != false) {
+            persistOverride.tun.strictRoute = false
+            scheduleClashMutation("网络设置-严格路由与局域网互斥校正") {
+                patchOverride(Clash.OverrideSlot.Persist, persistOverride)
+            }
+        }
+        val strictRouteForUi =
+            if (allowLanEffective) false else (persistOverride.tun.strictRoute ?: true)
         val design = NetworkSettingsDesign(
             this,
             uiStore,
             serviceStore,
             clashRunning,
-            persistOverride.allowLan ?: false,
-            persistOverride.tun.strictRoute ?: true,
+            allowLanEffective,
+            strictRouteForUi,
             resolveLanAddresses(serviceStore, sessionOverride, persistOverride),
         )
 
@@ -61,10 +70,13 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
                             val turningOff = persistOverride.allowLan == true && !it.enabled
                             persistOverride.allowLan = it.enabled
                             if (it.enabled) {
+                                persistOverride.tun.strictRoute = false
                                 // 每次开启局域网时自动刷新 bind-address，避免网络切换后仍绑定旧 IP。
                                 resolvePreferredIpv4Address()?.let { ip ->
                                     persistOverride.bindAddress = ip
                                 }
+                            } else {
+                                persistOverride.tun.strictRoute = true
                             }
                             if (turningOff) {
                                 withClash { closeLanConnections() }
@@ -75,10 +87,14 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
                             }
                         }
                         is NetworkSettingsDesign.Request.UpdateStrictRoute -> {
-                            persistOverride.tun.strictRoute = it.enabled
-                            // 立即持久化，避免依赖 defer 退出时保存导致设置丢失
-                            scheduleClashMutation("网络设置-严格路由") {
-                                patchOverride(Clash.OverrideSlot.Persist, persistOverride)
+                            if (persistOverride.allowLan == true && it.enabled) {
+                                // 与允许局域网互斥：保持关闭
+                            } else {
+                                persistOverride.tun.strictRoute = it.enabled
+                                // 立即持久化，避免依赖 defer 退出时保存导致设置丢失
+                                scheduleClashMutation("网络设置-严格路由") {
+                                    patchOverride(Clash.OverrideSlot.Persist, persistOverride)
+                                }
                             }
                         }
                         is NetworkSettingsDesign.Request.CopyLanAddress ->

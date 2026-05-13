@@ -17,6 +17,9 @@ interface SwitchPreference : Preference {
     var title: CharSequence?
     var summary: CharSequence?
     var listener: OnChangedListener?
+
+    /** 与绑定字段同步更新开关视觉状态（用于互斥等程序化场景）。 */
+    var checked: Boolean
 }
 
 fun PreferenceScreen.switch(
@@ -48,6 +51,12 @@ fun PreferenceScreen.switch(
                 binding.summaryView.text = value
             }
         override var listener: OnChangedListener? = null
+        override var checked: Boolean
+            get() = binding.switchView.isChecked
+            set(checked) {
+                binding.switchView.isChecked = checked
+                value.set(checked)
+            }
         override var enabled: Boolean
             get() = binding.root.isEnabled
             set(value) {

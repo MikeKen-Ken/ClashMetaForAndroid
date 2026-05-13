@@ -176,6 +176,7 @@
     <string name="allow_lan_summary">Allow devices on LAN to connect</string>
     <string name="strict_route">Strict Route</string>
     <string name="strict_route_summary">Force all traffic through TUN routes to reduce leaks</string>
+    <string name="strict_route_summary_mutex_with_allow_lan">Unavailable while Allow LAN is enabled; the two settings are mutually exclusive.</string>
     <string name="lan_address">LAN Address</string>
     <string name="lan_connected_devices">Connected devices</string>
     <string name="lan_address_disabled">Enable Allow LAN to show address</string>
