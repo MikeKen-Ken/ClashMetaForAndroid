@@ -1,78 +1,87 @@
-#--常用开关--#
-# .assets/
-# assets/
-# Assets/
-bat-tools/
-
-**/build/
-**/Build/
-
-*.java
-
-# ------------------------------------------------------------#
-extensions/
-native/
-profiles/
-settings/
-
-# --- Spine 文件 ---
-**/Spine/
-**/spine/
-
-# --- 字体文件 ---
-*.ttf
-*.otf
-*.woff
-*.woff2
-*.eot
-*.fnt
-
-
-# --- 构建与临时文件 ---
-bin/
-obj/
-dist/
-temp/
-out/
-.cache/
-
-# --- 资源文件 (建议根据你的游戏引擎微调) ---
+*.meta
+*.wav
+*.mp3
+*.mp4
+*.skel
+# native/
+locales/
+clash/test/
+clash-verge-i18n/
+docs/
+build/
 *.png
 *.jpg
 *.jpeg
-*.gif
-*.psd
-# *.wav
-# *.mp3
-*.mp4
-*.fui
-*.atlas
-*.zip
-*.rar
-*.7z
-*.exe
-*.apk
-*.ipa
-*.app
-*.tar.gz
+*.rr
 
+# --- 版本控制 ---
+.git/
+.svn/
+.hg/
 
-# --- 编辑器与系统 ---
+# --- 构建产物与临时文件 ---
+bin/
+obj/
+dist/
+out/
+
+temp/
+.cache/
+*.swp
+*.tmp
+*.log
+
+# --- 编辑器与系统文件 ---
 .idea/
 .DS_Store
 Thumbs.db
-*.suo
-*.user
+*.njsproj
+*.sln
+*.swp
 
-# --- 敏感文件 ---
-.env
+# --- 敏感文件 (保护隐私) ---
+# 忽略敏感后缀
 *.key
 *.pem
+*.p12
+*.cer
+*.jks
 
-# --- 依赖与库 ---
+# 忽略环境配置文件
+.env
+.env.local
+.env.production
+.env.development
+# 显式保留模板文件，方便 AI 参考变量结构
+!.env.example
+!.env.template
+
+# --- 依赖与庞大目录 ---
 node_modules/
+bower_components/
+vendor/
 Library/
 Packages/
-vendor/
+packages/
 .creator/
 .specstory/
+
+# --- 大型二进制与媒体文件 ---
+# 防止 AI 尝试索引非文本内容导致卡顿
+*.zip
+*.7z
+*.rar
+*.tar.gz
+*.exe
+*.dll
+*.so
+*.dylib
+*.mov
+*.pdf
+*.gif
+*.ico
+
+# --- 测试覆盖率与报告 ---
+coverage/
+.nyc_output/
+htmlcov/

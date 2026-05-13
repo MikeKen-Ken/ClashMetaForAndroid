@@ -10,6 +10,7 @@ import (
 
 	"cfa/native/common"
 
+	"github.com/metacubex/mihomo/common/orderedmap"
 	"github.com/metacubex/mihomo/common/utils"
 	"github.com/metacubex/mihomo/config"
 	"github.com/metacubex/mihomo/adapter/provider"
@@ -49,7 +50,18 @@ var processors = []processor{
 
 type processor func(cfg *config.RawConfig, profileDir string) error
 
-const proxyAdsBlockRule = "RULE-SET,ads,REJECT"
+const (
+	proxyAdsBlockRule      = "RULE-SET,ads,REJECT"
+	proxyAdsNsPolicyKey    = "rule-set:ads"
+	proxyAdsNsDefaultValue = "rcode://success"
+)
+
+// 关闭「代理广告拦截」时记录被移除的规则与 nameserver-policy 项的位置和取值，再次开启时按原顺序写回（同进程内有效）。
+var (
+	savedProxyAdsRuleIdx *int
+	savedProxyAdsNsIdx   *int
+	savedProxyAdsNsVal   any
+)
 
 type overrideProxyAdsBlock struct {
 	ProxyAdsBlock *bool `json:"proxy-ads-block"`
@@ -153,23 +165,80 @@ func patchProxyAdsBlock(cfg *config.RawConfig, _ string) error {
 		enableProxyAdsBlock = *session.ProxyAdsBlock
 	}
 
+	_, hasAdsProvider := cfg.RuleProvider["ads"]
+
 	if enableProxyAdsBlock {
-		if _, hasAdsProvider := cfg.RuleProvider["ads"]; hasAdsProvider {
-			exists := false
-			for _, rule := range cfg.Rule {
-				if strings.TrimSpace(rule) == proxyAdsBlockRule {
-					exists = true
-					break
-				}
+		if !hasAdsProvider {
+			savedProxyAdsRuleIdx, savedProxyAdsNsIdx, savedProxyAdsNsVal = nil, nil, nil
+		}
+
+		rulePresent := false
+		for _, rule := range cfg.Rule {
+			if strings.TrimSpace(rule) == proxyAdsBlockRule {
+				rulePresent = true
+				break
 			}
-			if !exists {
-				cfg.Rule = append([]string{proxyAdsBlockRule}, cfg.Rule...)
-				log.Infoln("Applied proxy-ads-block override: ads rule added")
+		}
+		if rulePresent {
+			savedProxyAdsRuleIdx = nil
+		}
+
+		nsHasAds := nameServerPolicyHasAdsKeyLoose(cfg.DNS.NameServerPolicy) ||
+			nameServerPolicyHasAdsKeyLoose(cfg.DNS.ProxyServerNameserverPolicy)
+		if nsHasAds {
+			savedProxyAdsNsIdx, savedProxyAdsNsVal = nil, nil
+		}
+
+		if hasAdsProvider {
+			if !rulePresent {
+				insertAt := defaultProxyAdsRuleInsertIndex(cfg.Rule)
+				if savedProxyAdsRuleIdx != nil {
+					insertAt = *savedProxyAdsRuleIdx
+					if insertAt < 0 {
+						insertAt = 0
+					}
+					if insertAt > len(cfg.Rule) {
+						insertAt = len(cfg.Rule)
+					}
+					savedProxyAdsRuleIdx = nil
+				}
+				cfg.Rule = insertStringAt(cfg.Rule, insertAt, proxyAdsBlockRule)
+				log.Infoln("代理广告拦截：已按索引 %d 插入广告规则", insertAt)
+			}
+			if !nsHasAds {
+				insertAt := defaultProxyAdsNsPolicyInsertIndex(cfg.DNS.NameServerPolicy)
+				val := any(proxyAdsNsDefaultValue)
+				if savedProxyAdsNsIdx != nil {
+					insertAt = *savedProxyAdsNsIdx
+					if insertAt < 0 {
+						insertAt = 0
+					}
+					nsLen := 0
+					if cfg.DNS.NameServerPolicy != nil {
+						nsLen = cfg.DNS.NameServerPolicy.Len()
+					}
+					if insertAt > nsLen {
+						insertAt = nsLen
+					}
+					if savedProxyAdsNsVal != nil {
+						val = savedProxyAdsNsVal
+					}
+					savedProxyAdsNsIdx, savedProxyAdsNsVal = nil, nil
+				}
+				cfg.DNS.NameServerPolicy = insertNameServerPolicyPairAt(cfg.DNS.NameServerPolicy, insertAt, proxyAdsNsPolicyKey, val)
+				log.Infoln("代理广告拦截：已按索引 %d 插入 nameserver-policy 项 %s", insertAt, proxyAdsNsPolicyKey)
 			}
 		}
 		return nil
 	}
 
+	for i, rule := range cfg.Rule {
+		if strings.TrimSpace(rule) == proxyAdsBlockRule {
+			idx := i
+			savedProxyAdsRuleIdx = &idx
+			break
+		}
+	}
 	nextRules := make([]string, 0, len(cfg.Rule))
 	for _, rule := range cfg.Rule {
 		if strings.TrimSpace(rule) == proxyAdsBlockRule {
@@ -178,9 +247,167 @@ func patchProxyAdsBlock(cfg *config.RawConfig, _ string) error {
 		nextRules = append(nextRules, rule)
 	}
 	cfg.Rule = nextRules
-	log.Infoln("Applied proxy-ads-block override: ads rule removed")
 
+	deleteAdsNameserverPoliciesWithSnapshot(cfg)
+
+	log.Infoln("代理广告拦截：已移除广告规则与 %s 的 nameserver-policy（含 proxy-server-nameserver-policy 中的同名项）", proxyAdsNsPolicyKey)
 	return nil
+}
+
+func defaultProxyAdsRuleInsertIndex(rules []string) int {
+	for i, rule := range rules {
+		t := strings.TrimSpace(rule)
+		if strings.HasPrefix(t, "RULE-SET,trackerslist,") {
+			return intMin(i+1, len(rules))
+		}
+	}
+	for i, rule := range rules {
+		t := strings.TrimSpace(rule)
+		if strings.HasPrefix(t, "MATCH,") {
+			return i
+		}
+	}
+	return len(rules)
+}
+
+func insertStringAt(slice []string, index int, item string) []string {
+	if index < 0 {
+		index = 0
+	}
+	if index > len(slice) {
+		index = len(slice)
+	}
+	out := make([]string, 0, len(slice)+1)
+	out = append(out, slice[:index]...)
+	out = append(out, item)
+	out = append(out, slice[index:]...)
+	return out
+}
+
+// nameServerPolicyAdsKeyResolve 解析与 canonical 等价的实际键名（精确匹配或 Trim 后相等），兼容 YAML/覆写合并产生的键名差异。
+func nameServerPolicyAdsKeyResolve(m *orderedmap.OrderedMap[string, any], canonical string) (string, bool) {
+	if m == nil {
+		return "", false
+	}
+	if _, ok := m.Get(canonical); ok {
+		return canonical, true
+	}
+	for p := m.Oldest(); p != nil; p = p.Next() {
+		if strings.TrimSpace(p.Key) == canonical {
+			return p.Key, true
+		}
+	}
+	return "", false
+}
+
+func nameServerPolicyAdsKeyIndex(m *orderedmap.OrderedMap[string, any], canonical string) int {
+	if m == nil {
+		return 0
+	}
+	i := 0
+	for p := m.Oldest(); p != nil; p = p.Next() {
+		if p.Key == canonical || strings.TrimSpace(p.Key) == canonical {
+			return i
+		}
+		i++
+	}
+	return 0
+}
+
+func nameServerPolicyHasAdsKeyLoose(m *orderedmap.OrderedMap[string, any]) bool {
+	_, ok := nameServerPolicyAdsKeyResolve(m, proxyAdsNsPolicyKey)
+	return ok
+}
+
+// stripAdsNameserverPolicyEntryNoSnapshot 删除 ads 策略项但不修改 savedProxyAdsNs*（用于第二处策略表上的重复项）。
+func stripAdsNameserverPolicyEntryNoSnapshot(m **orderedmap.OrderedMap[string, any]) {
+	om := *m
+	if om == nil {
+		return
+	}
+	k, ok := nameServerPolicyAdsKeyResolve(om, proxyAdsNsPolicyKey)
+	if !ok {
+		return
+	}
+	if _, deleted := om.Delete(k); deleted && om.Len() == 0 {
+		*m = nil
+	}
+}
+
+// deleteAdsNameserverPoliciesWithSnapshot 关闭广告拦截时从 dns.nameserver-policy 与 dns.proxy-server-nameserver-policy 移除 rule-set:ads；
+// 快照优先记录主表删除位置以便再次开启时原样恢复。
+func deleteAdsNameserverPoliciesWithSnapshot(cfg *config.RawConfig) {
+	trySave := func(m **orderedmap.OrderedMap[string, any]) bool {
+		om := *m
+		if om == nil {
+			return false
+		}
+		k, ok := nameServerPolicyAdsKeyResolve(om, proxyAdsNsPolicyKey)
+		if !ok {
+			return false
+		}
+		idx := nameServerPolicyAdsKeyIndex(om, proxyAdsNsPolicyKey)
+		if v, deleted := om.Delete(k); deleted {
+			savedProxyAdsNsIdx = &idx
+			savedProxyAdsNsVal = v
+			if om.Len() == 0 {
+				*m = nil
+			}
+			return true
+		}
+		return false
+	}
+	if trySave(&cfg.DNS.NameServerPolicy) {
+		stripAdsNameserverPolicyEntryNoSnapshot(&cfg.DNS.ProxyServerNameserverPolicy)
+		return
+	}
+	_ = trySave(&cfg.DNS.ProxyServerNameserverPolicy)
+}
+
+func defaultProxyAdsNsPolicyInsertIndex(m *orderedmap.OrderedMap[string, any]) int {
+	if m == nil {
+		return 0
+	}
+	i := 0
+	for p := m.Oldest(); p != nil; p = p.Next() {
+		if p.Key == "rule-set:trackerslist" {
+			return intMin(i+1, m.Len())
+		}
+		i++
+	}
+	return m.Len()
+}
+
+func insertNameServerPolicyPairAt(m *orderedmap.OrderedMap[string, any], insertAt int, key string, value any) *orderedmap.OrderedMap[string, any] {
+	if m != nil {
+		if _, present := m.Get(key); present {
+			return m
+		}
+	}
+	var pairs []orderedmap.Pair[string, any]
+	if m != nil {
+		for p := m.Oldest(); p != nil; p = p.Next() {
+			pairs = append(pairs, orderedmap.Pair[string, any]{Key: p.Key, Value: p.Value})
+		}
+	}
+	if insertAt < 0 {
+		insertAt = 0
+	}
+	if insertAt > len(pairs) {
+		insertAt = len(pairs)
+	}
+	var out []orderedmap.Pair[string, any]
+	out = append(out, pairs[:insertAt]...)
+	out = append(out, orderedmap.Pair[string, any]{Key: key, Value: value})
+	out = append(out, pairs[insertAt:]...)
+	return orderedmap.New(orderedmap.WithInitialData(out...))
+}
+
+func intMin(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 type overrideProxyDelayTest struct {

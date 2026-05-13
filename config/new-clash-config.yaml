@@ -3,7 +3,7 @@ allow-lan: false
 mixed-port: 7890              # 合法端口
 # authentication:
 #   - "myuser:strong-password-123"
-
+ipv6: true
 mode: rule
 dns:
   enable: true
@@ -57,7 +57,6 @@ dns:
     "rule-set:microsoft-cn": *china-dns
     "rule-set:apple-cn": *china-dns
     "rule-set:games-cn": *china-dns
-    "rule-set:bilibili": *china-dns
 
     "rule-set:cn": *china-dns
 
