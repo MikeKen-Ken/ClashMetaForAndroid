@@ -8,12 +8,14 @@ import com.github.kr328.clash.common.compat.registerReceiverCompat
 import com.github.kr328.clash.common.constants.Intents
 import com.github.kr328.clash.common.constants.Permissions
 import com.github.kr328.clash.common.ProxyGroupRefresh
+import com.github.kr328.clash.common.log.Log
 import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.core.model.TunnelState
 import com.github.kr328.clash.core.model.Proxy
 import com.github.kr328.clash.design.ProxyDesign
 import com.github.kr328.clash.design.model.ProxyState
+import com.github.kr328.clash.design.util.showExceptionToast
 import com.github.kr328.clash.util.scheduleClashMutation
 import com.github.kr328.clash.util.withClash
 import kotlinx.coroutines.delay
@@ -30,6 +32,8 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
 
         /** 代理页工具栏「整组测速」与 UI 测速数量步长解耦时的并发上限（与桌面端全量测速一致） */
         private const val PROXY_GROUP_DELAY_TEST_MAX_CONCURRENCY = 200
+
+        private const val LOG_FLUSH_FAKE_IP = "FakeIpFlush"
     }
 
     override suspend fun main() {
@@ -285,8 +289,17 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                             }
                             ProxyDesign.Request.FlushFakeIpCache -> {
                                 launch {
-                                    withClash { flushFakeIpCache() }
-                                    design.showFlushFakeIpDone()
+                                    try {
+                                        withClash { flushFakeIpCache() }
+                                        Log.i("[$LOG_FLUSH_FAKE_IP] 代理页清除 Fake-IP 缓存成功")
+                                        design.showFlushFakeIpDone()
+                                    } catch (e: Exception) {
+                                        Log.i(
+                                            "[$LOG_FLUSH_FAKE_IP] 代理页清除 Fake-IP 缓存失败: ${e.message ?: e.javaClass.simpleName}",
+                                            e,
+                                        )
+                                        design.showExceptionToast(e)
+                                    }
                                 }
                             }
                         }

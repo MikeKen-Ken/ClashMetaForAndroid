@@ -2,7 +2,6 @@ package com.github.kr328.clash.service
 
 import android.content.Context
 import com.github.kr328.clash.common.log.Log
-import com.github.kr328.clash.core.bridge.ClashException
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.core.model.*
 import com.github.kr328.clash.service.data.Selection
@@ -21,6 +20,8 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import java.io.File
 
 private const val DBG_TAG_OVERRIDE = "覆写Persist"
+
+private const val LOG_FLUSH_FAKE_IP = "FakeIpFlush"
 
 class ClashManager(private val context: Context) : IClashManager,
     CoroutineScope by CoroutineScope(Dispatchers.IO) {
@@ -185,12 +186,12 @@ class ClashManager(private val context: Context) : IClashManager,
     override fun flushFakeIpCache() {
         try {
             Clash.flushFakeIpCache()
-            context.sendDebugUiLog("FakeIPFlush", "成功：fake-ip flush 已完成（含内存池；持久化见 core 日志）")
-        } catch (e: ClashException) {
-            context.sendDebugUiLog("FakeIPFlush", "失败(Clash): ${e.message ?: "unknown"}")
-            throw e
-        } catch (e: RuntimeException) {
-            context.sendDebugUiLog("FakeIPFlush", "失败: ${e.javaClass.simpleName}: ${e.message ?: ""}")
+            Log.i("[$LOG_FLUSH_FAKE_IP] :background 清除 Fake-IP 缓存成功")
+        } catch (e: Exception) {
+            Log.i(
+                "[$LOG_FLUSH_FAKE_IP] :background 清除 Fake-IP 缓存失败: ${e.message ?: e.javaClass.simpleName}",
+                e,
+            )
             throw e
         }
     }
