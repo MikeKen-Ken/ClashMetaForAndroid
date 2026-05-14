@@ -2,6 +2,7 @@ package com.github.kr328.clash.service
 
 import android.content.Context
 import com.github.kr328.clash.common.log.Log
+import com.github.kr328.clash.core.bridge.ClashException
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.core.model.*
 import com.github.kr328.clash.service.data.Selection
@@ -182,7 +183,16 @@ class ClashManager(private val context: Context) : IClashManager,
     }
 
     override fun flushFakeIpCache() {
-        Clash.flushFakeIpCache()
+        try {
+            Clash.flushFakeIpCache()
+            context.sendDebugUiLog("FakeIPFlush", "成功：fake-ip flush 已完成（含内存池；持久化见 core 日志）")
+        } catch (e: ClashException) {
+            context.sendDebugUiLog("FakeIPFlush", "失败(Clash): ${e.message ?: "unknown"}")
+            throw e
+        } catch (e: RuntimeException) {
+            context.sendDebugUiLog("FakeIPFlush", "失败: ${e.javaClass.simpleName}: ${e.message ?: ""}")
+            throw e
+        }
     }
 
     override suspend fun healthCheck(group: String) {
