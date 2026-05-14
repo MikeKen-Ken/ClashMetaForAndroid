@@ -3,7 +3,6 @@ package com.github.kr328.clash
 import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.common.util.ticker
 import com.github.kr328.clash.design.ProvidersDesign
-import com.github.kr328.clash.design.ui.ToastDuration
 import com.github.kr328.clash.design.util.showExceptionToast
 import com.github.kr328.clash.util.scheduleCriticalWork
 import com.github.kr328.clash.util.withClash
@@ -47,9 +46,8 @@ class ProvidersActivity : BaseActivity<ProvidersDesign>() {
                             scheduleCriticalWork("订阅更新") {
                                 try {
                                     withContext(Dispatchers.Main) {
-                                        design.showToast(
+                                        design.showNativeToast(
                                             getString(R.string.provider_update_started, provider.name),
-                                            ToastDuration.Short,
                                         )
                                     }
                                     withClash {
@@ -57,9 +55,8 @@ class ProvidersActivity : BaseActivity<ProvidersDesign>() {
                                     }
 
                                     withContext(Dispatchers.Main) {
-                                        design.showToast(
+                                        design.showNativeToast(
                                             getString(R.string.provider_update_done, provider.name),
-                                            ToastDuration.Short,
                                         )
                                         design.notifyChanged(index)
                                     }

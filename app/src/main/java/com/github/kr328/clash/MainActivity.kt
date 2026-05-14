@@ -26,10 +26,10 @@ import java.util.concurrent.TimeUnit
 import com.github.kr328.clash.design.R
 
 class MainActivity : BaseActivity<MainDesign>() {
-    /** 主界面大开关触发开启后，等待 [Event.ClashStart] 以弹出 Snackbar 反馈 */
+    /** 主界面大开关触发开启后，等待 [Event.ClashStart] 以弹出系统 Toast 反馈 */
     private var awaitingProxyStartFeedback: Boolean = false
 
-    /** 主界面大开关触发关闭后，等待 [Event.ClashStop] 以弹出 Snackbar 反馈 */
+    /** 主界面大开关触发关闭后，等待 [Event.ClashStop] 以弹出系统 Toast 反馈 */
     private var awaitingProxyStopFeedback: Boolean = false
 
     override suspend fun main() {
@@ -49,7 +49,7 @@ class MainActivity : BaseActivity<MainDesign>() {
                             if (awaitingProxyStartFeedback) {
                                 awaitingProxyStartFeedback = false
                                 launch {
-                                    design.showToast(R.string.feedback_proxy_started, ToastDuration.Short)
+                                    design.showNativeToast(R.string.feedback_proxy_started)
                                 }
                             }
                             design.fetch()
@@ -58,7 +58,7 @@ class MainActivity : BaseActivity<MainDesign>() {
                             if (awaitingProxyStopFeedback) {
                                 awaitingProxyStopFeedback = false
                                 launch {
-                                    design.showToast(R.string.feedback_proxy_stopped, ToastDuration.Short)
+                                    design.showNativeToast(R.string.feedback_proxy_stopped)
                                 }
                             }
                             design.fetch()

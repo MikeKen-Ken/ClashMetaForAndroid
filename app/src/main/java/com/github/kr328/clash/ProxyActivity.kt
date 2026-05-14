@@ -15,7 +15,6 @@ import com.github.kr328.clash.core.model.TunnelState
 import com.github.kr328.clash.core.model.Proxy
 import com.github.kr328.clash.design.ProxyDesign
 import com.github.kr328.clash.design.R
-import com.github.kr328.clash.design.ui.ToastDuration
 import com.github.kr328.clash.design.model.ProxyState
 import com.github.kr328.clash.design.util.showExceptionToast
 import com.github.kr328.clash.util.scheduleClashMutation
@@ -228,9 +227,8 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                         design.requests.send(ProxyDesign.Request.Reload(it.index))
                                         return@launch
                                     }
-                                    design.showToast(
+                                    design.showNativeToast(
                                         getString(R.string.url_test_started, groupName),
-                                        ToastDuration.Short,
                                     )
                                     try {
                                         withClash {
@@ -256,9 +254,8 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                             closeConnectionsExcludingDirect()
                                         }
                                     } finally {
-                                        design.showToast(
+                                        design.showNativeToast(
                                             getString(R.string.url_test_finished, groupName),
-                                            ToastDuration.Short,
                                         )
                                     }
 
