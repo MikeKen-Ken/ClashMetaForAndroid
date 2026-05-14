@@ -2,7 +2,7 @@ package com.github.kr328.clash.design
 
 import android.content.Context
 import android.view.View
-import android.widget.Toast
+import com.github.kr328.clash.design.ui.ToastDuration
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.github.kr328.clash.core.model.Proxy
@@ -86,9 +86,7 @@ class ProxyDesign(
     }
 
     suspend fun showModeSwitchTips() {
-        withContext(Dispatchers.Main) {
-            Toast.makeText(context, R.string.mode_switch_tips, Toast.LENGTH_LONG).show()
-        }
+        showToast(R.string.mode_switch_tips, ToastDuration.Long)
     }
 
     /** VPN 重启或从主进程恢复后，与 [com.github.kr328.clash.design.store.UiStore.proxyUiMode] 对齐模式按钮，不触发 PatchMode。 */
@@ -277,9 +275,7 @@ class ProxyDesign(
     }
 
     suspend fun showFlushFakeIpDone() {
-        withContext(Dispatchers.Main) {
-            Toast.makeText(context, R.string.flush_fake_ip_done, Toast.LENGTH_SHORT).show()
-        }
+        showToast(R.string.flush_fake_ip_done, ToastDuration.Short)
     }
 
     fun onScrollToCurrentClick() {

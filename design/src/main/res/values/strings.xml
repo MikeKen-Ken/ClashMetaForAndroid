@@ -37,8 +37,14 @@
     <string name="rule_mode">Rule Mode</string>
     <string name="global_mode">Global Mode</string>
     <string name="proxy_empty_tips">No groups can be displayed</string>
-    <string name="flush_fake_ip">Flush DNS cache</string>
-    <string name="flush_fake_ip_done">DNS cache cleared</string>
+    <string name="flush_fake_ip">清空 DNS 缓存</string>
+    <string name="flush_fake_ip_done">DNS 缓存已清空</string>
+    <string name="feedback_proxy_started">代理已开启</string>
+    <string name="feedback_proxy_stopped">代理已关闭</string>
+    <string name="url_test_started">测速已开始：%1$s</string>
+    <string name="url_test_finished">测速已完成：%1$s</string>
+    <string name="provider_update_started">正在更新订阅：%1$s</string>
+    <string name="provider_update_done">订阅已更新：%1$s</string>
 
     <string name="profiles">Profiles</string>
     <string name="not_selected">Not selected</string>
@@ -344,7 +350,7 @@
     <string name="version_updated">App Updated</string>
     <string name="version_updated_tips">The settings have been reseted and the old profiles needs to be saved again.</string>
 
-    <string name="mode_switch_tips">Valid only for current session</string>
+    <string name="mode_switch_tips">仅在本次会话中有效</string>
 
     <string name="clash_meta_wiki">Clash Meta Wiki</string>
     <string name="clash_meta_wiki_url" translatable="false">https://wiki.metacubex.one</string>

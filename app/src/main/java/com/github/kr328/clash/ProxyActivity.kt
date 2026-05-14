@@ -14,6 +14,8 @@ import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.core.model.TunnelState
 import com.github.kr328.clash.core.model.Proxy
 import com.github.kr328.clash.design.ProxyDesign
+import com.github.kr328.clash.design.R
+import com.github.kr328.clash.design.ui.ToastDuration
 import com.github.kr328.clash.design.model.ProxyState
 import com.github.kr328.clash.design.util.showExceptionToast
 import com.github.kr328.clash.util.scheduleClashMutation
@@ -226,27 +228,38 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                         design.requests.send(ProxyDesign.Request.Reload(it.index))
                                         return@launch
                                     }
-                                    withClash {
-                                        val timeoutMs = uiStore.proxyDelayTestTimeoutMs
-                                        healthCheckWithTimeout(
-                                            groupName,
-                                            timeoutMs,
-                                            PROXY_GROUP_DELAY_TEST_MAX_CONCURRENCY,
+                                    design.showToast(
+                                        getString(R.string.url_test_started, groupName),
+                                        ToastDuration.Short,
+                                    )
+                                    try {
+                                        withClash {
+                                            val timeoutMs = uiStore.proxyDelayTestTimeoutMs
+                                            healthCheckWithTimeout(
+                                                groupName,
+                                                timeoutMs,
+                                                PROXY_GROUP_DELAY_TEST_MAX_CONCURRENCY,
+                                            )
+
+                                            // 测速后按当前排序结果选择最靠前的成功节点
+                                            val refreshed = queryProxyGroup(groupName, uiStore.proxySort)
+                                            val firstSuccess = refreshed.proxies.firstOrNull { proxy ->
+                                                proxy.type != Proxy.Type.Direct &&
+                                                    proxy.type != Proxy.Type.Reject &&
+                                                    proxy.delay in 0..timeoutMs
+                                            }
+                                            if (firstSuccess != null && firstSuccess.name != refreshed.now) {
+                                                patchSelector(groupName, firstSuccess.name)
+                                                closeConnectionsUsingProxyGroup(groupName)
+                                            }
+
+                                            closeConnectionsExcludingDirect()
+                                        }
+                                    } finally {
+                                        design.showToast(
+                                            getString(R.string.url_test_finished, groupName),
+                                            ToastDuration.Short,
                                         )
-
-                                        // 测速后按当前排序结果选择最靠前的成功节点
-                                        val refreshed = queryProxyGroup(groupName, uiStore.proxySort)
-                                        val firstSuccess = refreshed.proxies.firstOrNull { proxy ->
-                                            proxy.type != Proxy.Type.Direct &&
-                                                proxy.type != Proxy.Type.Reject &&
-                                                proxy.delay in 0..timeoutMs
-                                        }
-                                        if (firstSuccess != null && firstSuccess.name != refreshed.now) {
-                                            patchSelector(groupName, firstSuccess.name)
-                                            closeConnectionsUsingProxyGroup(groupName)
-                                        }
-
-                                        closeConnectionsExcludingDirect()
                                     }
 
                                     design.requests.send(ProxyDesign.Request.ReloadAll)

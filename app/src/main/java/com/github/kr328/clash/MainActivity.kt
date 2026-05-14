@@ -19,12 +19,19 @@ import com.github.kr328.clash.util.withProfile
 import com.github.kr328.clash.core.bridge.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 import com.github.kr328.clash.design.R
 
 class MainActivity : BaseActivity<MainDesign>() {
+    /** 主界面大开关触发开启后，等待 [Event.ClashStart] 以弹出 Snackbar 反馈 */
+    private var awaitingProxyStartFeedback: Boolean = false
+
+    /** 主界面大开关触发关闭后，等待 [Event.ClashStop] 以弹出 Snackbar 反馈 */
+    private var awaitingProxyStopFeedback: Boolean = false
+
     override suspend fun main() {
         val design = MainDesign(this)
 
@@ -38,9 +45,26 @@ class MainActivity : BaseActivity<MainDesign>() {
             select<Unit> {
                 events.onReceive {
                     when (it) {
+                        Event.ClashStart -> {
+                            if (awaitingProxyStartFeedback) {
+                                awaitingProxyStartFeedback = false
+                                launch {
+                                    design.showToast(R.string.feedback_proxy_started, ToastDuration.Short)
+                                }
+                            }
+                            design.fetch()
+                        }
+                        Event.ClashStop -> {
+                            if (awaitingProxyStopFeedback) {
+                                awaitingProxyStopFeedback = false
+                                launch {
+                                    design.showToast(R.string.feedback_proxy_stopped, ToastDuration.Short)
+                                }
+                            }
+                            design.fetch()
+                        }
                         Event.ActivityStart,
                         Event.ServiceRecreated,
-                        Event.ClashStop, Event.ClashStart,
                         Event.ProfileLoaded, Event.ProfileChanged -> design.fetch()
                         else -> Unit
                     }
@@ -48,10 +72,15 @@ class MainActivity : BaseActivity<MainDesign>() {
                 design.requests.onReceive {
                     when (it) {
                         MainDesign.Request.ToggleStatus -> {
-                            if (clashRunning)
+                            if (clashRunning) {
+                                awaitingProxyStopFeedback = true
                                 stopClashService()
-                            else
-                                design.startClash()
+                            } else {
+                                awaitingProxyStartFeedback = true
+                                if (!design.startClash()) {
+                                    awaitingProxyStartFeedback = false
+                                }
+                            }
                         }
                         MainDesign.Request.OpenRunningConfig ->
                             startActivity(RunningConfigActivity::class.intent)
@@ -111,7 +140,10 @@ class MainActivity : BaseActivity<MainDesign>() {
         }
     }
 
-    private suspend fun MainDesign.startClash() {
+    /**
+     * @return 是否已成功发起启动（将随后收到 [Event.ClashStart]）；未选择配置、用户取消 VPN 授权或异常时为 false
+     */
+    private suspend fun MainDesign.startClash(): Boolean {
         val active = withProfile { queryActive() }
 
         if (active == null || !active.imported) {
@@ -121,7 +153,7 @@ class MainActivity : BaseActivity<MainDesign>() {
                 }
             }
 
-            return
+            return false
         }
 
         val vpnRequest = startClashService()
@@ -133,11 +165,16 @@ class MainActivity : BaseActivity<MainDesign>() {
                     vpnRequest
                 )
 
-                if (result.resultCode == RESULT_OK)
+                if (result.resultCode == RESULT_OK) {
                     startClashService()
+                    return true
+                }
+                return false
             }
+            return true
         } catch (e: Exception) {
-            design?.showToast(R.string.unable_to_start_vpn, ToastDuration.Long)
+            showToast(R.string.unable_to_start_vpn, ToastDuration.Long)
+            return false
         }
     }
 

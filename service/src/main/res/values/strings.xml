@@ -18,10 +18,10 @@
     <string name="provider_files">Provider Files</string>
     <string name="profile_updater">Profile Updater</string>
     <string name="profile_updating">Profile Updating</string>
-    <string name="health_check_notification_channel">Health Check</string>
-    <string name="health_check_notification_channel_description">Notifications when fallback groups trigger health checks</string>
-    <string name="health_check_triggered_title">Fallback Health Check</string>
-    <string name="health_check_triggered_message">Group \"%s\" triggered health check</string>
-    <string name="max_connect_times_test_triggered_title">Request Count Delay Test</string>
-    <string name="max_connect_times_test_triggered_message">Group \"%1$s\" reached the request count threshold, testing current proxy \"%2$s\"</string>
+    <string name="health_check_notification_channel">健康检查</string>
+    <string name="health_check_notification_channel_description">Fallback 组触发健康检查时的通知</string>
+    <string name="health_check_triggered_title">Fallback 健康检查</string>
+    <string name="health_check_triggered_message">组「%s」触发了健康检查</string>
+    <string name="max_connect_times_test_triggered_title">请求次数延迟测试</string>
+    <string name="max_connect_times_test_triggered_message">组「%1$s」达到请求次数阈值，正在测试当前节点「%2$s」</string>
 </resources>
