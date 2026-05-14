@@ -46,6 +46,11 @@ data class Proxy(
         URLTest(true),
         LoadBalance(true),
 
+        Masque(false),
+        TrustTunnel(false),
+        OpenVPN(false),
+        Tailscale(false),
+
         Unknown(false);
     }
 
