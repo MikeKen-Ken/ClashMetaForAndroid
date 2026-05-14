@@ -1,6 +1,12 @@
 name: Build Pre-Release
 on:
   workflow_dispatch:
+  # 推送任意分支时自动构建预发布 APK；与手动运行共用并发组
+  push:
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
 
 permissions:
   contents: write
