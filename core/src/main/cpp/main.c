@@ -1,6 +1,7 @@
 #include <jni.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "bridge_helper.h"
@@ -409,6 +410,20 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeCloseLanConnections(JNIEnv 
     TRACE_METHOD();
 
     closeLanConnectionsExported();
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeFlushFakeIpCache(JNIEnv *env, jobject thiz) {
+    TRACE_METHOD();
+
+    char *err = flushFakeIPCache();
+    if (err == NULL) {
+        return NULL;
+    }
+
+    jstring result = new_string(err);
+    free(err);
+    return result;
 }
 
 JNIEXPORT void JNICALL

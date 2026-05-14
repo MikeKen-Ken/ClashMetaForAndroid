@@ -8,7 +8,11 @@ import com.github.kr328.clash.design.util.bindAppBarElevation
 import com.github.kr328.clash.design.util.layoutInflater
 import com.github.kr328.clash.design.util.root
 
-class AppCrashedDesign(context: Context) : Design<Unit>(context) {
+class AppCrashedDesign(context: Context) : Design<AppCrashedDesign.Request>(context) {
+    sealed class Request {
+        object Export : Request()
+    }
+
     private val binding = DesignAppCrashedBinding
         .inflate(context.layoutInflater, context.root, false)
 
@@ -25,5 +29,7 @@ class AppCrashedDesign(context: Context) : Design<Unit>(context) {
         binding.activityBarLayout.applyFrom(context)
 
         binding.scrollRoot.bindAppBarElevation(binding.activityBarLayout)
+
+        binding.crashExportView.setOnClickListener { requests.trySend(Request.Export) }
     }
 }
