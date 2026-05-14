@@ -61,8 +61,6 @@ node_modules/
 bower_components/
 vendor/
 Library/
-# Packages/
-# packages/
 .creator/
 .specstory/
 
