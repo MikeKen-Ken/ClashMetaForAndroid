@@ -16,8 +16,8 @@ function main(config) {
                 type: "fallback",
                 url: "https://www.gstatic.com/generate_204",
                 interval: 7200,
-                "max-failed-times": 2,
-                "max-connect-times": 30,
+                "max-failed-times": 1,
+                "max-connect-times": 50,
                 "expected-status": 204,
                 lazy: true,
                 "disable-udp": false,
@@ -124,8 +124,8 @@ function main(config) {
             ["applications", "applications.list", "classical", "text"],
             ["microsoft-cn", "microsoft-cn.mrs", "domain", "mrs"],
             ["apple-cn", "apple-cn.mrs", "domain", "mrs"],
+            ["google-cn", "google-cn.mrs", "domain", "mrs"],
             ["games-cn", "games-cn.mrs", "domain", "mrs"],
-            ["bilibili", "bilibili.mrs", "domain", "mrs"],
             ["spotify", "spotify.mrs", "domain", "mrs"],
             ["ai", "ai.mrs", "domain", "mrs"],
             ["networktest", "networktest.mrs", "domain", "mrs"],
@@ -144,7 +144,7 @@ function main(config) {
         // 每个 provider 间隔错开 2 分钟，避免 30 个 provider 同时到期、集中刷新时持有写锁阻塞连接
         config["rule-providers"] = Object.fromEntries(
             ruleProvidersList.map(([name, filename, behavior, format], index) => {
-                const interval = 86400 + index * 120;
+                const interval = 28800 + index * 120;
                 if (name.startsWith("custome-")) {
                     return [
                         name,
@@ -196,7 +196,6 @@ function main(config) {
             `RULE-SET,microsoft-cn,${DIRECT}`,
             `RULE-SET,apple-cn,${DIRECT}`,
             `RULE-SET,games-cn,${DIRECT}`,
-            `RULE-SET,bilibili,${DIRECT}`,
 
             `RULE-SET,cn,${DIRECT}`,
 

@@ -3,7 +3,7 @@ allow-lan: false
 mixed-port: 7890              # 合法端口
 # authentication:
 #   - "myuser:strong-password-123"
-ipv6: true
+
 mode: rule
 dns:
   enable: true
@@ -37,13 +37,13 @@ dns:
   direct-nameserver-follow-policy: true
 
   nameserver-policy:
-    "rule-set:custome-reject": rcode://success
+    "rule-set:custome-reject": rcode://refused
     "rule-set:custome-whitelist-direct": *china-dns
     "rule-set:custome-whitelist-proxy": *intl-dns
 
     "rule-set:private": *china-dns
-    "rule-set:trackerslist": rcode://success
-    "rule-set:ads": rcode://success
+    "rule-set:trackerslist": rcode://refused
+    "rule-set:ads": rcode://refused
 
     "rule-set:custome-noHK": *intl-dns
     "rule-set:custome-HK": *intl-dns
