@@ -126,7 +126,6 @@ function main(config) {
             ["apple-cn", "apple-cn.mrs", "domain", "mrs"],
             ["google-cn", "google-cn.mrs", "domain", "mrs"],
             ["games-cn", "games-cn.mrs", "domain", "mrs"],
-            ["spotify", "spotify.mrs", "domain", "mrs"],
             ["ai", "ai.mrs", "domain", "mrs"],
             ["networktest", "networktest.mrs", "domain", "mrs"],
             ["cn", "cn.mrs", "domain", "mrs"],
@@ -183,12 +182,11 @@ function main(config) {
             `RULE-SET,trackerslist,REJECT`,
             `RULE-SET,ads,REJECT`,
 
-            `RULE-SET,custome-noHK,${NO_HK}`,
             `RULE-SET,custome-HK,${HK}`,
+            `RULE-SET,custome-noHK,${NO_HK}`,
             `RULE-SET,custome-proxy,${AUTO}`,
             `RULE-SET,custome-direct,${DIRECT}`,
 
-            `RULE-SET,spotify,${HK}`,
             `RULE-SET,ai,${NO_HK}`,
 
             `RULE-SET,networktest,${DIRECT}`,

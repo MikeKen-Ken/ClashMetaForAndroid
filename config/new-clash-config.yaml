@@ -3,7 +3,7 @@ allow-lan: false
 mixed-port: 7890              # 合法端口
 # authentication:
 #   - "myuser:strong-password-123"
-
+ipv6: true
 mode: rule
 dns:
   enable: true
@@ -16,8 +16,9 @@ dns:
   use-hosts: false
   use-system-hosts: false
   fake-ip-filter:
-    - "rule-set:fakeip-filter"
-    - "127.0.0.1"
+  - "rule-set:fakeip-filter"
+  - "127.0.0.1"
+  - "::1"
   default-nameserver:
     - 1.1.1.1
     - 8.8.8.8
@@ -50,7 +51,6 @@ dns:
     "rule-set:custome-proxy": *intl-dns
     "rule-set:custome-direct": *china-dns
 
-    "rule-set:spotify": *intl-dns
     "rule-set:ai": *intl-dns
     "rule-set:networktest": *china-dns
     "rule-set:applications": *china-dns
