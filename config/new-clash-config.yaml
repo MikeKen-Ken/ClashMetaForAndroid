@@ -5,10 +5,10 @@ ipv6: true
 mode: rule
 dns:
   enable: true
+  enhanced-mode: fake-ip
   ipv6: true
   prefer-h3: true
-  listen: 127.0.0.1:53
-  enhanced-mode: fake-ip
+  listen: '[::]:1053'
   fake-ip-range: 198.18.0.1/16
   cache-algorithm: arc
   use-hosts: false
@@ -20,10 +20,6 @@ dns:
   default-nameserver:
     - 223.5.5.5
     - 119.29.29.29
-    - 1.1.1.1
-    - 8.8.8.8
-    - 9.9.9.9
-    - tls://1.0.0.1:853
 
   nameserver:
     - https://1.1.1.1/dns-query
@@ -32,10 +28,17 @@ dns:
     - tls://1.0.0.1:853
 
   direct-nameserver:
+    - 223.5.5.5                        # 增加传统纯 UDP DNS 兜底，防止 DoH 握手失败
+    - 119.29.29.29
     - https://dns.alidns.com/dns-query
     - https://120.53.53.53/dns-query
     - tls://119.29.29.29:853
-  direct-nameserver-follow-policy: true
+
+fallback:
+    - https://1.1.1.1/dns-query
+    - https://8.8.8.8/dns-query
+    - https://9.9.9.9/dns-query
+    - tls://1.0.0.1:853
 
 
 tun:
