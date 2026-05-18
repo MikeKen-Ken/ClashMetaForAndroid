@@ -256,7 +256,6 @@ function main(config) {
             ["applications", "applications.list", "classical", "text"],
             ["microsoft-cn", "microsoft-cn.mrs", "domain", "mrs"],
             ["apple-cn", "apple-cn.mrs", "domain", "mrs"],
-            ["google-cn", "google-cn.mrs", "domain", "mrs"],
             ["games-cn", "games-cn.mrs", "domain", "mrs"],
             ["ai", "ai.mrs", "domain", "mrs"],
             ["networktest", "networktest.mrs", "domain", "mrs"],
@@ -305,7 +304,7 @@ function main(config) {
 
         config.rules = [
             `RULE-SET,custome-reject,REJECT`,
-
+            `AND,((DST-PORT,443),(NETWORK,udp)),REJECT`,
             `RULE-SET,custome-whitelist-direct,${DIRECT}`,
             `AND,((NETWORK,UDP),(RULE-SET,custome-whitelist-proxy)),${AUTO_UDP}`,
             `RULE-SET,custome-whitelist-proxy,${AUTO}`,

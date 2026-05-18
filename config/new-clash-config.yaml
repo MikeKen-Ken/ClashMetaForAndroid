@@ -3,6 +3,7 @@ mixed-port: 7890
 
 ipv6: true
 mode: rule
+
 dns:
   enable: true
   enhanced-mode: fake-ip
@@ -13,47 +14,50 @@ dns:
   cache-algorithm: arc
   use-hosts: false
   use-system-hosts: false
+  
+  # 显式开启 rule 模式
+  fake-ip-filter-mode: rule
   fake-ip-filter:
-  - "rule-set:fakeip-filter"
-  - "127.0.0.1"
-  - "::1"
+    - RULE-SET,fakeip-filter,real-ip
+    - MATCH,fake-ip
+
   default-nameserver:
     - 223.5.5.5
     - 119.29.29.29
+    - tls://223.5.5.5:853
+    - tls://119.29.29.29:853
 
   nameserver:
-    - https://1.1.1.1/dns-query
-    - https://8.8.8.8/dns-query
-    - https://9.9.9.9/dns-query
-    - tls://1.0.0.1:853
+    - https://dns.alidns.com/dns-query
+    - https://doh.pub/dns-query
 
   direct-nameserver:
-    - 223.5.5.5                        # 增加传统纯 UDP DNS 兜底，防止 DoH 握手失败
+    - 223.5.5.5
     - 119.29.29.29
     - https://dns.alidns.com/dns-query
     - https://120.53.53.53/dns-query
     - tls://119.29.29.29:853
 
-fallback:
+  fallback:
     - https://1.1.1.1/dns-query
     - https://8.8.8.8/dns-query
     - https://9.9.9.9/dns-query
     - tls://1.0.0.1:853
 
-
 tun:
   enable: true
-  stack: mixed # mixed # gvisor # system
+  stack: mixed
   device: newsilence
   mtu: 1500
   udp-timeout: 300
   endpoint-independent-nat: true
   auto-route: true
-  auto-redirect: true
+  auto-redirect: true                 # 注意：此项仅在 Linux 环境下有效
   auto-detect-interface: true
   dns-hijack:
-    - any:53
-  strict-route: true
+    - "any:53"
+    - "tcp://any:53"                  # 补全：同时劫持 TCP DNS 流量
+  strict-route: true                  # 注意：若导致局域网设备或打印机无法访问，请设为 false
 
 geodata-mode: false
 
@@ -70,6 +74,7 @@ sniffer:
       override-destination: true
     QUIC:
       ports: [443, 8443]
+      override-destination: true      # 建议：同步开启 QUIC 的目标覆盖，优化 HTTP/3 体验
   skip-domain:
     - "Mijia Cloud"
 
@@ -80,7 +85,7 @@ profile:
 find-process-mode: always
 tcp-concurrent: true
 unified-delay: true
-keep-alive-interval: 5
-keep-alive-idle: 5
+keep-alive-interval: 15               # 优化：降低不必要的激进保活开销
+keep-alive-idle: 15                  # 优化：与 interval 保持合理同步
 disable-keep-alive: false
 etag-support: true
