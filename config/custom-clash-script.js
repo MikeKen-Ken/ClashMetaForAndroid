@@ -92,7 +92,7 @@ function main(config) {
                 type: "fallback",
                 url: "https://www.gstatic.com/generate_204",
                 interval: 7200,
-                "max-failed-times": 1,
+                "max-failed-times": 2,
                 "max-connect-times": 50,
                 "expected-status": 204,
                 lazy: true,
@@ -304,7 +304,7 @@ function main(config) {
 
         config.rules = [
             `RULE-SET,custome-reject,REJECT`,
-            `AND,((DST-PORT,443),(NETWORK,udp)),REJECT`,
+            // `AND,((DST-PORT,443),(NETWORK,udp)),REJECT`,
             `RULE-SET,custome-whitelist-direct,${DIRECT}`,
             `AND,((NETWORK,UDP),(RULE-SET,custome-whitelist-proxy)),${AUTO_UDP}`,
             `RULE-SET,custome-whitelist-proxy,${AUTO}`,

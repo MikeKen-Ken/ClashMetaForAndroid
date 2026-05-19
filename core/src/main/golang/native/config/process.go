@@ -51,17 +51,12 @@ var processors = []processor{
 type processor func(cfg *config.RawConfig, profileDir string) error
 
 const (
-	proxyAdsBlockRule      = "RULE-SET,ads,REJECT"
-	proxyAdsNsPolicyKey    = "rule-set:ads"
-	proxyAdsNsDefaultValue = "rcode://success"
+	proxyAdsBlockRule   = "RULE-SET,ads,REJECT"
+	proxyAdsNsPolicyKey = "rule-set:ads"
 )
 
-// 关闭「代理广告拦截」时记录被移除的规则与 nameserver-policy 项的位置和取值，再次开启时按原顺序写回（同进程内有效）。
-var (
-	savedProxyAdsRuleIdx *int
-	savedProxyAdsNsIdx   *int
-	savedProxyAdsNsVal   any
-)
+// 关闭「代理广告拦截」时记录被移除的规则位置，再次开启时按原顺序写回（同进程内有效）。
+var savedProxyAdsRuleIdx *int
 
 type overrideProxyAdsBlock struct {
 	ProxyAdsBlock *bool `json:"proxy-ads-block"`
@@ -165,11 +160,14 @@ func patchProxyAdsBlock(cfg *config.RawConfig, _ string) error {
 		enableProxyAdsBlock = *session.ProxyAdsBlock
 	}
 
+	// 不再注入 rule-set:ads 的 nameserver-policy；订阅或历史配置若含此项则一律剔除。
+	stripAdsNameserverPolicyFromDNS(cfg)
+
 	_, hasAdsProvider := cfg.RuleProvider["ads"]
 
 	if enableProxyAdsBlock {
 		if !hasAdsProvider {
-			savedProxyAdsRuleIdx, savedProxyAdsNsIdx, savedProxyAdsNsVal = nil, nil, nil
+			savedProxyAdsRuleIdx = nil
 		}
 
 		rulePresent := false
@@ -183,51 +181,20 @@ func patchProxyAdsBlock(cfg *config.RawConfig, _ string) error {
 			savedProxyAdsRuleIdx = nil
 		}
 
-		nsHasAds := nameServerPolicyHasAdsKeyLoose(cfg.DNS.NameServerPolicy) ||
-			nameServerPolicyHasAdsKeyLoose(cfg.DNS.ProxyServerNameserverPolicy)
-		if nsHasAds {
-			savedProxyAdsNsIdx, savedProxyAdsNsVal = nil, nil
-		}
-
-		if hasAdsProvider {
-			if !rulePresent {
-				insertAt := defaultProxyAdsRuleInsertIndex(cfg.Rule)
-				if savedProxyAdsRuleIdx != nil {
-					insertAt = *savedProxyAdsRuleIdx
-					if insertAt < 0 {
-						insertAt = 0
-					}
-					if insertAt > len(cfg.Rule) {
-						insertAt = len(cfg.Rule)
-					}
-					savedProxyAdsRuleIdx = nil
+		if hasAdsProvider && !rulePresent {
+			insertAt := defaultProxyAdsRuleInsertIndex(cfg.Rule)
+			if savedProxyAdsRuleIdx != nil {
+				insertAt = *savedProxyAdsRuleIdx
+				if insertAt < 0 {
+					insertAt = 0
 				}
-				cfg.Rule = insertStringAt(cfg.Rule, insertAt, proxyAdsBlockRule)
-				log.Infoln("代理广告拦截：已按索引 %d 插入广告规则", insertAt)
-			}
-			if !nsHasAds {
-				insertAt := defaultProxyAdsNsPolicyInsertIndex(cfg.DNS.NameServerPolicy)
-				val := any(proxyAdsNsDefaultValue)
-				if savedProxyAdsNsIdx != nil {
-					insertAt = *savedProxyAdsNsIdx
-					if insertAt < 0 {
-						insertAt = 0
-					}
-					nsLen := 0
-					if cfg.DNS.NameServerPolicy != nil {
-						nsLen = cfg.DNS.NameServerPolicy.Len()
-					}
-					if insertAt > nsLen {
-						insertAt = nsLen
-					}
-					if savedProxyAdsNsVal != nil {
-						val = savedProxyAdsNsVal
-					}
-					savedProxyAdsNsIdx, savedProxyAdsNsVal = nil, nil
+				if insertAt > len(cfg.Rule) {
+					insertAt = len(cfg.Rule)
 				}
-				cfg.DNS.NameServerPolicy = insertNameServerPolicyPairAt(cfg.DNS.NameServerPolicy, insertAt, proxyAdsNsPolicyKey, val)
-				log.Infoln("代理广告拦截：已按索引 %d 插入 nameserver-policy 项 %s", insertAt, proxyAdsNsPolicyKey)
+				savedProxyAdsRuleIdx = nil
 			}
+			cfg.Rule = insertStringAt(cfg.Rule, insertAt, proxyAdsBlockRule)
+			log.Infoln("代理广告拦截：已按索引 %d 插入广告规则", insertAt)
 		}
 		return nil
 	}
@@ -248,9 +215,7 @@ func patchProxyAdsBlock(cfg *config.RawConfig, _ string) error {
 	}
 	cfg.Rule = nextRules
 
-	deleteAdsNameserverPoliciesWithSnapshot(cfg)
-
-	log.Infoln("代理广告拦截：已移除广告规则与 %s 的 nameserver-policy（含 proxy-server-nameserver-policy 中的同名项）", proxyAdsNsPolicyKey)
+	log.Infoln("代理广告拦截：已移除广告规则")
 	return nil
 }
 
@@ -300,27 +265,13 @@ func nameServerPolicyAdsKeyResolve(m *orderedmap.OrderedMap[string, any], canoni
 	return "", false
 }
 
-func nameServerPolicyAdsKeyIndex(m *orderedmap.OrderedMap[string, any], canonical string) int {
-	if m == nil {
-		return 0
-	}
-	i := 0
-	for p := m.Oldest(); p != nil; p = p.Next() {
-		if p.Key == canonical || strings.TrimSpace(p.Key) == canonical {
-			return i
-		}
-		i++
-	}
-	return 0
+func stripAdsNameserverPolicyFromDNS(cfg *config.RawConfig) {
+	stripAdsNameserverPolicyEntry(&cfg.DNS.NameServerPolicy)
+	stripAdsNameserverPolicyEntry(&cfg.DNS.ProxyServerNameserverPolicy)
 }
 
-func nameServerPolicyHasAdsKeyLoose(m *orderedmap.OrderedMap[string, any]) bool {
-	_, ok := nameServerPolicyAdsKeyResolve(m, proxyAdsNsPolicyKey)
-	return ok
-}
-
-// stripAdsNameserverPolicyEntryNoSnapshot 删除 ads 策略项但不修改 savedProxyAdsNs*（用于第二处策略表上的重复项）。
-func stripAdsNameserverPolicyEntryNoSnapshot(m **orderedmap.OrderedMap[string, any]) {
+// stripAdsNameserverPolicyEntry 从 nameserver-policy（或 proxy-server-nameserver-policy）移除 rule-set:ads。
+func stripAdsNameserverPolicyEntry(m **orderedmap.OrderedMap[string, any]) {
 	om := *m
 	if om == nil {
 		return
@@ -332,75 +283,6 @@ func stripAdsNameserverPolicyEntryNoSnapshot(m **orderedmap.OrderedMap[string, a
 	if _, deleted := om.Delete(k); deleted && om.Len() == 0 {
 		*m = nil
 	}
-}
-
-// deleteAdsNameserverPoliciesWithSnapshot 关闭广告拦截时从 dns.nameserver-policy 与 dns.proxy-server-nameserver-policy 移除 rule-set:ads；
-// 快照优先记录主表删除位置以便再次开启时原样恢复。
-func deleteAdsNameserverPoliciesWithSnapshot(cfg *config.RawConfig) {
-	trySave := func(m **orderedmap.OrderedMap[string, any]) bool {
-		om := *m
-		if om == nil {
-			return false
-		}
-		k, ok := nameServerPolicyAdsKeyResolve(om, proxyAdsNsPolicyKey)
-		if !ok {
-			return false
-		}
-		idx := nameServerPolicyAdsKeyIndex(om, proxyAdsNsPolicyKey)
-		if v, deleted := om.Delete(k); deleted {
-			savedProxyAdsNsIdx = &idx
-			savedProxyAdsNsVal = v
-			if om.Len() == 0 {
-				*m = nil
-			}
-			return true
-		}
-		return false
-	}
-	if trySave(&cfg.DNS.NameServerPolicy) {
-		stripAdsNameserverPolicyEntryNoSnapshot(&cfg.DNS.ProxyServerNameserverPolicy)
-		return
-	}
-	_ = trySave(&cfg.DNS.ProxyServerNameserverPolicy)
-}
-
-func defaultProxyAdsNsPolicyInsertIndex(m *orderedmap.OrderedMap[string, any]) int {
-	if m == nil {
-		return 0
-	}
-	i := 0
-	for p := m.Oldest(); p != nil; p = p.Next() {
-		if p.Key == "rule-set:trackerslist" {
-			return intMin(i+1, m.Len())
-		}
-		i++
-	}
-	return m.Len()
-}
-
-func insertNameServerPolicyPairAt(m *orderedmap.OrderedMap[string, any], insertAt int, key string, value any) *orderedmap.OrderedMap[string, any] {
-	if m != nil {
-		if _, present := m.Get(key); present {
-			return m
-		}
-	}
-	var pairs []orderedmap.Pair[string, any]
-	if m != nil {
-		for p := m.Oldest(); p != nil; p = p.Next() {
-			pairs = append(pairs, orderedmap.Pair[string, any]{Key: p.Key, Value: p.Value})
-		}
-	}
-	if insertAt < 0 {
-		insertAt = 0
-	}
-	if insertAt > len(pairs) {
-		insertAt = len(pairs)
-	}
-	var out []orderedmap.Pair[string, any]
-	out = append(out, pairs[:insertAt]...)
-	out = append(out, orderedmap.Pair[string, any]{Key: key, Value: value})
-	out = append(out, pairs[insertAt:]...)
-	return orderedmap.New[string, any](orderedmap.WithInitialData(out...))
 }
 
 func intMin(a, b int) int {
