@@ -92,7 +92,7 @@ function main(config) {
                 type: "fallback",
                 url: "https://www.gstatic.com/generate_204",
                 interval: 7200,
-                "max-failed-times": 2,
+                "max-failed-times": 1,
                 "max-connect-times": 50,
                 "expected-status": 204,
                 lazy: true,
@@ -247,37 +247,19 @@ function main(config) {
         }
 
         const ruleProvidersList = [
-            // https://github.com/DustinWin/ruleset_geodata/tree/mihomo-geodata           
+            // https://github.com/DustinWin/ruleset_geodata/tree/mihomo-geodata
             ["fakeip-filter", "fakeip-filter.mrs", "domain", "mrs"],
             ["private", "private.mrs", "domain", "mrs"],
             ["privateip", "privateip.mrs", "ipcidr", "mrs"],
             ["ads", "ads.mrs", "domain", "mrs"],
             ["trackerslist", "trackerslist.mrs", "domain", "mrs"],
             ["spotify", "spotify.mrs", "domain", "mrs"],
-            ["games", "games.mrs", "domain", "mrs"],
-            ["netflix", "netflix.mrs", "domain", "mrs"],
-            ["disney", "disney.mrs", "domain", "mrs"],
-            ["max", "max.mrs", "domain", "mrs"],
-            ["primevideo", "primevideo.mrs", "domain", "mrs"],
-            ["appletv", "appletv.mrs", "domain", "mrs"],
-            ["youtube", "youtube.mrs", "domain", "mrs"],
-            ["tiktok", "tiktok.mrs", "domain", "mrs"],
-            ["bilibili", "bilibili.mrs", "domain", "mrs"],
-            ["media", "media.mrs", "domain", "mrs"],
-            ["networktest", "networktest.mrs", "domain", "mrs"],
-            ["tld-proxy", "tld-proxy.mrs", "domain", "mrs"],
-            ["gfw", "gfw.mrs", "domain", "mrs"],
-            ["proxy", "proxy.mrs", "domain", "mrs"],
-            ["applications", "applications.list", "classical", "text"],
             ["microsoft-cn", "microsoft-cn.mrs", "domain", "mrs"],
             ["apple-cn", "apple-cn.mrs", "domain", "mrs"],
             ["games-cn", "games-cn.mrs", "domain", "mrs"],
             ["ai", "ai.mrs", "domain", "mrs"],
             ["cn", "cn.mrs", "domain", "mrs"],
             ["cnip", "cnip.mrs", "ipcidr", "mrs"],
-            ["telegramip", "telegramip.mrs", "ipcidr", "mrs"],
-            ["netflixip", "netflixip.mrs", "ipcidr", "mrs"],
-            ["mediaip", "mediaip.mrs", "ipcidr", "mrs"],
 
             ["custome-reject", "custome-reject.yaml", "classical", "yaml"],
             ["custome-whitelist-direct", "custome-whitelist-direct.yaml", "classical", "yaml"],
@@ -322,10 +304,10 @@ function main(config) {
         config.rules = [
             `RULE-SET,custome-reject,REJECT`,
 
+            `RULE-SET,custome-whitelist-direct,${DIRECT}`,
+
             `AND,((NETWORK,UDP),(RULE-SET,custome-whitelist-proxy)),${AUTO_UDP}`,
             `RULE-SET,custome-whitelist-proxy,${AUTO}`,
-
-            `RULE-SET,custome-whitelist-direct,${DIRECT}`,
 
             `RULE-SET,ads,REJECT`,
             `RULE-SET,private,${DIRECT}`,
@@ -348,61 +330,12 @@ function main(config) {
             `AND,((NETWORK,UDP),(RULE-SET,spotify)),${HK_UDP}`,
             `RULE-SET,spotify,${HK}`,
 
-            `AND,((NETWORK,UDP),(RULE-SET,games)),${AUTO_UDP}`,
-            `RULE-SET,games,${AUTO}`,
-
-            `AND,((NETWORK,UDP),(RULE-SET,netflix)),${AUTO_UDP}`,
-            `RULE-SET,netflix,${AUTO}`,
-
-            `AND,((NETWORK,UDP),(RULE-SET,disney)),${AUTO_UDP}`,
-            `RULE-SET,disney,${AUTO}`,
-
-            `AND,((NETWORK,UDP),(RULE-SET,max)),${AUTO_UDP}`,
-            `RULE-SET,max,${AUTO}`,
-
-            `AND,((NETWORK,UDP),(RULE-SET,primevideo)),${AUTO_UDP}`,
-            `RULE-SET,primevideo,${AUTO}`,
-
-            `AND,((NETWORK,UDP),(RULE-SET,appletv)),${AUTO_UDP}`,
-            `RULE-SET,appletv,${AUTO}`,
-
-            `AND,((NETWORK,UDP),(RULE-SET,youtube)),${AUTO_UDP}`,
-            `RULE-SET,youtube,${AUTO}`,
-
-            `AND,((NETWORK,UDP),(RULE-SET,tiktok)),${AUTO_UDP}`,
-            `RULE-SET,tiktok,${AUTO}`,
-
-            `AND,((NETWORK,UDP),(RULE-SET,media)),${AUTO_UDP}`,
-            `RULE-SET,media,${AUTO}`,
-
-            `AND,((NETWORK,UDP),(RULE-SET,networktest)),${AUTO_UDP}`,
-            `RULE-SET,networktest,${AUTO}`,
-
-            `AND,((NETWORK,UDP),(RULE-SET,tld-proxy)),${AUTO_UDP}`,
-            `RULE-SET,tld-proxy,${AUTO}`,
-
-            `AND,((NETWORK,UDP),(RULE-SET,gfw)),${AUTO_UDP}`,
-            `RULE-SET,gfw,${AUTO}`,
-
-            `AND,((NETWORK,UDP),(RULE-SET,proxy)),${AUTO_UDP}`,
-            `RULE-SET,proxy,${AUTO}`,
-
-            `AND,((NETWORK,UDP),(RULE-SET,telegramip)),${AUTO_UDP}`,
-            `RULE-SET,telegramip,${AUTO},no-resolve`,
-            `AND,((NETWORK,UDP),(RULE-SET,netflixip)),${AUTO_UDP}`,
-            `RULE-SET,netflixip,${AUTO},no-resolve`,
-            `AND,((NETWORK,UDP),(RULE-SET,mediaip)),${AUTO_UDP}`,
-            `RULE-SET,mediaip,${AUTO},no-resolve`,
-
-            `RULE-SET,bilibili,${DIRECT}`,
+            `RULE-SET,games-cn,${DIRECT}`,
             `RULE-SET,microsoft-cn,${DIRECT}`,
             `RULE-SET,apple-cn,${DIRECT}`,
-            `RULE-SET,games-cn,${DIRECT}`,
             `RULE-SET,trackerslist,${DIRECT}`,
             `RULE-SET,cn,${DIRECT}`,
             `RULE-SET,cnip,${DIRECT},no-resolve`,
-
-            `RULE-SET,applications,${DIRECT}`,
 
             `NETWORK,UDP,${FALLBACK_UDP}`,
             `MATCH,${FALLBACK}`,
