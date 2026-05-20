@@ -73,12 +73,10 @@ class ClashManager(private val context: Context) : IClashManager,
     }
 
     override fun clearManualSelectionForGroup(group: String): Boolean {
-        return Clash.clearManualSelectionForGroup(group).also { ok ->
-            if (ok) {
-                store.activeProfile?.let { uuid ->
-                    SelectionDao().removeSelected(uuid, group)
-                }
-            }
+        return Clash.clearManualSelectionForGroup(group).also {
+            if (!it) return@also
+            val current = store.activeProfile ?: return@also
+            SelectionDao().removeSelected(current, group)
         }
     }
 

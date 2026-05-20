@@ -15,8 +15,6 @@ interface IClashManager {
     fun queryRuntimeYamlByProfile(profilePath: String): String
 
     fun patchSelector(group: String, name: String): Boolean
-
-    /** 取消指定组的手动固定（内核 ClearManualSelection），并同步移除本机持久化的「手动选中」记录。 */
     fun clearManualSelectionForGroup(group: String): Boolean
 
     fun setHealthCheckWorkerLimit(limit: Int)

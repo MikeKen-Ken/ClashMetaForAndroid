@@ -180,12 +180,20 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                             }
                             is ProxyDesign.Request.Select -> {
                                 withClash {
-                                    patchSelector(names[it.index], it.name)
-                                    // 切换组内节点后断开经过该组的既有连接，避免仍占用旧出站
-                                    closeConnectionsUsingProxyGroup(names[it.index])
+                                    val groupName = names[it.index]
+                                    if (it.clearManualSelection) {
+                                        clearManualSelectionForGroup(groupName)
+                                        // 清除手动选择后也关闭该组连接，让后续流量按当前自动选择重建
+                                        closeConnectionsUsingProxyGroup(groupName)
+                                        states[it.index].nowIsManual = false
+                                    } else {
+                                        patchSelector(groupName, it.name)
+                                        // 切换组内节点后断开经过该组的既有连接，避免仍占用旧出站
+                                        closeConnectionsUsingProxyGroup(groupName)
 
-                                    states[it.index].now = it.name
-                                    states[it.index].nowIsManual = true
+                                        states[it.index].now = it.name
+                                        states[it.index].nowIsManual = true
+                                    }
                                 }
 
                                 design.requestRedrawVisible()
@@ -218,22 +226,6 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                     // 选择后 3.5s 时查询一次，仅刷新当前选中节点所在组
                                     delay(3500L)
                                     if (idx in names.indices) reloadGroup()
-                                }
-                            }
-                            is ProxyDesign.Request.ClearManualSelection -> {
-                                launch {
-                                    val idx = it.index
-                                    if (idx !in names.indices) return@launch
-                                    val groupName = names[idx]
-                                    val ok = withClash {
-                                        clearManualSelectionForGroup(groupName)
-                                    }
-                                    if (!ok) return@launch
-                                    withClash {
-                                        closeConnectionsUsingProxyGroup(groupName)
-                                    }
-                                    design.showNativeToast("已取消手动固定")
-                                    design.requests.send(ProxyDesign.Request.Reload(idx))
                                 }
                             }
                             is ProxyDesign.Request.UrlTest -> {

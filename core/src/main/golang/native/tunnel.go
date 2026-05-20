@@ -137,8 +137,7 @@ func clearAllManualSelections() {
 
 //export clearManualSelectionForGroup
 func clearManualSelectionForGroup(name C.c_string) C.int {
-	n := C.GoString(name)
-	if tunnel.ClearManualSelectionForGroup(n) {
+	if tunnel.ClearManualSelectionForGroup(C.GoString(name)) {
 		return 1
 	}
 	return 0

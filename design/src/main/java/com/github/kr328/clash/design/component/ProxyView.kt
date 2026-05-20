@@ -4,8 +4,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.Rect
-import android.view.MotionEvent
 import android.view.View
 import androidx.core.graphics.drawable.DrawableCompat
 import com.github.kr328.clash.common.compat.getDrawableCompat
@@ -34,8 +32,6 @@ class ProxyView(
     }
 
     var state: ProxyViewState? = null
-    /** 点击标题行左侧「手动固定」图标时回调（由 [ProxyAdapter] 赋值） */
-    var onManualIconClick: (() -> Unit)? = null
     constructor(context: Context) : this(context, ProxyViewConfig(context, 2))
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val state = state ?: return super.onMeasure(widthMeasureSpec, heightMeasureSpec)
@@ -235,34 +231,5 @@ class ProxyView(
 
             drawText(state.subtitle, 0, subtitleCount, x, y, paint)
         }
-    }
-
-    private fun manualIconHitRect(): Rect? {
-        val state = state ?: return null
-        if (!state.isManualSelection) return null
-        val w = width.toFloat()
-        val h = height.toFloat()
-        if (w <= 0f || h <= 0f) return null
-        val paint = state.paint
-        paint.textSize = state.config.textSize
-        val textOffset = (paint.descent() + paint.ascent()) / 2
-        val titleY =
-            state.config.layoutPadding + (h - state.config.layoutPadding * 2) / 3f - textOffset
-        val iconSize = (state.config.textSize * 1.5f).toInt().coerceIn(18, 28)
-        val titleX = state.config.layoutPadding + state.config.contentPadding
-        val iconLeft = titleX.toInt()
-        val iconTop = (titleY - iconSize / 2f).toInt()
-        return Rect(iconLeft, iconTop, iconLeft + iconSize, iconTop + iconSize)
-    }
-
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (event.action == MotionEvent.ACTION_UP) {
-            val r = manualIconHitRect()
-            if (r != null && r.contains(event.x.toInt(), event.y.toInt())) {
-                onManualIconClick?.invoke()
-                return true
-            }
-        }
-        return super.onTouchEvent(event)
     }
 }

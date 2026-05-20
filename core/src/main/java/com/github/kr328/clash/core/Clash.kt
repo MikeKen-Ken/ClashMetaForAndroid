@@ -197,7 +197,6 @@ object Clash {
         Bridge.nativeClearAllManualSelections()
     }
 
-    /** 取消指定代理组的手动固定（Selector / Fallback），与 DELETE /proxies/{group}（电脑端）语义对齐。 */
     fun clearManualSelectionForGroup(group: String): Boolean {
         return Bridge.nativeClearManualSelectionForGroup(group)
     }
