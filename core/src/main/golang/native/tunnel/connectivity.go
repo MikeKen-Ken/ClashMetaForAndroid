@@ -158,14 +158,22 @@ func resetGroupConnectTimes(group outboundgroup.ProxyGroup) {
 // Call when proxy stops or restarts so no node is shown as "current" until user selects again.
 func ClearAllManualSelections() {
 	for _, name := range QueryProxyGroupNames(false) {
-		p := tunnel.Proxies()[name]
-		if p == nil {
-			continue
-		}
-		if clearable, ok := p.Adapter().(outboundgroup.ClearManualSelectionAble); ok {
-			clearable.ClearManualSelection()
-		}
+		_ = ClearManualSelectionForGroup(name)
 	}
+}
+
+// ClearManualSelectionForGroup clears manual selection for a single proxy group (Selector/Fallback).
+// Returns true if the group exists and ClearManualSelection was applied.
+func ClearManualSelectionForGroup(name string) bool {
+	p := tunnel.Proxies()[name]
+	if p == nil {
+		return false
+	}
+	if clearable, ok := p.Adapter().(outboundgroup.ClearManualSelectionAble); ok {
+		clearable.ClearManualSelection()
+		return true
+	}
+	return false
 }
 
 // SetHealthCheckWorkerLimit 同步延迟测速并发上限（订阅健康检查 / 默认组测速回退值）。

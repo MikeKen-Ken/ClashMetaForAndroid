@@ -263,6 +263,17 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeClearAllManualSelections(JN
     clearAllManualSelections();
 }
 
+JNIEXPORT jboolean JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeClearManualSelectionForGroup(JNIEnv *env,
+                                                                                 jobject thiz,
+                                                                                 jstring group_name) {
+    TRACE_METHOD();
+
+    scoped_string _group = get_string(group_name);
+
+    return (jboolean) clearManualSelectionForGroup(_group);
+}
+
 JNIEXPORT void JNICALL
 Java_com_github_kr328_clash_core_bridge_Bridge_nativeLoad(JNIEnv *env, jobject thiz,
                                                           jobject completable, jstring path) {

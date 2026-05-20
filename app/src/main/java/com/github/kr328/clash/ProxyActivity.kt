@@ -220,6 +220,22 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                     if (idx in names.indices) reloadGroup()
                                 }
                             }
+                            is ProxyDesign.Request.ClearManualSelection -> {
+                                launch {
+                                    val idx = it.index
+                                    if (idx !in names.indices) return@launch
+                                    val groupName = names[idx]
+                                    val ok = withClash {
+                                        clearManualSelectionForGroup(groupName)
+                                    }
+                                    if (!ok) return@launch
+                                    withClash {
+                                        closeConnectionsUsingProxyGroup(groupName)
+                                    }
+                                    design.showNativeToast("已取消手动固定")
+                                    design.requests.send(ProxyDesign.Request.Reload(idx))
+                                }
+                            }
                             is ProxyDesign.Request.UrlTest -> {
                                 launch {
                                     val groupName = names[it.index]

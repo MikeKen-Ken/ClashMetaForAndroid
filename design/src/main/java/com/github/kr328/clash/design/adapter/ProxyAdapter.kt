@@ -8,7 +8,10 @@ import com.github.kr328.clash.design.component.ProxyViewState
 
 class ProxyAdapter(
     private val config: ProxyViewConfig,
-    private val clicked: (String) -> Unit,
+    /** 选中组内叶子节点 */
+    private val onSelect: (String) -> Unit,
+    /** 在当前行已显示手动图标时取消手动固定 */
+    private val onClearManualSelection: () -> Unit,
 ) : RecyclerView.Adapter<ProxyAdapter.Holder>() {
     class Holder(val view: ProxyView) : RecyclerView.ViewHolder(view)
 
@@ -26,7 +29,13 @@ class ProxyAdapter(
             state = current
 
             setOnClickListener {
-                clicked(current.proxy.name)
+                onSelect(current.proxy.name)
+            }
+
+            onManualIconClick = {
+                if (selectable && current.isManualSelection) {
+                    onClearManualSelection()
+                }
             }
 
             val isSelector = selectable

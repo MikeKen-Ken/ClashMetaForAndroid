@@ -135,6 +135,15 @@ func clearAllManualSelections() {
 	tunnel.ClearAllManualSelections()
 }
 
+//export clearManualSelectionForGroup
+func clearManualSelectionForGroup(name C.c_string) C.int {
+	n := C.GoString(name)
+	if tunnel.ClearManualSelectionForGroup(n) {
+		return 1
+	}
+	return 0
+}
+
 //export queryProviders
 func queryProviders() *C.char {
 	return marshalJson(tunnel.QueryProviders())

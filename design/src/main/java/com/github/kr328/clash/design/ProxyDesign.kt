@@ -41,6 +41,8 @@ class ProxyDesign(
         data class PatchConcurrency(val concurrency: Int) : Request()
         data class Reload(val index: Int) : Request()
         data class Select(val index: Int, val name: String) : Request()
+        /** 点击手动固定图标取消「钉选」，与内核 ClearManualSelection 对齐 */
+        data class ClearManualSelection(val index: Int) : Request()
         data class UrlTest(val index: Int) : Request()
     }
 
@@ -228,9 +230,15 @@ class ProxyDesign(
                     surface,
                     config,
                     List(groupNames.size) { index ->
-                        ProxyAdapter(config) { name ->
-                            requests.trySend(Request.Select(index, name))
-                        }
+                        ProxyAdapter(
+                            config,
+                            onSelect = { name ->
+                                requests.trySend(Request.Select(index, name))
+                            },
+                            onClearManualSelection = {
+                                requests.trySend(Request.ClearManualSelection(index))
+                            },
+                        )
                     }
                 ) {
                     if (it == currentItem)
