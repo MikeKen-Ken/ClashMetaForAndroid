@@ -43,60 +43,57 @@
                     android:layout_centerVertical="true"
                     android:layout_toStartOf="@id/action_layout" />
 
-                <FrameLayout
+                <LinearLayout
                     android:id="@+id/action_layout"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true">
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:visibility="@{streaming ? View.GONE : View.VISIBLE}">
+                    <ImageView
+                        android:id="@+id/delete_view"
+                        android:layout_width="@dimen/item_tailing_component_size"
+                        android:layout_height="@dimen/item_tailing_component_size"
+                        android:layout_marginStart="@dimen/item_tailing_margin"
+                        android:background="?selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:contentDescription="@string/delete"
+                        android:focusable="true"
+                        android:padding="@dimen/toolbar_image_action_padding"
+                        android:src="@drawable/ic_baseline_delete"
+                        android:visibility="@{streaming ? View.GONE : View.VISIBLE}" />
 
-                        <ImageView
-                            android:id="@+id/delete_view"
-                            android:layout_width="@dimen/item_tailing_component_size"
-                            android:layout_height="@dimen/item_tailing_component_size"
-                            android:layout_marginStart="@dimen/item_tailing_margin"
-                            android:background="?selectableItemBackgroundBorderless"
-                            android:clickable="true"
-                            android:contentDescription="@string/delete"
-                            android:focusable="true"
-                            android:padding="@dimen/toolbar_image_action_padding"
-                            android:src="@drawable/ic_baseline_delete" />
+                    <ImageView
+                        android:id="@+id/export_view"
+                        android:layout_width="@dimen/item_tailing_component_size"
+                        android:layout_height="@dimen/item_tailing_component_size"
+                        android:layout_marginStart="@dimen/item_tailing_margin"
+                        android:background="?selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:contentDescription="@string/export"
+                        android:focusable="true"
+                        android:padding="@dimen/toolbar_image_action_padding"
+                        android:src="@drawable/ic_baseline_publish"
+                        android:visibility="@{streaming ? View.GONE : View.VISIBLE}" />
 
-                        <ImageView
-                            android:id="@+id/export_view"
-                            android:layout_width="@dimen/item_tailing_component_size"
-                            android:layout_height="@dimen/item_tailing_component_size"
-                            android:layout_marginStart="@dimen/item_tailing_margin"
-                            android:background="?selectableItemBackgroundBorderless"
-                            android:clickable="true"
-                            android:contentDescription="@string/export"
-                            android:focusable="true"
-                            android:padding="@dimen/toolbar_image_action_padding"
-                            android:src="@drawable/ic_baseline_publish" />
-
-                        <ImageView
-                            android:id="@+id/sort_order_view"
-                            android:layout_width="@dimen/item_tailing_component_size"
-                            android:layout_height="@dimen/item_tailing_component_size"
-                            android:layout_marginStart="@dimen/item_tailing_margin"
-                            android:background="?selectableItemBackgroundBorderless"
-                            android:clickable="true"
-                            android:contentDescription="@string/log_reverse_order"
-                            android:focusable="true"
-                            android:padding="@dimen/toolbar_image_action_padding"
-                            android:src="@drawable/ic_baseline_swap_vert" />
-                    </LinearLayout>
+                    <ImageView
+                        android:id="@+id/sort_order_view"
+                        android:layout_width="@dimen/item_tailing_component_size"
+                        android:layout_height="@dimen/item_tailing_component_size"
+                        android:layout_marginStart="@dimen/item_tailing_margin"
+                        android:background="?selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:contentDescription="@string/log_reverse_order"
+                        android:focusable="true"
+                        android:padding="@dimen/toolbar_image_action_padding"
+                        android:src="@drawable/ic_baseline_swap_vert" />
 
                     <ImageView
                         android:id="@+id/close_view"
                         android:layout_width="@dimen/item_tailing_component_size"
                         android:layout_height="@dimen/item_tailing_component_size"
-                        android:layout_gravity="end"
                         android:layout_marginStart="@dimen/item_tailing_margin"
                         android:background="?selectableItemBackgroundBorderless"
                         android:clickable="true"
@@ -105,7 +102,7 @@
                         android:padding="@dimen/toolbar_image_action_padding"
                         android:src="@drawable/ic_baseline_stop"
                         android:visibility="@{streaming ? View.VISIBLE : View.GONE}" />
-                </FrameLayout>
+                </LinearLayout>
 
             </RelativeLayout>
         </com.github.kr328.clash.design.view.ActivityBarLayout>
