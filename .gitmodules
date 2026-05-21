@@ -14,3 +14,4 @@
 	path = custome-rule
 	url = git@github.com:MikeKen-Ken/custome-rule.git
 	branch = main
+	update = none
