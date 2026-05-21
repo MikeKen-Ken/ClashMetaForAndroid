@@ -19,6 +19,7 @@ dns:
   fake-ip-filter-mode: rule
   fake-ip-filter:
     - RULE-SET,fakeip-filter,real-ip
+    - RULE-SET,trackerslist,real-ip
     - MATCH,fake-ip
 
   default-nameserver:
@@ -28,27 +29,23 @@ dns:
     - tls://1.0.0.1:853
 
   nameserver:
-    - 1.1.1.1
-    - 8.8.8.8
-    - 9.9.9.9
     - https://1.1.1.1/dns-query
     - https://8.8.8.8/dns-query
     - https://9.9.9.9/dns-query
+    - 1.1.1.1
+    - 8.8.8.8
+    - 9.9.9.9
     - tls://1.0.0.1:853
 
   direct-nameserver:
-    - 223.5.5.5
-    - 119.29.29.29
     - https://dns.alidns.com/dns-query
     - https://120.53.53.53/dns-query
+    - 223.5.5.5
+    - 119.29.29.29
     - tls://119.29.29.29:853
 
   fallback:
-    # - https://1.1.1.1/dns-query
-    # - https://8.8.8.8/dns-query
-    # - https://9.9.9.9/dns-query
-    # - tls://1.0.0.1:853
-
+  
 tun:
   enable: true
   stack: mixed
@@ -87,7 +84,7 @@ profile:
   store-selected: false
   store-fake-ip: true
 
-find-process-mode: always
+find-process-mode: off
 tcp-concurrent: true
 unified-delay: true
 keep-alive-interval: 15               # 优化：降低不必要的激进保活开销
