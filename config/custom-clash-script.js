@@ -294,45 +294,69 @@ function main(config) {
             })
         );
 
-        config.rules = [
-            `RULE-SET,custome-reject,REJECT`,
+        /** ipcidr 规则集须 no-resolve，与 rule-providers 的 behavior 一致 */
+        const ipCidrRuleSets = new Set(
+            ruleProvidersList.filter(([, , behavior]) => behavior === "ipcidr").map(([name]) => name)
+        );
 
-            `RULE-SET,custome-whitelist-direct,${DIRECT}`,
+        const formatRuleSet = (setName, target) =>
+            ipCidrRuleSets.has(setName)
+                ? `RULE-SET,${setName},${target},no-resolve`
+                : `RULE-SET,${setName},${target}`;
 
-            `AND,((NETWORK,UDP),(RULE-SET,custome-whitelist-proxy)),${AUTO_UDP}`,
-            `RULE-SET,custome-whitelist-proxy,${AUTO}`,
-
-            `RULE-SET,ads,REJECT`,
-            `RULE-SET,private,${DIRECT}`,
-            `RULE-SET,privateip,${DIRECT},no-resolve`,
-
-            `AND,((NETWORK,UDP),(RULE-SET,custome-HK)),${HK_UDP}`,
-            `RULE-SET,custome-HK,${HK}`,
-
-            `AND,((NETWORK,UDP),(RULE-SET,custome-noHK)),${NO_HK_UDP}`,
-            `RULE-SET,custome-noHK,${NO_HK}`,
-
-            `RULE-SET,custome-direct,${DIRECT}`,
-
-            `AND,((NETWORK,UDP),(RULE-SET,custome-proxy)),${AUTO_UDP}`,
-            `RULE-SET,custome-proxy,${AUTO}`,
-
-            `AND,((NETWORK,UDP),(RULE-SET,ai)),${NO_HK_UDP}`,
-            `RULE-SET,ai,${NO_HK}`,
-
-            `AND,((NETWORK,UDP),(RULE-SET,spotify)),${HK_UDP}`,
-            `RULE-SET,spotify,${HK}`,
-
-            `RULE-SET,games-cn,${DIRECT}`,
-            `RULE-SET,microsoft-cn,${DIRECT}`,
-            `RULE-SET,apple-cn,${DIRECT}`,
-            `RULE-SET,trackerslist,${DIRECT}`,
-            `RULE-SET,cn,${DIRECT}`,
-            `RULE-SET,cnip,${DIRECT},no-resolve`,
-
-            `NETWORK,UDP,${FALLBACK_UDP}`,
-            `MATCH,${FALLBACK}`,
+        /** 非 DIRECT：先 UDP 专用组，再 TCP/默认组 */
+        const formatProxyRulePair = (setName, tcpTarget, udpTarget) => [
+            `AND,((NETWORK,UDP),(RULE-SET,${setName})),${udpTarget}`,
+            formatRuleSet(setName, tcpTarget),
         ];
+
+        /**
+         * 连接规则流水线：数组顺序即匹配优先级。
+         * - reject：拒绝
+         * - direct：直连（单集 name 或批量 names）
+         * - proxy：走代理，自动生成 UDP 分支
+         * - footer：漏网 UDP + MATCH
+         */
+        const RULE_PIPELINE = [
+            { kind: "reject", name: "custome-reject" },
+            { kind: "direct", name: "custome-whitelist-direct" },
+            { kind: "proxy", name: "custome-whitelist-proxy", tcp: AUTO, udp: AUTO_UDP },
+
+            { kind: "reject", name: "ads" },
+            { kind: "direct", names: ["private", "privateip"] },
+
+            { kind: "proxy", name: "custome-HK", tcp: HK, udp: HK_UDP },
+            { kind: "proxy", name: "custome-noHK", tcp: NO_HK, udp: NO_HK_UDP },
+            { kind: "direct", name: "custome-direct" },
+
+            { kind: "proxy", name: "custome-proxy", tcp: AUTO, udp: AUTO_UDP },
+            { kind: "proxy", name: "ai", tcp: NO_HK, udp: NO_HK_UDP },
+            { kind: "proxy", name: "spotify", tcp: HK, udp: HK_UDP },
+
+            {
+                kind: "direct",
+                names: ["games-cn", "microsoft-cn", "apple-cn", "trackerslist", "cn", "cnip"],
+            },
+
+            { kind: "footer" },
+        ];
+
+        config.rules = RULE_PIPELINE.flatMap((entry) => {
+            switch (entry.kind) {
+                case "reject":
+                    return [formatRuleSet(entry.name, "REJECT")];
+                case "direct": {
+                    const names = entry.names ?? [entry.name];
+                    return names.map((n) => formatRuleSet(n, DIRECT));
+                }
+                case "proxy":
+                    return formatProxyRulePair(entry.name, entry.tcp, entry.udp);
+                case "footer":
+                    return [`NETWORK,UDP,${FALLBACK_UDP}`, `MATCH,${FALLBACK}`];
+                default:
+                    return [];
+            }
+        });
 
         if (config.proxies) {
             config.proxies = config.proxies.map((proxy) => {
