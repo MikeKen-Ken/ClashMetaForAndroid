@@ -16,7 +16,7 @@ func NotifyDnsChanged(dnsList string) {
 	dns.FlushCacheWithDefaultResolver()
 }
 
-// FlushFakeIPCache 清空 fake-ip 映射表，用于规则变更后手动修正路由
+// FlushFakeIPCache 清空 fake-ip 映射表及 DNS 应答缓存，用于规则变更或映射异常后修正路由
 func FlushFakeIPCache() error {
 	return resolver.FlushFakeIP()
 }
