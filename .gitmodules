@@ -10,3 +10,7 @@
 	path = .cursor
 	url = https://github.com/MikeKen-Ken/cursor-rule.git
 	update = none
+[submodule "custome-rule"]
+	path = custome-rule
+	url = git@github.com:MikeKen-Ken/custome-rule.git
+	branch = main
