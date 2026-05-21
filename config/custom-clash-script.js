@@ -246,8 +246,14 @@ function main(config) {
             config["proxy-groups"] = reorderProxyGroupsByTemplate(config["proxy-groups"], PROXY_GROUP_ORDER);
         }
 
+        /** raw 规则集分支：DustinWin mihomo-ruleset；自定义 custome-rule release */
+        const RULESET_RAW_BASE = {
+            dustinwin: "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/mihomo-ruleset",
+            custome: "https://raw.githubusercontent.com/MikeKen-Ken/custome-rule/release",
+        };
+
         const ruleProvidersList = [
-            // https://github.com/DustinWin/ruleset_geodata/tree/mihomo-geodata
+            // https://github.com/DustinWin/ruleset_geodata/tree/mihomo-ruleset
             ["fakeip-filter", "fakeip-filter.mrs", "domain", "mrs"],
             ["private", "private.mrs", "domain", "mrs"],
             ["privateip", "privateip.mrs", "ipcidr", "mrs"],
@@ -261,32 +267,19 @@ function main(config) {
             ["cn", "cn.mrs", "domain", "mrs"],
             ["cnip", "cnip.mrs", "ipcidr", "mrs"],
 
-            ["custome-reject", "custome-reject.yaml", "classical", "yaml"],
-            ["custome-whitelist-direct", "custome-whitelist-direct.yaml", "classical", "yaml"],
-            ["custome-whitelist-proxy", "custome-whitelist-proxy.yaml", "classical", "yaml"],
-            ["custome-proxy", "custome-proxy.yaml", "classical", "yaml"],
-            ["custome-noHK", "custome-noHK.yaml", "classical", "yaml"],
-            ["custome-HK", "custome-HK.yaml", "classical", "yaml"],
-            ["custome-direct", "custome-direct.yaml", "classical", "yaml"],
+            ["custome-reject", "custome-reject.mrs", "domain", "mrs"],
+            ["custome-whitelist-direct", "custome-whitelist-direct.mrs", "domain", "mrs"],
+            ["custome-whitelist-proxy", "custome-whitelist-proxy.mrs", "domain", "mrs"],
+            ["custome-proxy", "custome-proxy.mrs", "domain", "mrs"],
+            ["custome-noHK", "custome-noHK.mrs", "domain", "mrs"],
+            ["custome-HK", "custome-HK.mrs", "domain", "mrs"],
+            ["custome-direct", "custome-direct.mrs", "domain", "mrs"],
         ];
 
         // 每个 provider 间隔错开 2 分钟，避免大量 provider 同时到期、集中刷新时持有写锁阻塞连接
         config["rule-providers"] = Object.fromEntries(
             ruleProvidersList.map(([name, filename, behavior, format], index) => {
-                const interval = 28800 + index * 120;
-                if (name.startsWith("custome-")) {
-                    return [
-                        name,
-                        {
-                            type: "http",
-                            behavior,
-                            format,
-                            path: `./ruleset/${filename}`,
-                            url: `https://raw.githubusercontent.com/MikeKen-Ken/custome-rule/main/${filename}`,
-                            interval,
-                        },
-                    ];
-                }
+                const base = name.startsWith("custome-") ? RULESET_RAW_BASE.custome : RULESET_RAW_BASE.dustinwin;
                 return [
                     name,
                     {
@@ -294,8 +287,8 @@ function main(config) {
                         behavior,
                         format,
                         path: `./ruleset/${filename}`,
-                        url: `https://raw.githubusercontent.com/DustinWin/ruleset_geodata/mihomo-ruleset/${filename}`,
-                        interval,
+                        url: `${base}/${filename}`,
+                        interval: 28800 + index * 120,
                     },
                 ];
             })

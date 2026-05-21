@@ -1,7 +1,7 @@
 # Clash 配置：请求链路与 DNS 说明
 
 > 基于 `config/new-clash-config.yaml` + `config/custom-clash-script.js` 整理。  
-> 远程规则集（`ruleset/*.mrs`、`custome-*.yaml`）是否包含具体域名，需以实际 ruleset 与运行日志为准。
+> 远程规则集（`ruleset/*.mrs`、`custome-*.mrs`）是否包含具体域名，需以实际 ruleset 与运行日志为准。
 
 ---
 
