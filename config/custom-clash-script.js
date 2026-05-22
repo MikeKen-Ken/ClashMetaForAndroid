@@ -119,6 +119,8 @@ function main(config) {
         }
 
         config["geodata-mode"] = false;
+        // PROCESS-NAME 规则依赖进程查找；off 时规则集不会生效
+        config["find-process-mode"] = "strict";
         config["proxy-groups"] = config["proxy-groups"].map(modifyProxyGroup);
 
         if (config["proxy-groups"].length > 0) {
@@ -263,11 +265,15 @@ function main(config) {
             ["microsoft-cn", "microsoft-cn.mrs", "domain", "mrs"],
             ["apple-cn", "apple-cn.mrs", "domain", "mrs"],
             ["games-cn", "games-cn.mrs", "domain", "mrs"],
+            ["applications", "applications.list", "classical", "text"],
             ["ai", "ai.mrs", "domain", "mrs"],
             ["cn", "cn.mrs", "domain", "mrs"],
             ["cnip", "cnip.mrs", "ipcidr", "mrs"],
 
             ["custome-reject", "custome-reject.mrs", "domain", "mrs"],
+            ["custome-process-reject", "custome-process-reject.list", "classical", "text"],
+            ["custome-process-direct", "custome-process-direct.list", "classical", "text"],
+            ["custome-process-proxy", "custome-process-proxy.list", "classical", "text"],
             ["custome-whitelist-direct", "custome-whitelist-direct.mrs", "domain", "mrs"],
             ["custome-whitelist-proxy", "custome-whitelist-proxy.mrs", "domain", "mrs"],
             ["custome-proxy", "custome-proxy.mrs", "domain", "mrs"],
@@ -319,12 +325,18 @@ function main(config) {
          */
         const RULE_PIPELINE = [
             { kind: "reject", name: "custome-reject" },
+            { kind: "reject", name: "custome-process-reject" },
+
             { kind: "direct", name: "custome-whitelist-direct" },
             { kind: "proxy", name: "custome-whitelist-proxy", tcp: AUTO, udp: AUTO_UDP },
 
             { kind: "reject", name: "ads" },
             { kind: "direct", names: ["private", "privateip"] },
 
+            { kind: "direct", name: "custome-process-direct" },
+            { kind: "proxy", name: "custome-process-proxy", tcp: AUTO, udp: AUTO_UDP },
+
+            { kind: "direct", name: "applications" },
             { kind: "proxy", name: "custome-HK", tcp: HK, udp: HK_UDP },
             { kind: "proxy", name: "custome-noHK", tcp: NO_HK, udp: NO_HK_UDP },
             { kind: "direct", name: "custome-direct" },

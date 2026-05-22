@@ -84,7 +84,7 @@ profile:
   store-selected: false
   store-fake-ip: true
 
-find-process-mode: off
+find-process-mode: always
 tcp-concurrent: true
 unified-delay: true
 keep-alive-interval: 15               # 优化：降低不必要的激进保活开销
