@@ -119,11 +119,20 @@ class ConnectionsDesign(
         set(value) {
             if (value !in RETENTION_HOURS_OPTIONS) return
             uiStore.connectionsClosedRetentionHours = value
-            if (tabMode == TabMode.Closed) launch { refreshDisplayItems() }
+            launch {
+                if (tabMode == TabMode.Closed) refreshDisplayItems()
+                withContext(Dispatchers.Main) { updateTabLabels() }
+            }
         }
 
     val activeCount: Int get() = lastSnapshot?.connections?.size ?: 0
-    val closedCount: Int get() = closedEntries.size
+    /** 与已关闭列表相同的保留时长过滤 */
+    val closedCount: Int
+        get() {
+            val retentionMs = retentionHours * 3600 * 1000L
+            val nowMs = System.currentTimeMillis()
+            return closedEntries.count { nowMs - it.closedAt <= retentionMs }
+        }
 
     override val root: View
         get() = binding.root
@@ -133,6 +142,7 @@ class ConnectionsDesign(
         val loaded = ClosedConnectionsStorage.load(context).compactRejectClosedEntries()
         closedEntries.clear()
         closedEntries.addAll(loaded)
+        withContext(Dispatchers.Main) { updateTabLabels() }
     }
 
     suspend fun patchConnections(snapshot: ConnectionsSnapshot) {
@@ -187,6 +197,7 @@ class ConnectionsDesign(
         previousTimeMs = nowMs
 
         withContext(Dispatchers.Main) {
+            updateTabLabels()
             if (tabMode == TabMode.Active) {
                 adapter.patchDataSet(adapter::displayItems, displayItems, detectMove = true) { it.connection.id }
             } else {
@@ -336,7 +347,10 @@ class ConnectionsDesign(
     fun clearClosedConnections() {
         closedEntries.clear()
         launch { ClosedConnectionsStorage.save(context, emptyList()) }
-        if (tabMode == TabMode.Closed) launch { refreshDisplayItems() }
+        launch {
+            if (tabMode == TabMode.Closed) refreshDisplayItems()
+            withContext(Dispatchers.Main) { updateTabLabels() }
+        }
     }
 
     private fun schedulePersistClosedEntries() {
@@ -397,6 +411,14 @@ class ConnectionsDesign(
         binding.tabDeviceButton?.isSelected = tabMode == TabMode.Devices
         binding.closedToolbar?.visibility = if (tabMode == TabMode.Closed) View.VISIBLE else View.GONE
         binding.activeToolbar?.visibility = if (tabMode == TabMode.Closed) View.GONE else View.VISIBLE
+        updateTabLabels()
+    }
+
+    private fun updateTabLabels() {
+        binding.tabActiveButton?.text =
+            "${context.getString(R.string.connections_active)} $activeCount"
+        binding.tabClosedButton?.text =
+            "${context.getString(R.string.connections_closed)} $closedCount"
     }
 
     init {
