@@ -10,6 +10,9 @@ import com.github.kr328.clash.core.model.ConnectionsSnapshot
 import com.github.kr328.clash.design.adapter.ClosedEntry
 import com.github.kr328.clash.design.adapter.ConnectionAdapter
 import com.github.kr328.clash.design.adapter.ConnectionDisplayItem
+import com.github.kr328.clash.design.connections.compactRejectClosedEntries
+import com.github.kr328.clash.design.connections.rejectDedupeKey
+import com.github.kr328.clash.design.connections.upsertClosedEntry
 import com.github.kr328.clash.design.databinding.DesignConnectionsBinding
 import com.github.kr328.clash.design.store.ClosedConnectionsStorage
 import com.github.kr328.clash.design.store.LastConnectionsSnapshotStorage
@@ -127,7 +130,7 @@ class ConnectionsDesign(
 
     /** 进入连接页时从磁盘恢复已关闭列表（与桌面端 IndexedDB 恢复一致） */
     suspend fun loadPersistedClosedEntries() {
-        val loaded = ClosedConnectionsStorage.load(context)
+        val loaded = ClosedConnectionsStorage.load(context).compactRejectClosedEntries()
         closedEntries.clear()
         closedEntries.addAll(loaded)
     }
@@ -147,8 +150,9 @@ class ConnectionsDesign(
             previous.connections
                 .filter { it.id !in currentIds && it.id !in existingClosedIds }
                 .forEach { conn ->
-                    closedEntries.add(ClosedEntry(conn, nowMs))
-                    closedPersistChanged = true
+                    if (closedEntries.upsertClosedEntry(ClosedEntry(conn, nowMs))) {
+                        closedPersistChanged = true
+                    }
                 }
         }
 
@@ -319,10 +323,12 @@ class ConnectionsDesign(
         var changed = false
         val knownIds = existingClosedIds.toMutableSet()
         for (recent in snapshot.recentClosed) {
-            if (recent.id in knownIds || recent.id in currentIds) continue
-            closedEntries.add(ClosedEntry(recent.toConnection(), recent.closedAt))
-            knownIds.add(recent.id)
-            changed = true
+            if (recent.id in currentIds) continue
+            if (recent.id in knownIds && recent.toConnection().rejectDedupeKey() == null) continue
+            if (closedEntries.upsertClosedEntry(ClosedEntry(recent.toConnection(), recent.closedAt))) {
+                knownIds.add(recent.id)
+                changed = true
+            }
         }
         return changed
     }
