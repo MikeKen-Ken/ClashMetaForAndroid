@@ -254,6 +254,21 @@ function main(config) {
             custome: "https://raw.githubusercontent.com/MikeKen-Ken/custome-rule/release",
         };
 
+        /** 托管在 custome-rule 仓库的规则集名（与 release 文件名一致，勿用 custome- 长前缀） */
+        const CUSTOME_RULESET_NAMES = new Set([
+            "reject",
+            "proc-rej",
+            "proc-wl-dir",
+            "proc-dir",
+            "proc-pxy",
+            "wl-dir",
+            "wl-pxy",
+            "pxy",
+            "nohk",
+            "hk",
+            "dir",
+        ]);
+
         const ruleProvidersList = [
             // https://github.com/DustinWin/ruleset_geodata/tree/mihomo-ruleset
             ["fakeip-filter", "fakeip-filter.mrs", "domain", "mrs"],
@@ -270,22 +285,23 @@ function main(config) {
             ["cn", "cn.mrs", "domain", "mrs"],
             ["cnip", "cnip.mrs", "ipcidr", "mrs"],
 
-            ["custome-reject", "custome-reject.mrs", "domain", "mrs"],
-            ["custome-process-reject", "custome-process-reject.list", "classical", "text"],
-            ["custome-process-direct", "custome-process-direct.list", "classical", "text"],
-            ["custome-process-proxy", "custome-process-proxy.list", "classical", "text"],
-            ["custome-whitelist-direct", "custome-whitelist-direct.mrs", "domain", "mrs"],
-            ["custome-whitelist-proxy", "custome-whitelist-proxy.mrs", "domain", "mrs"],
-            ["custome-proxy", "custome-proxy.mrs", "domain", "mrs"],
-            ["custome-noHK", "custome-noHK.mrs", "domain", "mrs"],
-            ["custome-HK", "custome-HK.mrs", "domain", "mrs"],
-            ["custome-direct", "custome-direct.mrs", "domain", "mrs"],
+            ["reject", "reject.mrs", "domain", "mrs"],
+            ["proc-rej", "proc-rej.list", "classical", "text"],
+            ["proc-wl-dir", "proc-wl-dir.list", "classical", "text"],
+            ["proc-dir", "proc-dir.list", "classical", "text"],
+            ["proc-pxy", "proc-pxy.list", "classical", "text"],
+            ["wl-dir", "wl-dir.mrs", "domain", "mrs"],
+            ["wl-pxy", "wl-pxy.mrs", "domain", "mrs"],
+            ["pxy", "pxy.mrs", "domain", "mrs"],
+            ["nohk", "nohk.mrs", "domain", "mrs"],
+            ["hk", "hk.mrs", "domain", "mrs"],
+            ["dir", "dir.mrs", "domain", "mrs"],
         ];
 
         // 每个 provider 间隔错开 2 分钟，避免大量 provider 同时到期、集中刷新时持有写锁阻塞连接
         config["rule-providers"] = Object.fromEntries(
             ruleProvidersList.map(([name, filename, behavior, format], index) => {
-                const base = name.startsWith("custome-") ? RULESET_RAW_BASE.custome : RULESET_RAW_BASE.dustinwin;
+                const base = CUSTOME_RULESET_NAMES.has(name) ? RULESET_RAW_BASE.custome : RULESET_RAW_BASE.dustinwin;
                 return [
                     name,
                     {
@@ -324,24 +340,26 @@ function main(config) {
          * - footer：漏网 UDP + MATCH
          */
         const RULE_PIPELINE = [
-            { kind: "reject", name: "custome-reject" },
-            { kind: "reject", name: "custome-process-reject" },
+            { kind: "reject", name: "reject" },
+            { kind: "reject", name: "proc-rej" },
 
-            { kind: "direct", name: "custome-whitelist-direct" },
-            { kind: "proxy", name: "custome-whitelist-proxy", tcp: AUTO, udp: AUTO_UDP },
+            { kind: "direct", name: "wl-dir" },
+            { kind: "proxy", name: "wl-pxy", tcp: AUTO, udp: AUTO_UDP },
+
+            { kind: "direct", name: "proc-wl-dir" },
 
             { kind: "reject", name: "ads" },
             { kind: "direct", names: ["private", "privateip"] },
 
-            { kind: "direct", name: "custome-process-direct" },
-            { kind: "proxy", name: "custome-process-proxy", tcp: AUTO, udp: AUTO_UDP },
+            { kind: "direct", name: "proc-dir" },
+            { kind: "proxy", name: "proc-pxy", tcp: AUTO, udp: AUTO_UDP },
 
             { kind: "direct", name: "applications" },
-            { kind: "proxy", name: "custome-HK", tcp: HK, udp: HK_UDP },
-            { kind: "proxy", name: "custome-noHK", tcp: NO_HK, udp: NO_HK_UDP },
-            { kind: "direct", name: "custome-direct" },
+            { kind: "proxy", name: "hk", tcp: HK, udp: HK_UDP },
+            { kind: "proxy", name: "nohk", tcp: NO_HK, udp: NO_HK_UDP },
+            { kind: "direct", name: "dir" },
 
-            { kind: "proxy", name: "custome-proxy", tcp: AUTO, udp: AUTO_UDP },
+            { kind: "proxy", name: "pxy", tcp: AUTO, udp: AUTO_UDP },
             { kind: "proxy", name: "ai", tcp: NO_HK, udp: NO_HK_UDP },
             { kind: "proxy", name: "spotify", tcp: HK, udp: HK_UDP },
 
