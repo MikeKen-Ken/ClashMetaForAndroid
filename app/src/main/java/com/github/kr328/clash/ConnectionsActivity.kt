@@ -23,6 +23,7 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
     override suspend fun main() {
         val design = ConnectionsDesign(this, uiStore)
         setContentDesign(design)
+        design.loadPersistedClosedEntries()
         blockedIps.clear()
         blockedIps.addAll(
             withClash {

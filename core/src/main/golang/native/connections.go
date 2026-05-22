@@ -29,10 +29,16 @@ type metadataDTO struct {
 	DstPort  uint16 `json:"destinationPort,string"`
 }
 
+type recentClosedDTO struct {
+	connectionDTO
+	ClosedAt int64 `json:"closedAt"`
+}
+
 type connectionsSnapshotDTO struct {
-	DownloadTotal int64           `json:"downloadTotal"`
-	UploadTotal   int64           `json:"uploadTotal"`
-	Connections   []connectionDTO `json:"connections"`
+	DownloadTotal int64             `json:"downloadTotal"`
+	UploadTotal   int64             `json:"uploadTotal"`
+	Connections   []connectionDTO   `json:"connections"`
+	RecentClosed  []recentClosedDTO `json:"recentClosed,omitempty"`
 }
 
 func queryConnectionsSnapshot() *connectionsSnapshotDTO {
@@ -74,7 +80,67 @@ func queryConnectionsSnapshot() *connectionsSnapshotDTO {
 		}
 		out.Connections = append(out.Connections, dto)
 	}
+	for _, item := range snap.RecentClosed {
+		if item == nil || item.TrackerInfo == nil {
+			continue
+		}
+		info := item.TrackerInfo
+		dto := connectionDTO{
+			Id:          info.UUID.String(),
+			Upload:      info.UploadTotal.Load(),
+			Download:    info.DownloadTotal.Load(),
+			Start:       info.Start.Format(time.RFC3339),
+			Chains:      info.Chain.String(),
+			Rule:        info.Rule,
+			RulePayload: info.RulePayload,
+			RuleDetail:  info.RuleDetail,
+		}
+		if len(info.ProviderChain) > 0 {
+			dto.ProviderChains = info.ProviderChain.String()
+		}
+		if info.Metadata != nil {
+			m := info.Metadata
+			dto.Metadata = &metadataDTO{
+				Network:  m.NetWork.String(),
+				Host:     m.Host,
+				Process:  m.Process,
+				SourceIP: m.SrcIP.String(),
+				DstPort:  m.DstPort,
+			}
+		}
+		out.RecentClosed = append(out.RecentClosed, recentClosedDTO{
+			connectionDTO: dto,
+			ClosedAt:      item.ClosedAt,
+		})
+	}
 	return out
+}
+
+func trackerInfoToConnectionDTO(info *statistic.TrackerInfo) connectionDTO {
+	dto := connectionDTO{
+		Id:          info.UUID.String(),
+		Upload:      info.UploadTotal.Load(),
+		Download:    info.DownloadTotal.Load(),
+		Start:       info.Start.Format(time.RFC3339),
+		Chains:      info.Chain.String(),
+		Rule:        info.Rule,
+		RulePayload: info.RulePayload,
+		RuleDetail:  info.RuleDetail,
+	}
+	if len(info.ProviderChain) > 0 {
+		dto.ProviderChains = info.ProviderChain.String()
+	}
+	if info.Metadata != nil {
+		m := info.Metadata
+		dto.Metadata = &metadataDTO{
+			Network:  m.NetWork.String(),
+			Host:     m.Host,
+			Process:  m.Process,
+			SourceIP: m.SrcIP.String(),
+			DstPort:  m.DstPort,
+		}
+	}
+	return dto
 }
 
 func closeConnectionByID(id string) bool {

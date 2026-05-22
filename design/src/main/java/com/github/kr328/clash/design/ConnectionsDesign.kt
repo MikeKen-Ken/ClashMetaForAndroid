@@ -11,6 +11,7 @@ import com.github.kr328.clash.design.adapter.ClosedEntry
 import com.github.kr328.clash.design.adapter.ConnectionAdapter
 import com.github.kr328.clash.design.adapter.ConnectionDisplayItem
 import com.github.kr328.clash.design.databinding.DesignConnectionsBinding
+import com.github.kr328.clash.design.store.ClosedConnectionsStorage
 import com.github.kr328.clash.design.store.LastConnectionsSnapshotStorage
 import com.github.kr328.clash.design.store.UiStore
 import com.github.kr328.clash.design.util.applyFrom
@@ -95,8 +96,9 @@ class ConnectionsDesign(
     private var previousTraffic: Map<String, Pair<Long, Long>> = emptyMap()
     private var previousTimeMs: Long = 0
 
-    /** 当前会话的已关闭连接（带时间戳、按保留时长裁剪），不落盘，仅内存 */
+    /** 已关闭连接（带时间戳）；内存与 [ClosedConnectionsStorage] 同步，持久化保留 24 小时 */
     private val closedEntries = mutableListOf<ClosedEntry>()
+    private var closedPersistScheduled = false
     private var tabMode: TabMode = TabMode.Active
     var mergeByDomain: Boolean = false
         set(value) {
@@ -123,6 +125,13 @@ class ConnectionsDesign(
     override val root: View
         get() = binding.root
 
+    /** 进入连接页时从磁盘恢复已关闭列表（与桌面端 IndexedDB 恢复一致） */
+    suspend fun loadPersistedClosedEntries() {
+        val loaded = ClosedConnectionsStorage.load(context)
+        closedEntries.clear()
+        closedEntries.addAll(loaded)
+    }
+
     suspend fun patchConnections(snapshot: ConnectionsSnapshot) {
         var previous = lastSnapshot
         val nowMs = System.currentTimeMillis()
@@ -131,17 +140,27 @@ class ConnectionsDesign(
             previous = LastConnectionsSnapshotStorage.load(context)
         }
 
+        var closedPersistChanged = false
+        val currentIds = snapshot.connections.map { it.id }.toSet()
+        val existingClosedIds = closedEntries.map { it.connection.id }.toSet()
         if (previous != null) {
-            val previousIds = previous.connections.map { it.id }.toSet()
-            val currentIds = snapshot.connections.map { it.id }.toSet()
             previous.connections
-                .filter { it.id !in currentIds }
-                .forEach { conn -> closedEntries.add(ClosedEntry(conn, nowMs)) }
+                .filter { it.id !in currentIds && it.id !in existingClosedIds }
+                .forEach { conn ->
+                    closedEntries.add(ClosedEntry(conn, nowMs))
+                    closedPersistChanged = true
+                }
         }
 
-        val retentionMs = retentionHours * 3600 * 1000L
-        closedEntries.removeAll { nowMs - it.closedAt > retentionMs }
-        // 已关闭列表不再每次 patch 写盘，改为在离开连接页时由 Activity.onStop 统一持久化，避免每秒一次大 JSON 写入
+        if (mergeRecentClosedFromSnapshot(snapshot, existingClosedIds, currentIds)) {
+            closedPersistChanged = true
+        }
+
+        val persistRetentionMs = ClosedConnectionsStorage.PERSIST_RETENTION_HOURS * 3600 * 1000L
+        val beforePrune = closedEntries.size
+        closedEntries.removeAll { nowMs - it.closedAt > persistRetentionMs }
+        if (closedEntries.size != beforePrune) closedPersistChanged = true
+        if (closedPersistChanged) schedulePersistClosedEntries()
 
         lastSnapshot = snapshot
         // 不在每次 patch 时写盘，避免每秒一次大 JSON 写入；仅在离开连接页时由 Activity.onStop 调用 persistLastSnapshot()
@@ -290,9 +309,37 @@ class ConnectionsDesign(
         }
     }
 
+    /** 合并内核 REJECT 短时缓冲，避免连接存活时间短于轮询间隔而漏记 */
+    private fun mergeRecentClosedFromSnapshot(
+        snapshot: ConnectionsSnapshot,
+        existingClosedIds: Set<String>,
+        currentIds: Set<String>,
+    ): Boolean {
+        if (snapshot.recentClosed.isEmpty()) return false
+        var changed = false
+        val knownIds = existingClosedIds.toMutableSet()
+        for (recent in snapshot.recentClosed) {
+            if (recent.id in knownIds || recent.id in currentIds) continue
+            closedEntries.add(ClosedEntry(recent.toConnection(), recent.closedAt))
+            knownIds.add(recent.id)
+            changed = true
+        }
+        return changed
+    }
+
     fun clearClosedConnections() {
         closedEntries.clear()
+        launch { ClosedConnectionsStorage.save(context, emptyList()) }
         if (tabMode == TabMode.Closed) launch { refreshDisplayItems() }
+    }
+
+    private fun schedulePersistClosedEntries() {
+        if (closedPersistScheduled) return
+        closedPersistScheduled = true
+        launch {
+            closedPersistScheduled = false
+            ClosedConnectionsStorage.save(context, closedEntries.toList())
+        }
     }
 
     fun onTabActiveClick() {
@@ -332,9 +379,10 @@ class ConnectionsDesign(
         requests.trySend(Request.CloseConnectionsExcludingDirect)
     }
 
-    /** 在离开连接页时调用，仅持久化当前活跃快照（供返回时计算「因模式切换被关掉的连接」），已关闭列表不再写盘以省电。 */
+    /** 离开连接页时持久化活跃快照与已关闭列表（与桌面端 setConnectionSnapshot 一致） */
     suspend fun persistState() {
         lastSnapshot?.let { LastConnectionsSnapshotStorage.save(context, it) }
+        ClosedConnectionsStorage.save(context, closedEntries.toList())
     }
 
     private fun updateTabAndToolbarVisibility() {

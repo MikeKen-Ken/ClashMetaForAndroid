@@ -11,6 +11,8 @@ data class ConnectionsSnapshot(
     val downloadTotal: Long = 0,
     val uploadTotal: Long = 0,
     val connections: List<Connection> = emptyList(),
+    /** 内核在 REJECT 连接关闭时缓冲的短时记录，避免轮询间隔漏采 */
+    val recentClosed: List<RecentClosedConnection> = emptyList(),
 ) : Parcelable {
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         Parcelizer.encodeToParcel(serializer(), parcel, this)
@@ -53,6 +55,35 @@ data class Connection(
 
         override fun newArray(size: Int): Array<Connection?> = arrayOfNulls(size)
     }
+}
+
+/** 与 [Connection] 字段一致，另含关闭时间戳（JSON 扁平结构） */
+@Serializable
+data class RecentClosedConnection(
+    val id: String,
+    val metadata: ConnectionMetadata? = null,
+    val upload: Long = 0,
+    val download: Long = 0,
+    val start: String = "",
+    val chains: String = "",
+    @SerialName("providerChains") val providerChains: String = "",
+    val rule: String = "",
+    val rulePayload: String = "",
+    val ruleDetail: String = "",
+    val closedAt: Long,
+) {
+    fun toConnection(): Connection = Connection(
+        id = id,
+        metadata = metadata,
+        upload = upload,
+        download = download,
+        start = start,
+        chains = chains,
+        providerChains = providerChains,
+        rule = rule,
+        rulePayload = rulePayload,
+        ruleDetail = ruleDetail,
+    )
 }
 
 @Serializable
