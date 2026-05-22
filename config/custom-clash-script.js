@@ -118,9 +118,7 @@ function main(config) {
             return config;
         }
 
-        config["geodata-mode"] = false;
         // PROCESS-NAME 规则依赖进程查找；off 时规则集不会生效
-        config["find-process-mode"] = "strict";
         config["proxy-groups"] = config["proxy-groups"].map(modifyProxyGroup);
 
         if (config["proxy-groups"].length > 0) {
