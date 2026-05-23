@@ -246,15 +246,14 @@ function main(config) {
             config["proxy-groups"] = reorderProxyGroupsByTemplate(config["proxy-groups"], PROXY_GROUP_ORDER);
         }
 
-        /** raw 规则集分支：DustinWin mihomo-ruleset；自定义 custome-rule release；Sukka Ruleset */
+        /** raw 规则集分支：DustinWin mihomo-ruleset；custome-rule release（含 c-* 与 skk-*） */
         const RULESET_RAW_BASE = {
             dustinwin: "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/mihomo-ruleset",
             custome: "https://raw.githubusercontent.com/MikeKen-Ken/custome-rule/release",
-            sukka: "https://ruleset.skk.moe/Clash",
         };
 
-        /** 自建规则集统一 `c-` 前缀（与 custome-rule release 文件名一致） */
-        const isCustomeRuleset = (name) => name.startsWith("c-");
+        /** 与 custome-rule release 文件名一致：c-* 自建；skk-* 由 build-skk.sh 同步 Sukka 并转 mrs/list */
+        const isCustomeRuleset = (name) => name.startsWith("c-") || name.startsWith("skk-");
 
         const ruleProvidersList = [
             // https://github.com/DustinWin/ruleset_geodata/tree/mihomo-ruleset
@@ -282,36 +281,28 @@ function main(config) {
             ["c-hk", "c-hk.mrs", "domain", "mrs"],
             ["c-dir", "c-dir.mrs", "domain", "mrs"],
 
-            // https://github.com/SukkaW/Surge — domainset / non_ip，第五项 "sukka" 表示 Sukka Ruleset
-            ["skk-cdn-domainset", "domainset/cdn.txt", "domain", "text", "sukka"],
-            ["skk-cdn-non_ip", "non_ip/cdn.txt", "classical", "text", "sukka"],
-            ["skk-download-domainset", "domainset/download.txt", "domain", "text", "sukka"],
-            ["skk-download-non_ip", "non_ip/download.txt", "classical", "text", "sukka"],
-            ["skk-apple-cn", "non_ip/apple_cn.txt", "classical", "text", "sukka"],
+            // Sukka Ruleset（custome-rule/scripts/build-skk.sh：domainset→.mrs，non_ip→.list）
+            ["skk-cdn-domainset", "skk-cdn-domainset.mrs", "domain", "mrs"],
+            ["skk-cdn-non_ip", "skk-cdn-non_ip.list", "classical", "text"],
+            ["skk-download-domainset", "skk-download-domainset.mrs", "domain", "mrs"],
+            ["skk-download-non_ip", "skk-download-non_ip.list", "classical", "text"],
+            ["skk-apple-cn", "skk-apple-cn.list", "classical", "text"],
         ];
 
-        const resolveRulesetBase = (name, source) => {
-            if (source === "sukka") {
-                return RULESET_RAW_BASE.sukka;
-            }
-            if (isCustomeRuleset(name)) {
-                return RULESET_RAW_BASE.custome;
-            }
-            return RULESET_RAW_BASE.dustinwin;
-        };
+        const resolveRulesetBase = (name) =>
+            isCustomeRuleset(name) ? RULESET_RAW_BASE.custome : RULESET_RAW_BASE.dustinwin;
 
         // 每个 provider 间隔错开 2 分钟，避免大量 provider 同时到期、集中刷新时持有写锁阻塞连接
         config["rule-providers"] = Object.fromEntries(
-            ruleProvidersList.map(([name, filename, behavior, format, source], index) => {
-                const base = resolveRulesetBase(name, source);
-                const pathFile = source === "sukka" ? `${name}.txt` : filename;
+            ruleProvidersList.map(([name, filename, behavior, format], index) => {
+                const base = resolveRulesetBase(name);
                 return [
                     name,
                     {
                         type: "http",
                         behavior,
                         format,
-                        path: `./ruleset/${pathFile}`,
+                        path: `./ruleset/${filename}`,
                         url: `${base}/${filename}`,
                         interval: 28800 + index * 120,
                     },
