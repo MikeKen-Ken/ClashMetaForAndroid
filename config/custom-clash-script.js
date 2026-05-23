@@ -246,10 +246,11 @@ function main(config) {
             config["proxy-groups"] = reorderProxyGroupsByTemplate(config["proxy-groups"], PROXY_GROUP_ORDER);
         }
 
-        /** raw 规则集分支：DustinWin mihomo-ruleset；自定义 custome-rule release */
+        /** raw 规则集分支：DustinWin mihomo-ruleset；自定义 custome-rule release；Sukka Ruleset */
         const RULESET_RAW_BASE = {
             dustinwin: "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/mihomo-ruleset",
             custome: "https://raw.githubusercontent.com/MikeKen-Ken/custome-rule/release",
+            sukka: "https://ruleset.skk.moe/Clash",
         };
 
         /** 自建规则集统一 `c-` 前缀（与 custome-rule release 文件名一致） */
@@ -263,8 +264,6 @@ function main(config) {
             ["ads", "ads.mrs", "domain", "mrs"],
             ["trackerslist", "trackerslist.mrs", "domain", "mrs"],
             ["spotify", "spotify.mrs", "domain", "mrs"],
-            ["microsoft-cn", "microsoft-cn.mrs", "domain", "mrs"],
-            ["apple-cn", "apple-cn.mrs", "domain", "mrs"],
             ["games-cn", "games-cn.mrs", "domain", "mrs"],
             ["applications", "applications.list", "classical", "text"],
             ["ai", "ai.mrs", "domain", "mrs"],
@@ -282,19 +281,37 @@ function main(config) {
             ["c-nohk", "c-nohk.mrs", "domain", "mrs"],
             ["c-hk", "c-hk.mrs", "domain", "mrs"],
             ["c-dir", "c-dir.mrs", "domain", "mrs"],
+
+            // https://github.com/SukkaW/Surge — domainset / non_ip，第五项 "sukka" 表示 Sukka Ruleset
+            ["skk-cdn-domainset", "domainset/cdn.txt", "domain", "text", "sukka"],
+            ["skk-cdn-non_ip", "non_ip/cdn.txt", "classical", "text", "sukka"],
+            ["skk-download-domainset", "domainset/download.txt", "domain", "text", "sukka"],
+            ["skk-download-non_ip", "non_ip/download.txt", "classical", "text", "sukka"],
+            ["skk-apple-cn", "non_ip/apple_cn.txt", "classical", "text", "sukka"],
         ];
+
+        const resolveRulesetBase = (name, source) => {
+            if (source === "sukka") {
+                return RULESET_RAW_BASE.sukka;
+            }
+            if (isCustomeRuleset(name)) {
+                return RULESET_RAW_BASE.custome;
+            }
+            return RULESET_RAW_BASE.dustinwin;
+        };
 
         // 每个 provider 间隔错开 2 分钟，避免大量 provider 同时到期、集中刷新时持有写锁阻塞连接
         config["rule-providers"] = Object.fromEntries(
-            ruleProvidersList.map(([name, filename, behavior, format], index) => {
-                const base = isCustomeRuleset(name) ? RULESET_RAW_BASE.custome : RULESET_RAW_BASE.dustinwin;
+            ruleProvidersList.map(([name, filename, behavior, format, source], index) => {
+                const base = resolveRulesetBase(name, source);
+                const pathFile = source === "sukka" ? `${name}.txt` : filename;
                 return [
                     name,
                     {
                         type: "http",
                         behavior,
                         format,
-                        path: `./ruleset/${filename}`,
+                        path: `./ruleset/${pathFile}`,
                         url: `${base}/${filename}`,
                         interval: 28800 + index * 120,
                     },
@@ -322,36 +339,43 @@ function main(config) {
          * 连接规则流水线：数组顺序即匹配优先级。
          * - reject：拒绝
          * - direct：直连（单集 name 或批量 names）
-         * - proxy：走代理，自动生成 UDP 分支
+         * - proxy：走代理，自动生成 UDP 分支（单集 name 或批量 names，须同一 tcp/udp）
          * - footer：漏网 UDP + MATCH
          */
         const RULE_PIPELINE = [
             { kind: "reject", name: "c-reject" },
             { kind: "reject", name: "c-proc-rej" },
 
-            { kind: "direct", name: "c-proc-wl-dir" },
+            {
+                kind: "direct",
+                names: ["private", "privateip", "c-proc-wl-dir", "c-wl-dir"],
+            },
 
-            { kind: "direct", name: "c-wl-dir" },
             { kind: "proxy", name: "c-wl-pxy", tcp: AUTO, udp: AUTO_UDP },
 
             { kind: "reject", name: "ads" },
-            { kind: "direct", names: ["private", "privateip"] },
 
-            { kind: "direct", name: "c-proc-dir" },
+            { kind: "direct", names: ["c-proc-dir", "c-dir"] },
+
             { kind: "proxy", name: "c-proc-pxy", tcp: AUTO, udp: AUTO_UDP },
-
-            { kind: "direct", name: "applications" },
-            { kind: "proxy", name: "c-hk", tcp: HK, udp: HK_UDP },
-            { kind: "proxy", name: "c-nohk", tcp: NO_HK, udp: NO_HK_UDP },
-            { kind: "direct", name: "c-dir" },
-
+            { kind: "proxy", names: ["c-hk", "spotify"], tcp: HK, udp: HK_UDP },
+            { kind: "proxy", names: ["c-nohk", "ai"], tcp: NO_HK, udp: NO_HK_UDP },
             { kind: "proxy", name: "c-pxy", tcp: AUTO, udp: AUTO_UDP },
-            { kind: "proxy", name: "ai", tcp: NO_HK, udp: NO_HK_UDP },
-            { kind: "proxy", name: "spotify", tcp: HK, udp: HK_UDP },
 
             {
                 kind: "direct",
-                names: ["games-cn", "microsoft-cn", "apple-cn", "trackerslist", "cn", "cnip"],
+                names: [
+                    "skk-cdn-domainset",
+                    "skk-cdn-non_ip",
+                    "skk-download-domainset",
+                    "skk-download-non_ip",
+                    "skk-apple-cn",
+                    "applications",
+                    "games-cn",
+                    "trackerslist",
+                    "cn",
+                    "cnip",
+                ],
             },
 
             { kind: "footer" },
@@ -365,8 +389,10 @@ function main(config) {
                     const names = entry.names ?? [entry.name];
                     return names.map((n) => formatRuleSet(n, DIRECT));
                 }
-                case "proxy":
-                    return formatProxyRulePair(entry.name, entry.tcp, entry.udp);
+                case "proxy": {
+                    const names = entry.names ?? [entry.name];
+                    return names.flatMap((n) => formatProxyRulePair(n, entry.tcp, entry.udp));
+                }
                 case "footer":
                     return [`NETWORK,UDP,${FALLBACK_UDP}`, `MATCH,${FALLBACK}`];
                 default:
