@@ -282,8 +282,6 @@ function main(config) {
             ["c-dir", "c-dir.mrs", "domain", "mrs"],
 
             // Sukka Ruleset（custome-rule/scripts/build-skk.sh：domainset→.mrs，non_ip→.list）
-            ["skk-cdn-domainset", "skk-cdn-domainset.mrs", "domain", "mrs"],
-            ["skk-cdn-non_ip", "skk-cdn-non_ip.list", "classical", "text"],
             ["skk-download-domainset", "skk-download-domainset.mrs", "domain", "mrs"],
             ["skk-download-non_ip", "skk-download-non_ip.list", "classical", "text"],
             ["skk-apple-cn", "skk-apple-cn.list", "classical", "text"],
@@ -356,8 +354,6 @@ function main(config) {
             {
                 kind: "direct",
                 names: [
-                    "skk-cdn-domainset",
-                    "skk-cdn-non_ip",
                     "skk-download-domainset",
                     "skk-download-non_ip",
                     "skk-apple-cn",
