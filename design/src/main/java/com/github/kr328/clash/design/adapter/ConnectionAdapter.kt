@@ -11,7 +11,7 @@ import com.github.kr328.clash.design.util.layoutInflater
 class ConnectionAdapter(
     private val context: Context,
     private val onClose: (Connection) -> Unit,
-    private val onCopy: ((Connection, String) -> Unit)? = null,
+    private val onCopy: ((String) -> Unit)? = null,
 ) : RecyclerView.Adapter<ConnectionAdapter.Holder>() {
     class Holder(val binding: AdapterConnectionItemBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -37,13 +37,7 @@ class ConnectionAdapter(
         holder.binding.trafficDisplayText = item.trafficDisplayText
         holder.binding.trafficDisplayView.visibility = View.VISIBLE
         holder.binding.startTimeDisplayText = item.startTimeDisplayText
-        val ruleText = if (conn.id.startsWith("blocked-device:")) {
-            context.getString(com.github.kr328.clash.design.R.string.connections_enable_device)
-        } else if (conn.id.startsWith("device:")) {
-            context.getString(com.github.kr328.clash.design.R.string.connections_disable_device)
-        } else {
-            formatRuleDisplay(conn)
-        }
+        val ruleText = ruleDisplayText(conn)
         holder.binding.ruleDisplayText = ruleText
         holder.binding.ruleDisplayView.visibility = if (ruleText.isNotEmpty()) View.VISIBLE else View.GONE
         val processView = holder.binding.processView
@@ -64,12 +58,55 @@ class ConnectionAdapter(
         holder.binding.closeView.visibility = if (item.isClosed) View.GONE else View.VISIBLE
         holder.binding.closeView.setOnClickListener { onClose(conn) }
         holder.binding.root.setOnLongClickListener {
-            onCopy?.invoke(conn, formatRuleDisplay(conn))
+            onCopy?.invoke(formatCopyText(item))
             true
         }
     }
 
     override fun getItemCount(): Int = displayItems.size
+
+    /** 与列表 item 可见内容一致，供长按复制 */
+    private fun formatCopyText(item: ConnectionDisplayItem): String {
+        val conn = item.connection
+        val meta = conn.metadata
+        return buildString {
+            val title = meta?.host?.takeIf { it.isNotEmpty() } ?: conn.chains
+            if (title.isNotEmpty()) {
+                append(title)
+                appendLine()
+            }
+            meta?.network?.takeIf { it.isNotEmpty() }?.let {
+                append(it.uppercase())
+                appendLine()
+            }
+            if (item.startTimeDisplayText.isNotEmpty()) {
+                append(item.startTimeDisplayText)
+                appendLine()
+            }
+            meta?.process?.takeIf { it.isNotEmpty() }?.let {
+                append(it)
+                appendLine()
+            }
+            if (item.trafficDisplayText.isNotEmpty()) {
+                append(item.trafficDisplayText)
+                appendLine()
+            }
+            val ruleText = ruleDisplayText(conn)
+            if (ruleText.isNotEmpty()) {
+                append(ruleText)
+            }
+        }.trimEnd()
+    }
+
+    private fun ruleDisplayText(conn: Connection): String {
+        if (conn.id.startsWith("blocked-device:")) {
+            return context.getString(com.github.kr328.clash.design.R.string.connections_enable_device)
+        }
+        if (conn.id.startsWith("device:")) {
+            return context.getString(com.github.kr328.clash.design.R.string.connections_disable_device)
+        }
+        return formatRuleDisplay(conn)
+    }
 
     private fun formatRuleDisplay(conn: Connection): String {
         return buildString {

@@ -346,9 +346,9 @@ function main(config) {
 
             { kind: "direct", names: ["c-proc-dir", "c-dir"] },
 
-            { kind: "proxy", name: "c-proc-pxy", tcp: AUTO, udp: AUTO_UDP },
             { kind: "proxy", names: ["c-hk", "spotify"], tcp: HK, udp: HK_UDP },
             { kind: "proxy", names: ["c-nohk", "ai"], tcp: NO_HK, udp: NO_HK_UDP },
+            { kind: "proxy", name: "c-proc-pxy", tcp: AUTO, udp: AUTO_UDP },
             { kind: "proxy", name: "c-pxy", tcp: AUTO, udp: AUTO_UDP },
 
             {

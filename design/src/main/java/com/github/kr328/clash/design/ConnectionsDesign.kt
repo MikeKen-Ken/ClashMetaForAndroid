@@ -82,7 +82,7 @@ class ConnectionsDesign(
                 requests.trySend(Request.CloseConnection(conn))
             }
         },
-        onCopy = { _, displayText ->
+        onCopy = { displayText ->
             launch {
                 context.getSystemService<ClipboardManager>()?.setPrimaryClip(
                     ClipData.newPlainText("connection", displayText)
