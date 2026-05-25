@@ -246,14 +246,14 @@ function main(config) {
             config["proxy-groups"] = reorderProxyGroupsByTemplate(config["proxy-groups"], PROXY_GROUP_ORDER);
         }
 
-        /** raw 规则集分支：DustinWin mihomo-ruleset；custome-rule release（含 c-* 与 skk-*） */
+        /** raw 规则集分支：DustinWin mihomo-ruleset；custome-rule release（c-*） */
         const RULESET_RAW_BASE = {
             dustinwin: "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/mihomo-ruleset",
             custome: "https://raw.githubusercontent.com/MikeKen-Ken/custome-rule/release",
         };
 
-        /** 与 custome-rule release 文件名一致：c-* 自建；skk-* 由 build-skk.sh 同步 Sukka 并转 mrs/list */
-        const isCustomeRuleset = (name) => name.startsWith("c-") || name.startsWith("skk-");
+        /** 与 custome-rule release 文件名一致：c-* 自建 */
+        const isCustomeRuleset = (name) => name.startsWith("c-");
 
         const ruleProvidersList = [
             // https://github.com/DustinWin/ruleset_geodata/tree/mihomo-ruleset
@@ -264,6 +264,8 @@ function main(config) {
             ["trackerslist", "trackerslist.mrs", "domain", "mrs"],
             ["spotify", "spotify.mrs", "domain", "mrs"],
             ["games-cn", "games-cn.mrs", "domain", "mrs"],
+            ["microsoft-cn", "microsoft-cn.mrs", "domain", "mrs"],
+            ["apple-cn", "apple-cn.mrs", "domain", "mrs"],
             ["applications", "applications.list", "classical", "text"],
             ["ai", "ai.mrs", "domain", "mrs"],
             ["cn", "cn.mrs", "domain", "mrs"],
@@ -280,11 +282,6 @@ function main(config) {
             ["c-nohk", "c-nohk.mrs", "domain", "mrs"],
             ["c-hk", "c-hk.mrs", "domain", "mrs"],
             ["c-dir", "c-dir.mrs", "domain", "mrs"],
-
-            // Sukka Ruleset（custome-rule/scripts/build-skk.sh：domainset→.mrs，non_ip→.list）
-            ["skk-download-domainset", "skk-download-domainset.mrs", "domain", "mrs"],
-            ["skk-download-non_ip", "skk-download-non_ip.list", "classical", "text"],
-            ["skk-apple-cn", "skk-apple-cn.list", "classical", "text"],
         ];
 
         const resolveRulesetBase = (name) =>
@@ -354,11 +351,10 @@ function main(config) {
             {
                 kind: "direct",
                 names: [
-                    "skk-download-domainset",
-                    "skk-download-non_ip",
-                    "skk-apple-cn",
                     "applications",
                     "games-cn",
+                    "microsoft-cn",
+                    "apple-cn",
                     "trackerslist",
                     "cn",
                     "cnip",
