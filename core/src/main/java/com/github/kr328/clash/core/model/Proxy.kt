@@ -50,6 +50,7 @@ data class Proxy(
         TrustTunnel(false),
         OpenVPN(false),
         Tailscale(false),
+        GostRelay(false),
 
         Unknown(false);
     }
