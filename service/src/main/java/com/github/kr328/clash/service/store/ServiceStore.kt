@@ -23,7 +23,7 @@ class ServiceStore(context: Context) {
 
     var bypassPrivateNetwork: Boolean by store.boolean(
         key = "bypass_private_network",
-        defaultValue = true
+        defaultValue = false
     )
 
     var accessControlMode: AccessControlMode by store.enum(
