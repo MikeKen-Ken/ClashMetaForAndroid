@@ -93,9 +93,9 @@ function main(config) {
                 url: "https://www.gstatic.com/generate_204",
                 interval: 7200,
                 "max-failed-times": 1,
-                "max-connect-times": 50,
+                "max-connect-times": 15,
                 "expected-status": 204,
-                lazy: true,
+                lazy: false,
                 "disable-udp": false,
             },
         };
