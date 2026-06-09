@@ -60,21 +60,7 @@ tun:
   dns-hijack:
     - "any:53"
     - "tcp://any:53"                  # 补全：同时劫持 TCP DNS 流量
-  strict-route: true                 # 局域网/LocalSend：避免私网流量进 TUN 后 DIRECT 拨号超时
-  # 私网/组播不走 TUN，由系统直出（与 sniffer.skip-dst-address 一致；Android 端 tun 由 VpnService 接管时以应用「绕过私有网络」为准）
-  route-exclude-address:
-    # IPv4
-    - 192.168.0.0/16
-    - 10.0.0.0/8
-    - 172.16.0.0/12
-    - 127.0.0.0/8
-    - 169.254.0.0/16
-    - 224.0.0.0/4
-    # IPv6
-    - fc00::/7
-    - fe80::/10
-    - ::1/128
-    - ff00::/8
+  strict-route: true                 # 防泄漏模式：私网仍进入 TUN，再由 private/privateip 规则 DIRECT
 
 geodata-mode: false
 
