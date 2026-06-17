@@ -4,13 +4,6 @@ function main(config) {
     const FALLBACK = "↩️";
     const NO_HK = "🚫 🇭🇰";
 
-    /** 与 FALLBACK 同结构，子链为 AUTO_UDP / NO_HK_UDP，用于漏网 UDP */
-    const FALLBACK_UDP = `${FALLBACK} UDP`;
-
-    /** 与 AUTO / NO_HK 对应，仅含订阅里声明支持 UDP 的节点（见下方 proxy.udp 过滤） */
-    const AUTO_UDP = `${AUTO} UDP`;
-    const NO_HK_UDP = `${NO_HK} UDP`;
-
     const DEFAULT_AUTO = "🚀 节点选择";
     const DEFAULT_DIRECT = "🎯 全球直连";
     const DEFAULT_FALLBACK = "🐟 漏网之鱼";
@@ -26,11 +19,8 @@ function main(config) {
     const PROXY_GROUP_ORDER = [
         AUTO,
         NO_HK,
-        AUTO_UDP,
-        NO_HK_UDP,
         DIRECT,
         FALLBACK,
-        FALLBACK_UDP,
         PROXY_GROUP_ORDER_REST,
     ];
 
@@ -217,55 +207,6 @@ function main(config) {
                 }
             });
 
-            // 为走代理且需 UDP 的策略单独建组：从 AUTO / NO_HK 中剔除 yaml 里 udp: false 的节点（内核无 PROTOCOL 规则，AND 内请用 NETWORK,UDP）
-            const proxyByName = new Map(
-                (config.proxies || []).filter((p) => p && p.name).map((p) => [p.name, p])
-            );
-            const supportsUdp = (proxyName) => {
-                const p = proxyByName.get(proxyName);
-                if (!p) {
-                    return true;
-                }
-                return p.udp !== false;
-            };
-            const filterUdpProxies = (baseGroup) => {
-                const names = Array.isArray(baseGroup.proxies) ? baseGroup.proxies : [];
-                const filtered = names.filter(supportsUdp);
-                if (filtered.length === 0 && names.length > 0) {
-                    console.warn(
-                        "UDP proxy group would be empty; keeping unfiltered list. Check proxy.udp in subscription."
-                    );
-                    return names;
-                }
-                return filtered;
-            };
-            const gAuto = config["proxy-groups"][0];
-            const gNoHk = config["proxy-groups"][1];
-            const udpSidecars = [
-                { ...gAuto, name: AUTO_UDP, proxies: filterUdpProxies(gAuto), "disable-udp": false },
-                { ...gNoHk, name: NO_HK_UDP, proxies: filterUdpProxies(gNoHk), "disable-udp": false },
-            ];
-            config["proxy-groups"] = config["proxy-groups"].concat(udpSidecars);
-
-            const fbGroup = config["proxy-groups"].find((g) => g.name === FALLBACK);
-            if (fbGroup && Array.isArray(fbGroup.proxies)) {
-                const chainToUdp = (p) => {
-                    if (p === AUTO) {
-                        return AUTO_UDP;
-                    }
-                    if (p === NO_HK) {
-                        return NO_HK_UDP;
-                    }
-                    return p;
-                };
-                config["proxy-groups"].push({
-                    ...fbGroup,
-                    name: FALLBACK_UDP,
-                    proxies: fbGroup.proxies.map(chainToUdp),
-                    "disable-udp": false,
-                });
-            }
-
             config["proxy-groups"] = reorderProxyGroupsByTemplate(config["proxy-groups"], PROXY_GROUP_ORDER);
         }
 
@@ -338,18 +279,12 @@ function main(config) {
                 ? `RULE-SET,${setName},${target},no-resolve`
                 : `RULE-SET,${setName},${target}`;
 
-        /** 非 DIRECT：先 UDP 专用组，再 TCP/默认组 */
-        const formatProxyRulePair = (setName, tcpTarget, udpTarget) => [
-            `AND,((NETWORK,UDP),(RULE-SET,${setName})),${udpTarget}`,
-            formatRuleSet(setName, tcpTarget),
-        ];
-
         /**
          * 连接规则流水线：数组顺序即匹配优先级。
          * - reject：拒绝
          * - direct：直连（单集 name 或批量 names）
-         * - proxy：走代理，自动生成 UDP 分支（单集 name 或批量 names，须同一 tcp/udp）
-         * - footer：漏网 UDP + MATCH
+         * - proxy：走代理（单集 name 或批量 names）
+         * - footer：漏网 MATCH
          */
         const RULE_PIPELINE = [
             { kind: "reject", name: "c-reject" },
@@ -360,16 +295,16 @@ function main(config) {
                 names: ["private", "privateip", "c-proc-wl-dir", "c-wl-dir"],
             },
 
-            { kind: "proxy", name: "c-wl-pxy", tcp: AUTO, udp: AUTO_UDP },
+            { kind: "proxy", name: "c-wl-pxy", target: AUTO },
 
             { kind: "reject", name: "ads" },
 
             { kind: "direct", names: ["c-proc-dir", "c-dir"] },
 
-            { kind: "proxy", names: ["c-hk", "spotify"], tcp: AUTO, udp: AUTO_UDP },
-            { kind: "proxy", names: ["c-nohk", "ai"], tcp: NO_HK, udp: NO_HK_UDP },
-            { kind: "proxy", name: "c-proc-pxy", tcp: AUTO, udp: AUTO_UDP },
-            { kind: "proxy", name: "c-pxy", tcp: AUTO, udp: AUTO_UDP },
+            { kind: "proxy", names: ["c-hk", "spotify"], target: AUTO },
+            { kind: "proxy", names: ["c-nohk", "ai"], target: NO_HK },
+            { kind: "proxy", name: "c-proc-pxy", target: AUTO },
+            { kind: "proxy", name: "c-pxy", target: AUTO },
 
             {
                 kind: "direct",
@@ -397,10 +332,10 @@ function main(config) {
                 }
                 case "proxy": {
                     const names = entry.names ?? [entry.name];
-                    return names.flatMap((n) => formatProxyRulePair(n, entry.tcp, entry.udp));
+                    return names.map((n) => formatRuleSet(n, entry.target));
                 }
                 case "footer":
-                    return [`NETWORK,UDP,${FALLBACK_UDP}`, `MATCH,${FALLBACK}`];
+                    return [`MATCH,${FALLBACK}`];
                 default:
                     return [];
             }
@@ -411,7 +346,7 @@ function main(config) {
 
         if (config.proxies) {
             config.proxies = config.proxies.map((proxy) => {
-                // proxy.udp = true;
+                proxy.udp = true;
                 return proxy;
             });
         }
