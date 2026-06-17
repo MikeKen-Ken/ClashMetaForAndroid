@@ -3,14 +3,12 @@ function main(config) {
     const DIRECT = "⬆️";
     const FALLBACK = "↩️";
     const NO_HK = "🚫 🇭🇰";
-    const HK = "🇭🇰";
 
-    /** 与 FALLBACK 同结构，子链为 AUTO_UDP / NO_HK_UDP / HK_UDP，用于漏网 UDP */
+    /** 与 FALLBACK 同结构，子链为 AUTO_UDP / NO_HK_UDP，用于漏网 UDP */
     const FALLBACK_UDP = `${FALLBACK} UDP`;
 
-    /** 与 AUTO / HK / NO_HK 对应，仅含订阅里声明支持 UDP 的节点（见下方 proxy.udp 过滤） */
+    /** 与 AUTO / NO_HK 对应，仅含订阅里声明支持 UDP 的节点（见下方 proxy.udp 过滤） */
     const AUTO_UDP = `${AUTO} UDP`;
-    const HK_UDP = `${HK} UDP`;
     const NO_HK_UDP = `${NO_HK} UDP`;
 
     const DEFAULT_AUTO = "🚀 节点选择";
@@ -28,15 +26,51 @@ function main(config) {
     const PROXY_GROUP_ORDER = [
         AUTO,
         NO_HK,
-        HK,
         AUTO_UDP,
         NO_HK_UDP,
-        HK_UDP,
         DIRECT,
         FALLBACK,
         FALLBACK_UDP,
         PROXY_GROUP_ORDER_REST,
     ];
+
+    /**
+     * ========== 本地测试规则（改这里即可，无需动下方流水线） ==========
+     * 生成后会插入到 rules 最前面，优先于订阅规则集匹配。
+     *
+     * 字段说明：
+     * - type：Mihomo 规则类型，如 DOMAIN / DOMAIN-SUFFIX / DOMAIN-KEYWORD / PROCESS-NAME / IP-CIDR 等
+     * - pattern：匹配内容（域名、进程名、IP 等）；type 为 MATCH 时可省略
+     * - target：策略组，可用上方常量 AUTO / NO_HK / DIRECT / FALLBACK / REJECT，或任意已有组名
+     * - noResolve：可选，IP 类规则设为 true 时追加 ,no-resolve
+     *
+     * 进程规则需客户端开启 find-process-mode（建议 strict），否则 PROCESS-NAME 不生效。
+     *
+     * 示例：
+     * { type: "DOMAIN-SUFFIX", pattern: "test.example.com", target: AUTO },
+     * { type: "DOMAIN-KEYWORD", pattern: "debug", target: AUTO },
+     * { type: "PROCESS-NAME", pattern: "chrome.exe", target: NO_HK },
+     * { type: "PROCESS-NAME", pattern: "WeChat.exe", target: DIRECT },
+     * { type: "MATCH", target: "REJECT" }, // reject all
+     */
+    const LOCAL_TEST_RULES = [
+        // { type: "MATCH", target: "REJECT" }, // reject all
+        // { type: "DOMAIN-SUFFIX", pattern: "example.com", target: AUTO },
+        // { type: "PROCESS-NAME", pattern: "YourApp.exe", target: AUTO },
+    ];
+
+    /** @param {{ type: string; pattern?: string; target: string; noResolve?: boolean }} rule */
+    const formatLocalTestRule = (rule) => {
+        if (!rule || !rule.type || !rule.target || (rule.type !== "MATCH" && !rule.pattern)) {
+            console.warn("LOCAL_TEST_RULES: skip invalid entry", rule);
+            return null;
+        }
+        if (rule.type === "MATCH") {
+            return `MATCH,${rule.target}`;
+        }
+        const suffix = rule.noResolve ? ",no-resolve" : "";
+        return `${rule.type},${rule.pattern},${rule.target}${suffix}`;
+    };
 
     /**
      * @param {Array<Record<string, unknown>>} groups
@@ -150,29 +184,23 @@ function main(config) {
                     name: NO_HK,
                     proxies: firstGroupProxies.filter((proxy) => !proxy.includes("🇭🇰")),
                 },
-                {
-                    name: HK,
-                    proxies: firstGroupProxies.filter((proxy) => proxy.includes("🇭🇰")),
-                },
             ].map((group) => ({ ...firstGroup, ...group }));
 
             config["proxy-groups"].splice(1, 0, ...newGroups);
 
-            config["proxy-groups"].slice(3).forEach((group, index) => {
+            config["proxy-groups"].slice(2).forEach((group, index) => {
                 if (group.proxies && Array.isArray(group.proxies)) {
                     group.proxies = [];
                     if (index === 0) {
                         group.proxies.push(
                             "DIRECT",
                             config["proxy-groups"][0].name,
-                            config["proxy-groups"][1].name,
-                            config["proxy-groups"][2].name
+                            config["proxy-groups"][1].name
                         );
                     } else {
                         group.proxies.push(
                             config["proxy-groups"][0].name,
                             config["proxy-groups"][1].name,
-                            config["proxy-groups"][2].name,
                             "DIRECT"
                         );
                     }
@@ -189,7 +217,7 @@ function main(config) {
                 }
             });
 
-            // 为走代理且需 UDP 的策略单独建组：从 AUTO / NO_HK / HK 中剔除 yaml 里 udp: false 的节点（内核无 PROTOCOL 规则，AND 内请用 NETWORK,UDP）
+            // 为走代理且需 UDP 的策略单独建组：从 AUTO / NO_HK 中剔除 yaml 里 udp: false 的节点（内核无 PROTOCOL 规则，AND 内请用 NETWORK,UDP）
             const proxyByName = new Map(
                 (config.proxies || []).filter((p) => p && p.name).map((p) => [p.name, p])
             );
@@ -213,11 +241,9 @@ function main(config) {
             };
             const gAuto = config["proxy-groups"][0];
             const gNoHk = config["proxy-groups"][1];
-            const gHk = config["proxy-groups"][2];
             const udpSidecars = [
                 { ...gAuto, name: AUTO_UDP, proxies: filterUdpProxies(gAuto), "disable-udp": false },
                 { ...gNoHk, name: NO_HK_UDP, proxies: filterUdpProxies(gNoHk), "disable-udp": false },
-                { ...gHk, name: HK_UDP, proxies: filterUdpProxies(gHk), "disable-udp": false },
             ];
             config["proxy-groups"] = config["proxy-groups"].concat(udpSidecars);
 
@@ -229,9 +255,6 @@ function main(config) {
                     }
                     if (p === NO_HK) {
                         return NO_HK_UDP;
-                    }
-                    if (p === HK) {
-                        return HK_UDP;
                     }
                     return p;
                 };
@@ -343,7 +366,7 @@ function main(config) {
 
             { kind: "direct", names: ["c-proc-dir", "c-dir"] },
 
-            { kind: "proxy", names: ["c-hk", "spotify"], tcp: HK, udp: HK_UDP },
+            { kind: "proxy", names: ["c-hk", "spotify"], tcp: AUTO, udp: AUTO_UDP },
             { kind: "proxy", names: ["c-nohk", "ai"], tcp: NO_HK, udp: NO_HK_UDP },
             { kind: "proxy", name: "c-proc-pxy", tcp: AUTO, udp: AUTO_UDP },
             { kind: "proxy", name: "c-pxy", tcp: AUTO, udp: AUTO_UDP },
@@ -364,7 +387,7 @@ function main(config) {
             { kind: "footer" },
         ];
 
-        config.rules = RULE_PIPELINE.flatMap((entry) => {
+        const pipelineRules = RULE_PIPELINE.flatMap((entry) => {
             switch (entry.kind) {
                 case "reject":
                     return [formatRuleSet(entry.name, "REJECT")];
@@ -382,6 +405,9 @@ function main(config) {
                     return [];
             }
         });
+
+        const localRules = LOCAL_TEST_RULES.map(formatLocalTestRule).filter(Boolean);
+        config.rules = [...localRules, ...pipelineRules];
 
         if (config.proxies) {
             config.proxies = config.proxies.map((proxy) => {
