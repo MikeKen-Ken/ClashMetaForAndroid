@@ -226,7 +226,6 @@ function main(config) {
             ["privateip", "privateip.mrs", "ipcidr", "mrs"],
             ["ads", "ads.mrs", "domain", "mrs"],
             ["trackerslist", "trackerslist.mrs", "domain", "mrs"],
-            ["spotify", "spotify.mrs", "domain", "mrs"],
             ["games-cn", "games-cn.mrs", "domain", "mrs"],
             ["microsoft-cn", "microsoft-cn.mrs", "domain", "mrs"],
             ["apple-cn", "apple-cn.mrs", "domain", "mrs"],
@@ -244,7 +243,6 @@ function main(config) {
             ["c-wl-pxy", "c-wl-pxy.mrs", "domain", "mrs"],
             ["c-pxy", "c-pxy.mrs", "domain", "mrs"],
             ["c-nohk", "c-nohk.mrs", "domain", "mrs"],
-            ["c-hk", "c-hk.mrs", "domain", "mrs"],
             ["c-dir", "c-dir.mrs", "domain", "mrs"],
         ];
 
@@ -301,7 +299,6 @@ function main(config) {
 
             { kind: "direct", names: ["c-proc-dir", "c-dir"] },
 
-            { kind: "proxy", names: ["c-hk", "spotify"], target: AUTO },
             { kind: "proxy", names: ["c-nohk", "ai"], target: NO_HK },
             { kind: "proxy", name: "c-proc-pxy", target: AUTO },
             { kind: "proxy", name: "c-pxy", target: AUTO },
