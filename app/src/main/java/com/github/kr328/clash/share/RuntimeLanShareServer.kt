@@ -12,6 +12,7 @@ import com.github.kr328.clash.common.net.safeNetworkInterfaces
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.Inet4Address
+import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketTimeoutException
@@ -46,15 +47,14 @@ object RuntimeLanShareServer {
         stop()
 
         val token = UUID.randomUUID().toString().replace("-", "")
-        val server = ServerSocket(0).apply {
+        val server = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1")).apply {
             reuseAddress = true
             soTimeout = 1000
         }
         val port = server.localPort
         val expectedPath = "$pathPrefix/$token/runtime.yaml"
-        val urls = collectLanUrls(port, token).toMutableList()
-        val primary = pickPrimaryUrl(urls) ?: "http://127.0.0.1:$port$expectedPath"
-        if (!urls.contains(primary)) urls += primary
+        val primary = "http://127.0.0.1:$port$expectedPath"
+        val urls = mutableListOf(primary)
 
         val share = ActiveShare(server)
         val job = scope.launch {

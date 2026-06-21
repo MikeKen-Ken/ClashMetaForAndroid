@@ -17,9 +17,13 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
+    <permission
+        android:name="${applicationId}.permission.EXTERNAL_CONTROL"
+        android:protectionLevel="signature" />
+
     <application
         android:name=".MainApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:banner="@mipmap/ic_banner"
         android:fullBackupContent="@xml/full_backup_content"
         android:icon="@mipmap/ic_launcher"
@@ -67,6 +71,7 @@
             android:name=".ExternalControlActivity"
             android:exported="true"
             android:label="@string/external_control_activity"
+            android:permission="${applicationId}.permission.EXTERNAL_CONTROL"
             android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
