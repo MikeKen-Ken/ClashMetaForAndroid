@@ -252,7 +252,7 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                             val firstSuccess = refreshed.proxies.firstOrNull { proxy ->
                                                 proxy.type != Proxy.Type.Direct &&
                                                     proxy.type != Proxy.Type.Reject &&
-                                                    proxy.delay in 0..timeoutMs
+                                                    proxy.delay in 1..timeoutMs
                                             }
                                             if (firstSuccess != null && firstSuccess.name != refreshed.now) {
                                                 patchSelector(groupName, firstSuccess.name)

@@ -136,7 +136,12 @@ func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) {
 					defer cancel()
 					ctx = C.WithHealthCheckSourceName(ctx, name)
 
-					_, _ = proxy.URLTest(ctx, testURL, nil)
+					delay, err := proxy.URLTest(ctx, testURL, nil)
+					delayVal := int(delay)
+					if err != nil {
+						delayVal = 0
+					}
+					RecordDelayTestResult(proxy.Name(), delayVal, timeoutMs)
 				}(px)
 			}
 

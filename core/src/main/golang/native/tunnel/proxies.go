@@ -120,6 +120,7 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 
 		sort.Sort(wrapper)
 	case Default:
+		sortProxiesByRegionAndConnectivity(proxies)
 	default:
 	}
 
