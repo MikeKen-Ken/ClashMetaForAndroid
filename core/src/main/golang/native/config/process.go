@@ -9,6 +9,7 @@ import (
 	"github.com/dlclark/regexp2"
 
 	"cfa/native/common"
+	"cfa/native/connectivity"
 
 	"github.com/metacubex/mihomo/common/orderedmap"
 	"github.com/metacubex/mihomo/common/utils"
@@ -45,6 +46,7 @@ var processors = []processor{
 	patchTun,
 	patchListeners,
 	patchProviders,
+	patchConnectivityProxyOrder,
 	validConfig,
 }
 
@@ -445,6 +447,11 @@ func patchProviders(cfg *config.RawConfig, profileDir string) error {
 		provider["path"] = profileDir + "/providers/" + path
 	})
 
+	return nil
+}
+
+func patchConnectivityProxyOrder(cfg *config.RawConfig, _ string) error {
+	connectivity.ApplyProxyOrderToRawConfig(cfg)
 	return nil
 }
 
