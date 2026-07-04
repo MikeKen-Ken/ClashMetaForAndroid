@@ -12,6 +12,7 @@ import (
 	"runtime/debug"
 
 	"cfa/native/config"
+	"cfa/native/connectivity"
 	"cfa/native/delegate"
 	"cfa/native/tunnel"
 
@@ -30,6 +31,7 @@ func coreInit(home, versionName, gitVersion C.c_string, sdkVersion C.int) {
 	s := int(sdkVersion)
 
 	delegate.Init(h, v, g, s)
+	delegate.SetRecordProxyConnectivityTestFunc(connectivity.RecordDelayTestResult)
 
 	reset()
 }

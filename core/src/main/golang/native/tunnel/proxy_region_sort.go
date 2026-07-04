@@ -3,6 +3,8 @@ package tunnel
 import (
 	"sort"
 	"strings"
+
+	"cfa/native/connectivity"
 )
 
 // 默认节点地区顺序（与桌面端 profiles.customProxyOrder 一致）
@@ -143,7 +145,7 @@ func sortProxiesByRegionAndConnectivity(proxies []*Proxy) {
 		keys[i] = proxySortKey{
 			index:        i,
 			groupOrder:   resolveGroupOrder(flag, customOrder, fallbackOrder, &nextFallback),
-			successCount: getConnectivitySuccessCount(p.Name),
+			successCount: connectivity.GetSuccessCount(p.Name),
 		}
 	}
 

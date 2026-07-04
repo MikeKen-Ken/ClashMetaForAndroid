@@ -20,6 +20,19 @@ var errBlocked = errors.New("blocked")
 
 var healthCheckNotifyFunc func(groupName string)
 
+var recordProxyConnectivityTestFunc func(proxyName string, delay int, timeoutMs int)
+
+func SetRecordProxyConnectivityTestFunc(fn func(proxyName string, delay int, timeoutMs int)) {
+	recordProxyConnectivityTestFunc = fn
+}
+
+// RecordProxyConnectivityTest 由 mihomo Proxy.URLTest 统一回调，记录测速联通次数。
+func RecordProxyConnectivityTest(proxyName string, delay int, timeoutMs int) {
+	if recordProxyConnectivityTestFunc != nil {
+		recordProxyConnectivityTestFunc(proxyName, delay, timeoutMs)
+	}
+}
+
 func SetHealthCheckNotifyFunc(fn func(groupName string)) {
 	healthCheckNotifyFunc = fn
 }
