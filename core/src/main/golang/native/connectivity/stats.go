@@ -177,3 +177,12 @@ func GetSuccessCount(proxyName string) int {
 	statsCache[proxyName] = entry
 	return sumSuccess(entry.Days)
 }
+
+// ClearAll 清空全部测速联通统计（本地文件一并删除）。
+func ClearAll() {
+	statsMu.Lock()
+	defer statsMu.Unlock()
+	statsCache = make(map[string]proxyConnectivityEntry)
+	statsLoaded = true
+	_ = os.Remove(statsFilePath())
+}

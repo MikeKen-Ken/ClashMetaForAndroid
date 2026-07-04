@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import androidx.appcompat.app.AlertDialog
 import com.github.kr328.clash.common.compat.registerReceiverCompat
 import com.github.kr328.clash.common.constants.Intents
 import com.github.kr328.clash.common.constants.Permissions
@@ -319,6 +320,19 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                         design.showExceptionToast(e)
                                     }
                                 }
+                            }
+                            ProxyDesign.Request.ClearConnectivityStats -> {
+                                AlertDialog.Builder(this@ProxyActivity)
+                                    .setMessage("确定清空所有节点的测速成功/失败统计吗？此操作不可恢复。")
+                                    .setPositiveButton("清空") { _, _ ->
+                                        launch {
+                                            withClash { clearProxyConnectivityStats() }
+                                            design.showClearConnectivityStatsDone()
+                                            design.requests.send(ProxyDesign.Request.ReloadAll)
+                                        }
+                                    }
+                                    .setNegativeButton("取消", null)
+                                    .show()
                             }
                         }
                     }

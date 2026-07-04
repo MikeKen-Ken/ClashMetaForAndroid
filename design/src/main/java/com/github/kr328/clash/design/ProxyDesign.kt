@@ -34,6 +34,7 @@ class ProxyDesign(
         object ReloadAll : Request()
         object ReLaunch : Request()
         object FlushFakeIpCache : Request()
+        object ClearConnectivityStats : Request()
 
         data class PatchMode(val mode: TunnelState.Mode?) : Request()
         data class PatchAdsBlock(val enabled: Boolean) : Request()
@@ -279,6 +280,14 @@ class ProxyDesign(
 
     fun requestFlushFakeIpCache() {
         requests.trySend(Request.FlushFakeIpCache)
+    }
+
+    fun requestClearConnectivityStats() {
+        requests.trySend(Request.ClearConnectivityStats)
+    }
+
+    suspend fun showClearConnectivityStatsDone() {
+        showNativeToast("已清空测速联通统计", Toast.LENGTH_SHORT)
     }
 
     suspend fun showFlushFakeIpDone() {

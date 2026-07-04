@@ -8,6 +8,7 @@ import (
 	"unsafe"
 
 	"cfa/native/app"
+	"cfa/native/connectivity"
 
 	"github.com/metacubex/mihomo/log"
 )
@@ -42,6 +43,11 @@ func flushFakeIPCache() *C.char {
 		return C.CString(err.Error())
 	}
 	return nil
+}
+
+//export clearProxyConnectivityStats
+func clearProxyConnectivityStats() {
+	connectivity.ClearAll()
 }
 
 //export notifyInstalledAppsChanged

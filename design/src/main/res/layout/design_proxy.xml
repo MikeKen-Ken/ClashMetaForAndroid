@@ -100,6 +100,19 @@
                             android:onClick="@{() -> self.requestFlushFakeIpCache()}"
                             android:padding="@dimen/toolbar_image_action_padding"
                             android:src="@drawable/ic_baseline_clear_all" />
+
+                        <ImageView
+                            android:id="@+id/clear_connectivity_stats_view"
+                            android:layout_width="@dimen/item_tailing_component_size"
+                            android:layout_height="@dimen/item_tailing_component_size"
+                            android:layout_marginStart="@dimen/item_tailing_margin"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:contentDescription="清空测速联通统计"
+                            android:focusable="true"
+                            android:onClick="@{() -> self.requestClearConnectivityStats()}"
+                            android:padding="@dimen/toolbar_image_action_padding"
+                            android:src="@drawable/ic_baseline_delete" />
                     </LinearLayout>
 
                 </RelativeLayout>

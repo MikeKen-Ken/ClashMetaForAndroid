@@ -338,6 +338,10 @@ object Clash {
         if (error != null) throw ClashException(error)
     }
 
+    fun clearProxyConnectivityStats() {
+        Bridge.nativeClearProxyConnectivityStats()
+    }
+
     fun subscribeLogcat(): ReceiveChannel<LogMessage> {
         return Channel<LogMessage>(32).apply {
             Bridge.nativeSubscribeLogcat(object : LogcatInterface {

@@ -37,5 +37,7 @@ interface IClashManager {
 
     fun flushFakeIpCache()
 
+    fun clearProxyConnectivityStats()
+
     fun setLogObserver(observer: ILogObserver?)
 }
