@@ -7,7 +7,6 @@ import (
 	"cfa/native/connectivity"
 )
 
-// 默认节点地区顺序（与桌面端 profiles.customProxyOrder 一致）
 var defaultCustomProxyOrder = []string{"🇭🇰", "🇯🇵", "🇸🇬", "🇹🇼", "🇺🇸"}
 
 type flagKeywordRule struct {
@@ -15,7 +14,6 @@ type flagKeywordRule struct {
 	keywords []string
 }
 
-// 顺序敏感：长关键字必须在短关键字之前（如「印度尼西亚」在「印度」前）
 var countryFlagKeywords = []flagKeywordRule{
 	{flag: "🇭🇰", keywords: []string{"香港"}},
 	{flag: "🇲🇴", keywords: []string{"澳门"}},
@@ -91,7 +89,16 @@ var countryFlagKeywords = []flagKeywordRule{
 	{flag: "🇳🇿", keywords: []string{"新西兰", "奥克兰"}},
 }
 
-func resolveProxyFlag(proxyName string) string {
+var allRegionFlags []string
+
+func init() {
+	allRegionFlags = make([]string, 0, len(countryFlagKeywords))
+	for _, rule := range countryFlagKeywords {
+		allRegionFlags = append(allRegionFlags, rule.flag)
+	}
+}
+
+func resolveProxyFlagByKeyword(proxyName string) string {
 	for _, rule := range countryFlagKeywords {
 		for _, keyword := range rule.keywords {
 			if strings.Contains(proxyName, keyword) {
@@ -102,32 +109,112 @@ func resolveProxyFlag(proxyName string) string {
 	return ""
 }
 
-func resolveGroupOrder(
-	flag string,
-	customOrder []string,
-	fallbackOrder map[string]int,
-	nextFallback *int,
-) int {
-	orderMap := make(map[string]int, len(customOrder))
-	for i, item := range customOrder {
-		orderMap[item] = i
+func resolveRegionFlag(proxyName string) string {
+	trimmed := strings.TrimSpace(proxyName)
+	for _, flag := range allRegionFlags {
+		if strings.HasPrefix(trimmed, flag) {
+			return flag
+		}
 	}
-	if groupOrder, ok := orderMap[flag]; ok {
-		return groupOrder
+	return resolveProxyFlagByKeyword(trimmed)
+}
+
+func resolveSubscriptionGroup(proxyName string) string {
+	rest := strings.TrimSpace(proxyName)
+	for _, flag := range allRegionFlags {
+		if strings.HasPrefix(rest, flag) {
+			rest = strings.TrimSpace(strings.TrimPrefix(rest, flag))
+			break
+		}
 	}
-	if cached, ok := fallbackOrder[flag]; ok {
-		return cached
+	if rest == "" {
+		return ""
 	}
-	groupOrder := *nextFallback
-	fallbackOrder[flag] = groupOrder
-	*nextFallback++
-	return groupOrder
+	parts := strings.Fields(rest)
+	if len(parts) == 0 {
+		return ""
+	}
+	return parts[0]
+}
+
+type proxySortContext struct {
+	customOrder         []string
+	subscriptionOrder   map[string]int
+	regionFallbackOrder map[string]int
+}
+
+func buildProxySortContext(names []string, customOrder []string) proxySortContext {
+	ctx := proxySortContext{
+		customOrder:         customOrder,
+		subscriptionOrder:   make(map[string]int),
+		regionFallbackOrder: make(map[string]int),
+	}
+	customSet := make(map[string]struct{}, len(customOrder))
+	for _, flag := range customOrder {
+		customSet[flag] = struct{}{}
+	}
+
+	nextSubscription := 0
+	nextRegionFallback := len(customOrder)
+	for _, name := range names {
+		subscription := resolveSubscriptionGroup(name)
+		if _, ok := ctx.subscriptionOrder[subscription]; !ok {
+			ctx.subscriptionOrder[subscription] = nextSubscription
+			nextSubscription++
+		}
+
+		flag := resolveRegionFlag(name)
+		if flag == "" {
+			continue
+		}
+		if _, inCustom := customSet[flag]; inCustom {
+			continue
+		}
+		if _, ok := ctx.regionFallbackOrder[flag]; ok {
+			continue
+		}
+		ctx.regionFallbackOrder[flag] = nextRegionFallback
+		nextRegionFallback++
+	}
+	return ctx
+}
+
+func regionOrder(flag string, ctx proxySortContext) int {
+	for i, item := range ctx.customOrder {
+		if item == flag {
+			return i
+		}
+	}
+	if order, ok := ctx.regionFallbackOrder[flag]; ok {
+		return order
+	}
+	return len(ctx.customOrder) + 9999
+}
+
+func compareProxySortKeys(nameA string, indexA int, nameB string, indexB int, ctx proxySortContext) bool {
+	subA := ctx.subscriptionOrder[resolveSubscriptionGroup(nameA)]
+	subB := ctx.subscriptionOrder[resolveSubscriptionGroup(nameB)]
+	if subA != subB {
+		return subA < subB
+	}
+
+	regionA := regionOrder(resolveRegionFlag(nameA), ctx)
+	regionB := regionOrder(resolveRegionFlag(nameB), ctx)
+	if regionA != regionB {
+		return regionA < regionB
+	}
+
+	successA := connectivity.GetSuccessCount(nameA)
+	successB := connectivity.GetSuccessCount(nameB)
+	if successA != successB {
+		return successA > successB
+	}
+
+	return indexA < indexB
 }
 
 type proxySortKey struct {
-	index        int
-	groupOrder   int
-	successCount int
+	index int
 }
 
 func sortProxiesByRegionAndConnectivity(proxies []*Proxy) {
@@ -135,29 +222,21 @@ func sortProxiesByRegionAndConnectivity(proxies []*Proxy) {
 		return
 	}
 
-	customOrder := defaultCustomProxyOrder
-	fallbackOrder := make(map[string]int)
-	nextFallback := len(customOrder)
+	names := make([]string, len(proxies))
+	for i, p := range proxies {
+		names[i] = p.Name
+	}
+	ctx := buildProxySortContext(names, defaultCustomProxyOrder)
 
 	keys := make([]proxySortKey, len(proxies))
-	for i, p := range proxies {
-		flag := resolveProxyFlag(p.Name)
-		keys[i] = proxySortKey{
-			index:        i,
-			groupOrder:   resolveGroupOrder(flag, customOrder, fallbackOrder, &nextFallback),
-			successCount: connectivity.GetSuccessCount(p.Name),
-		}
+	for i := range proxies {
+		keys[i] = proxySortKey{index: i}
 	}
 
 	sort.SliceStable(keys, func(i, j int) bool {
-		a, b := keys[i], keys[j]
-		if a.groupOrder != b.groupOrder {
-			return a.groupOrder < b.groupOrder
-		}
-		if a.successCount != b.successCount {
-			return a.successCount > b.successCount
-		}
-		return a.index < b.index
+		a := keys[i]
+		b := keys[j]
+		return compareProxySortKeys(proxies[a.index].Name, a.index, proxies[b.index].Name, b.index, ctx)
 	})
 
 	sorted := make([]*Proxy, len(proxies))
