@@ -33,9 +33,11 @@
     <string name="proxy_rule">Rule</string>
     <string name="proxy_global">Global</string>
     <string name="proxy_direct">Direct</string>
+    <string name="proxy_offline">Offline</string>
     <string name="direct_mode">Direct Mode</string>
     <string name="rule_mode">Rule Mode</string>
     <string name="global_mode">Global Mode</string>
+    <string name="offline_mode">Offline Mode</string>
     <string name="proxy_empty_tips">No groups can be displayed</string>
     <string name="flush_fake_ip">清空 DNS 缓存</string>
     <string name="flush_fake_ip_done">DNS 缓存已清空</string>

@@ -36,7 +36,7 @@ var (
 var processors = []processor{
 	patchExternalController, // must before patchOverride, so we only apply ExternalController in Override settings
 	patchOverride,
-	patchDirectGlobalMode, // after patchOverride: force rule mode + override rules/dns when session mode is direct/global
+	patchDirectGlobalMode, // after patchOverride: force rule mode + override rules/dns when session mode is direct/global/offline
 	patchProxyAdsBlock,
 	patchProxyGroupTimeout,
 	patchGeneral,
@@ -118,16 +118,64 @@ func patchOverride(cfg *config.RawConfig, _ string) error {
 	if err := decodeFilteredOverride(ReadOverride(OverrideSlotPersist), cfg); err != nil {
 		log.Warnln("Apply persist override: %s", err.Error())
 	}
-	if err := decodeFilteredOverride(ReadOverride(OverrideSlotSession), cfg); err != nil {
+	if err := decodeFilteredOverride(prepareSessionOverrideForDecode(ReadOverride(OverrideSlotSession)), cfg); err != nil {
 		log.Warnln("Apply session override: %s", err.Error())
 	}
 
 	return nil
 }
 
-// patchDirectGlobalMode: when session mode is direct/global, force mode=rule and override rules + dns
-// so that traffic uses MATCH,⬆️ or MATCH,🔀 (same behavior as desktop).
+// 核心 TunnelMode 不识别 offline/script 等扩展 UI 模式；解码前剥离 mode 字段并暂存。
+var sessionExtendedUiMode string
+
+const extendedUiModeOffline = "offline"
+
+func isExtendedUiMode(mode string) bool {
+	switch strings.ToLower(strings.TrimSpace(mode)) {
+	case extendedUiModeOffline, "script":
+		return true
+	default:
+		return false
+	}
+}
+
+func prepareSessionOverrideForDecode(content string) string {
+	sessionExtendedUiMode = ""
+	trimmed := strings.TrimSpace(content)
+	if trimmed == "" || trimmed == "{}" {
+		return content
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal([]byte(trimmed), &payload); err != nil {
+		return content
+	}
+
+	if raw, ok := payload["mode"]; ok {
+		if mode, ok := raw.(string); ok && isExtendedUiMode(mode) {
+			sessionExtendedUiMode = strings.ToLower(strings.TrimSpace(mode))
+			delete(payload, "mode")
+		}
+	}
+
+	filtered, err := json.Marshal(payload)
+	if err != nil {
+		return content
+	}
+	return string(filtered)
+}
+
+// patchDirectGlobalMode: when session mode is direct/global/offline, force mode=rule and override rules + dns
+// so that traffic uses MATCH,⬆️ / MATCH,🔀 / MATCH,REJECT (same behavior as desktop for direct/global).
 func patchDirectGlobalMode(cfg *config.RawConfig, _ string) error {
+	if sessionExtendedUiMode == extendedUiModeOffline {
+		cfg.Mode = T.Rule
+		cfg.Rule = []string{"MATCH,REJECT"}
+		cfg.DNS.NameServerPolicy = nil
+		log.Infoln("Applied offline mode overrides (all traffic REJECT)")
+		return nil
+	}
+
 	switch cfg.Mode {
 	case T.Direct:
 		cfg.Mode = T.Rule

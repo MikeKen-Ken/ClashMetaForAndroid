@@ -23,6 +23,7 @@
     <string name="proxy_rule">规则</string>
     <string name="proxy_global">全局</string>
     <string name="proxy_direct">直连</string>
+    <string name="proxy_offline">离线</string>
     <string name="direct_mode">直连模式</string>
     <string name="disabled">已禁用</string>
     <string name="dns_hijacking">DNS 劫持</string>
@@ -42,6 +43,7 @@
     <string name="format_profile_activated">%s 已激活</string>
     <string name="format_traffic_forwarded">%s 已转发</string>
     <string name="global_mode">全局模式</string>
+    <string name="offline_mode">离线模式</string>
     <string name="hide_app_icon_title">隐藏应用图标</string>
     <string name="hide_app_icon_desc">可以在拨号盘输入 *#*#252746382#*#* 打开应用</string>
     <string name="history">历史</string>

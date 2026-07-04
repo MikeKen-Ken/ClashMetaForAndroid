@@ -102,6 +102,7 @@ class ProxyDesign(
                     TunnelState.Mode.Rule -> binding.modeToggleGroup.check(R.id.rule_mode_btn)
                     TunnelState.Mode.Global -> binding.modeToggleGroup.check(R.id.global_mode_btn)
                     TunnelState.Mode.Direct -> binding.modeToggleGroup.check(R.id.direct_mode_btn)
+                    TunnelState.Mode.Offline -> binding.modeToggleGroup.check(R.id.offline_mode_btn)
                     else -> binding.modeToggleGroup.clearChecked()
                 }
             } finally {
@@ -127,6 +128,7 @@ class ProxyDesign(
             TunnelState.Mode.Rule -> binding.modeToggleGroup.check(R.id.rule_mode_btn)
             TunnelState.Mode.Global -> binding.modeToggleGroup.check(R.id.global_mode_btn)
             TunnelState.Mode.Direct -> binding.modeToggleGroup.check(R.id.direct_mode_btn)
+            TunnelState.Mode.Offline -> binding.modeToggleGroup.check(R.id.offline_mode_btn)
             else -> binding.modeToggleGroup.clearChecked()
         }
         binding.modeToggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
@@ -136,6 +138,7 @@ class ProxyDesign(
                 checkedId == R.id.rule_mode_btn -> TunnelState.Mode.Rule
                 checkedId == R.id.global_mode_btn -> TunnelState.Mode.Global
                 checkedId == R.id.direct_mode_btn -> TunnelState.Mode.Direct
+                checkedId == R.id.offline_mode_btn -> TunnelState.Mode.Offline
                 else -> return@addOnButtonCheckedListener
             }
             requests.trySend(Request.PatchMode(mode))

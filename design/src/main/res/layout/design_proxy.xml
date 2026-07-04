@@ -159,6 +159,18 @@
                         android:paddingEnd="10dp"
                         android:text="@string/proxy_direct"
                         android:textSize="12sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/offline_mode_btn"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="0dp"
+                        android:minHeight="32dp"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:text="@string/proxy_offline"
+                        android:textSize="12sp" />
                 </com.google.android.material.button.MaterialButtonToggleGroup>
 
             </HorizontalScrollView>

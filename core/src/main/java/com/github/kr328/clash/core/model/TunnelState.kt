@@ -21,6 +21,9 @@ data class TunnelState(
         @SerialName("rule")
         Rule,
 
+        @SerialName("offline")
+        Offline,
+
         @SerialName("script")
         Script,
     }
