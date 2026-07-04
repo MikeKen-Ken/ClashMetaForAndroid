@@ -118,11 +118,8 @@ jobs:
       - name: Clean Build
         run: |
           ./gradlew --no-daemon clean
-          # Remove build directories to ensure fresh build
-          rm -rf app/build
-          rm -rf .gradle
-          # Clear Gradle cache for resources
-          rm -rf ~/.gradle/caches/
+          # 清理项目级产物；勿删除 ~/.gradle/caches/，会与 setup-gradle 冲突
+          rm -rf app/build .gradle
       
       - name: Pre-release Build
         if: success()
