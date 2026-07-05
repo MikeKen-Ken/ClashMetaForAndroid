@@ -11,15 +11,18 @@ import (
 )
 
 const (
-	retentionDays         = 30
-	decayHalfLifeDays     = 3.0
-	priorVirtualSamples   = 20.0
-	fallbackPriorRate     = 0.75
+	retentionDays              = 30
+	decayHalfLifeDays          = 3.0
+	priorVirtualSamples        = 20.0
+	fallbackPriorRate          = 0.75
+	speedReferenceDelayMs      = 400.0
+	neutralSpeedScore          = 0.5
 )
 
 type dayCounts struct {
 	Success int `json:"s"`
 	Failure int `json:"f"`
+	DelaySum int `json:"ds,omitempty"`
 }
 
 type proxyConnectivityEntry struct {
@@ -37,10 +40,11 @@ type legacyEntry struct {
 	Failure int `json:"failure"`
 }
 
-// WeightedStats 指数衰减加权后的成功/失败计数（可为小数）。
+// WeightedStats 指数衰减加权后的成功/失败/延迟总和（可为小数）。
 type WeightedStats struct {
-	Success float64
-	Failure float64
+	Success  float64
+	Failure  float64
+	DelaySum float64
 }
 
 // BayesianPrior 贝叶斯平滑先验参数。
@@ -118,6 +122,7 @@ func sumWeightedDays(days map[string]dayCounts, today time.Time) WeightedStats {
 		}
 		stats.Success += float64(counts.Success) * weight
 		stats.Failure += float64(counts.Failure) * weight
+		stats.DelaySum += float64(counts.DelaySum) * weight
 	}
 	return stats
 }
@@ -163,6 +168,23 @@ func bayesianScore(success, failure float64, prior BayesianPrior) float64 {
 	return (success + prior.Alpha) / denom
 }
 
+func speedScore(success, delaySum float64) float64 {
+	if success <= 0 {
+		return neutralSpeedScore
+	}
+	avgDelay := delaySum / success
+	if math.IsNaN(avgDelay) || math.IsInf(avgDelay, 0) || avgDelay < 0 {
+		return neutralSpeedScore
+	}
+	return 1.0 / (1.0 + avgDelay/speedReferenceDelayMs)
+}
+
+func compositeScore(stats WeightedStats, prior BayesianPrior) float64 {
+	reliability := bayesianScore(stats.Success, stats.Failure, prior)
+	speed := speedScore(stats.Success, stats.DelaySum)
+	return reliability * speed
+}
+
 // BuildScoreContext 构建联通评分上下文（与桌面端公式一致）。
 func BuildScoreContext() ScoreContext {
 	statsMu.Lock()
@@ -176,10 +198,10 @@ func BuildScoreContext() ScoreContext {
 	}
 }
 
-// ScoreFor 返回节点的贝叶斯平滑成功率。
+// ScoreFor 返回节点的综合分（可靠 × 速度）。
 func (ctx ScoreContext) ScoreFor(proxyName string) float64 {
 	stats := ctx.byProxy[proxyName]
-	return bayesianScore(stats.Success, stats.Failure, ctx.prior)
+	return compositeScore(stats, ctx.prior)
 }
 
 func ensureStatsLoaded() {
@@ -258,6 +280,7 @@ func RecordDelayTestResult(proxyName string, delay int, timeoutMs int) {
 	counts := entry.Days[day]
 	if isSuccess {
 		counts.Success++
+		counts.DelaySum += delay
 	} else {
 		counts.Failure++
 	}

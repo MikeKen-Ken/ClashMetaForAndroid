@@ -29,34 +29,61 @@ func TestBayesianScoreShrinksSmallSampleWithK20(t *testing.T) {
 	}
 }
 
+func TestCompositeScorePrefersFastAndStable(t *testing.T) {
+	prior := BayesianPrior{Alpha: 15, Beta: 5}
+	stableFast := compositeScore(WeightedStats{
+		Success:  20,
+		Failure:  2,
+		DelaySum: 20 * 200,
+	}, prior)
+	stableSlow := compositeScore(WeightedStats{
+		Success:  20,
+		Failure:  2,
+		DelaySum: 20 * 800,
+	}, prior)
+	if stableFast <= stableSlow {
+		t.Fatalf("fast stable=%v should beat slow stable=%v", stableFast, stableSlow)
+	}
+}
+
+func TestSpeedScoreNeutralWithoutSuccess(t *testing.T) {
+	if speedScore(0, 0) != neutralSpeedScore {
+		t.Fatalf("neutral speed = %v, want %v", speedScore(0, 0), neutralSpeedScore)
+	}
+}
+
 func TestSortNamesByConnectivityOrder(t *testing.T) {
 	names := []string{"node-low", "node-high", "node-untested"}
 	ctx := ScoreContext{
 		byProxy: map[string]WeightedStats{
-			"node-low":  {Success: 1, Failure: 9},
-			"node-high": {Success: 45, Failure: 5},
+			"node-low": {
+				Success:  1,
+				Failure:  9,
+				DelaySum: 800,
+			},
+			"node-high": {
+				Success:  45,
+				Failure:  5,
+				DelaySum: 45 * 200,
+			},
 		},
 		prior: computeBayesianPrior(WeightedStats{Success: 46, Failure: 14}),
 	}
 
-	keys := make([]nameScoreKey, len(names))
-	for i, name := range names {
-		keys[i] = nameScoreKey{index: i, score: ctx.ScoreFor(name)}
-	}
 	if ctx.ScoreFor("node-high") <= ctx.ScoreFor("node-low") {
 		t.Fatal("high score should beat low score")
 	}
 	if ctx.ScoreFor("node-untested") <= ctx.ScoreFor("node-low") {
 		t.Fatal("untested should beat clearly bad node")
 	}
-	_ = keys
+	_ = names
 }
 
 func TestOlderDayCountsLessThanToday(t *testing.T) {
 	today := time.Date(2026, 7, 5, 12, 0, 0, 0, time.Local)
 	days := map[string]dayCounts{
-		"2026-07-05": {Success: 10, Failure: 0},
-		"2026-07-02": {Success: 10, Failure: 0},
+		"2026-07-05": {Success: 10, Failure: 0, DelaySum: 3000},
+		"2026-07-02": {Success: 10, Failure: 0, DelaySum: 3000},
 	}
 	weighted := sumWeightedDays(days, today)
 	if weighted.Success <= 10 {

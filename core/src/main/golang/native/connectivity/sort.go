@@ -7,7 +7,7 @@ type nameScoreKey struct {
 	score float64
 }
 
-// SortNamesByConnectivity 全局按贝叶斯平滑成功率降序，相同时保留原顺序。
+// SortNamesByConnectivity 全局按综合分（可靠×速度）降序，相同时保留原顺序。
 func SortNamesByConnectivity(names []string) []string {
 	if len(names) <= 1 {
 		return names
@@ -37,7 +37,7 @@ func SortNamesByConnectivity(names []string) []string {
 	return out
 }
 
-// CompareProxyNamesByConnectivity 先比贝叶斯成功率，再比原索引。
+// CompareProxyNamesByConnectivity 先比综合分，再比原索引。
 func CompareProxyNamesByConnectivity(
 	nameA, nameB string,
 	originalIndexA, originalIndexB int,
