@@ -2,6 +2,7 @@ package connectivity
 
 import (
 	"encoding/json"
+	"math"
 	"os"
 	"sync"
 	"time"
@@ -9,7 +10,12 @@ import (
 	C "github.com/metacubex/mihomo/constant"
 )
 
-const retentionDays = 3
+const (
+	retentionDays         = 30
+	decayHalfLifeDays     = 3.0
+	priorVirtualSamples   = 20.0
+	fallbackPriorRate     = 0.75
+)
 
 type dayCounts struct {
 	Success int `json:"s"`
@@ -29,6 +35,24 @@ type statsFileV2 struct {
 type legacyEntry struct {
 	Success int `json:"success"`
 	Failure int `json:"failure"`
+}
+
+// WeightedStats 指数衰减加权后的成功/失败计数（可为小数）。
+type WeightedStats struct {
+	Success float64
+	Failure float64
+}
+
+// BayesianPrior 贝叶斯平滑先验参数。
+type BayesianPrior struct {
+	Alpha float64
+	Beta  float64
+}
+
+// ScoreContext 批量排序时一次性构建，避免重复扫描统计。
+type ScoreContext struct {
+	byProxy map[string]WeightedStats
+	prior   BayesianPrior
 }
 
 var (
@@ -61,12 +85,101 @@ func pruneDays(days map[string]dayCounts, now time.Time) {
 	}
 }
 
-func sumSuccess(days map[string]dayCounts) int {
-	total := 0
-	for _, counts := range days {
-		total += counts.Success
+func dayAgeInDays(dayKey string, today time.Time) int {
+	parsed, err := time.ParseInLocation("2006-01-02", dayKey, today.Location())
+	if err != nil {
+		return math.MaxInt32
 	}
-	return total
+	todayStart := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, today.Location())
+	dayStart := time.Date(parsed.Year(), parsed.Month(), parsed.Day(), 0, 0, 0, 0, parsed.Location())
+	return int(todayStart.Sub(dayStart).Hours() / 24)
+}
+
+// DecayWeight 方案 B：weight = 0.5 ^ (ageDays / halfLife)。
+func DecayWeight(ageDays int) float64 {
+	if ageDays < 0 || ageDays >= retentionDays {
+		return 0
+	}
+	if decayHalfLifeDays <= 0 {
+		if ageDays == 0 {
+			return 1
+		}
+		return 0
+	}
+	return math.Pow(0.5, float64(ageDays)/decayHalfLifeDays)
+}
+
+func sumWeightedDays(days map[string]dayCounts, today time.Time) WeightedStats {
+	var stats WeightedStats
+	for day, counts := range days {
+		weight := DecayWeight(dayAgeInDays(day, today))
+		if weight <= 0 {
+			continue
+		}
+		stats.Success += float64(counts.Success) * weight
+		stats.Failure += float64(counts.Failure) * weight
+	}
+	return stats
+}
+
+func collectWeightedStatsFromCache(
+	cache map[string]proxyConnectivityEntry,
+	today time.Time,
+) (WeightedStats, map[string]WeightedStats) {
+	global := WeightedStats{}
+	byProxy := make(map[string]WeightedStats)
+	for name, entry := range cache {
+		if len(entry.Days) == 0 {
+			continue
+		}
+		weighted := sumWeightedDays(entry.Days, today)
+		if weighted.Success <= 0 && weighted.Failure <= 0 {
+			continue
+		}
+		byProxy[name] = weighted
+		global.Success += weighted.Success
+		global.Failure += weighted.Failure
+	}
+	return global, byProxy
+}
+
+func computeBayesianPrior(global WeightedStats) BayesianPrior {
+	total := global.Success + global.Failure
+	rate := fallbackPriorRate
+	if total > 0 {
+		rate = global.Success / total
+	}
+	return BayesianPrior{
+		Alpha: rate * priorVirtualSamples,
+		Beta:  (1 - rate) * priorVirtualSamples,
+	}
+}
+
+func bayesianScore(success, failure float64, prior BayesianPrior) float64 {
+	denom := success + failure + prior.Alpha + prior.Beta
+	if denom <= 0 {
+		return fallbackPriorRate
+	}
+	return (success + prior.Alpha) / denom
+}
+
+// BuildScoreContext 构建联通评分上下文（与桌面端公式一致）。
+func BuildScoreContext() ScoreContext {
+	statsMu.Lock()
+	defer statsMu.Unlock()
+	ensureStatsLoaded()
+	today := time.Now()
+	global, byProxy := collectWeightedStatsFromCache(statsCache, today)
+	return ScoreContext{
+		byProxy: byProxy,
+		prior:   computeBayesianPrior(global),
+	}
+}
+
+// ScoreFor 返回节点的贝叶斯平滑成功率。
+func (ctx ScoreContext) ScoreFor(proxyName string) float64 {
+	stats := ctx.byProxy[proxyName]
+	return bayesianScore(stats.Success, stats.Failure, ctx.prior)
 }
 
 func ensureStatsLoaded() {
@@ -116,7 +229,7 @@ func persistConnectivityStats() {
 	_ = os.WriteFile(statsFilePath(), data, 0o644)
 }
 
-// RecordDelayTestResult 根据测速 delay 累加成功/失败（0 < delay <= timeout 为成功），仅保留最近 3 天。
+// RecordDelayTestResult 根据测速 delay 累加成功/失败（0 < delay <= timeout 为成功），最多保留 30 天。
 func RecordDelayTestResult(proxyName string, delay int, timeoutMs int) {
 	if proxyName == "" || proxyName == "DIRECT" || proxyName == "REJECT" {
 		return
@@ -152,30 +265,6 @@ func RecordDelayTestResult(proxyName string, delay int, timeoutMs int) {
 	pruneDays(entry.Days, now)
 	statsCache[proxyName] = entry
 	persistConnectivityStats()
-}
-
-// GetSuccessCount 返回节点在最近 3 天内的测速成功次数总和。
-func GetSuccessCount(proxyName string) int {
-	if proxyName == "" {
-		return 0
-	}
-
-	now := time.Now()
-	statsMu.Lock()
-	defer statsMu.Unlock()
-	ensureStatsLoaded()
-
-	entry, ok := statsCache[proxyName]
-	if !ok || entry.Days == nil {
-		return 0
-	}
-	pruneDays(entry.Days, now)
-	if len(entry.Days) == 0 {
-		delete(statsCache, proxyName)
-		return 0
-	}
-	statsCache[proxyName] = entry
-	return sumSuccess(entry.Days)
 }
 
 // ClearAll 清空全部测速联通统计（本地文件一并删除）。
