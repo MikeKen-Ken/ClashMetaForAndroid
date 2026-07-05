@@ -90,9 +90,15 @@ var countryFlagKeywords = []flagKeywordRule{
 }
 
 func ResolveProxyFlag(proxyName string) string {
+	trimmed := strings.TrimSpace(proxyName)
+	for _, rule := range countryFlagKeywords {
+		if strings.HasPrefix(trimmed, rule.flag) {
+			return rule.flag
+		}
+	}
 	for _, rule := range countryFlagKeywords {
 		for _, keyword := range rule.keywords {
-			if strings.Contains(proxyName, keyword) {
+			if strings.Contains(trimmed, keyword) {
 				return rule.flag
 			}
 		}
