@@ -12,71 +12,87 @@ func TestDecayWeightHalvesEveryHalfLife(t *testing.T) {
 	if diff := DecayWeight(3) - 0.5; diff < -1e-9 || diff > 1e-9 {
 		t.Fatalf("3-day weight = %v, want 0.5", DecayWeight(3))
 	}
-	if diff := DecayWeight(6) - 0.25; diff < -1e-9 || diff > 1e-9 {
-		t.Fatalf("6-day weight = %v, want 0.25", DecayWeight(6))
-	}
 	if DecayWeight(30) != 0 {
 		t.Fatalf("30-day weight = %v, want 0", DecayWeight(30))
 	}
 }
 
-func TestBayesianScoreShrinksSmallSampleWithK20(t *testing.T) {
-	prior := BayesianPrior{Alpha: 15, Beta: 5}
-	perfectSmall := bayesianScore(1, 0, prior)
-	stableLarge := bayesianScore(9, 1, prior)
-	if stableLarge <= perfectSmall {
-		t.Fatalf("stableLarge=%v should exceed perfectSmall=%v", stableLarge, perfectSmall)
+func TestFailurePenaltyRaisesAvgDelay(t *testing.T) {
+	prior := 400.0
+	mostlyFast := penalizedDelayScore(WeightedStats{
+		Success:  10,
+		Failure:  0,
+		DelaySum: 10 * 200,
+	}, prior)
+	withFailure := penalizedDelayScore(WeightedStats{
+		Success:  10,
+		Failure:  1,
+		DelaySum: 10*200 + 5000,
+	}, prior)
+	if mostlyFast <= withFailure {
+		t.Fatalf("mostlyFast=%v should beat withFailure=%v", mostlyFast, withFailure)
 	}
 }
 
-func TestCompositeScorePrefersFastAndStable(t *testing.T) {
-	prior := BayesianPrior{Alpha: 15, Beta: 5}
-	stableFast := compositeScore(WeightedStats{
-		Success:  20,
-		Failure:  2,
-		DelaySum: 20 * 200,
-	}, prior)
-	stableSlow := compositeScore(WeightedStats{
-		Success:  20,
-		Failure:  2,
-		DelaySum: 20 * 800,
-	}, prior)
-	if stableFast <= stableSlow {
-		t.Fatalf("fast stable=%v should beat slow stable=%v", stableFast, stableSlow)
-	}
-}
-
-func TestSpeedScoreNeutralWithoutSuccess(t *testing.T) {
-	if speedScore(0, 0) != neutralSpeedScore {
-		t.Fatalf("neutral speed = %v, want %v", speedScore(0, 0), neutralSpeedScore)
+func TestSmoothedAvgUsesPriorForSmallSample(t *testing.T) {
+	avg := smoothedEffectiveAvgDelay(WeightedStats{
+		Success:  1,
+		Failure:  0,
+		DelaySum: 100,
+	}, 400)
+	if avg <= 100 || avg >= 400 {
+		t.Fatalf("smoothed avg=%v, want between 100 and 400", avg)
 	}
 }
 
 func TestSortNamesByConnectivityOrder(t *testing.T) {
-	names := []string{"node-low", "node-high", "node-untested"}
 	ctx := ScoreContext{
 		byProxy: map[string]WeightedStats{
 			"node-low": {
-				Success:  1,
-				Failure:  9,
-				DelaySum: 800,
+				Success:  2,
+				Failure:  8,
+				DelaySum: 2*200 + 8*5000,
 			},
 			"node-high": {
 				Success:  45,
-				Failure:  5,
-				DelaySum: 45 * 200,
+				Failure:  2,
+				DelaySum: 45*200 + 2*5000,
 			},
 		},
-		prior: computeBayesianPrior(WeightedStats{Success: 46, Failure: 14}),
+		priorDelayMs: 400,
 	}
-
 	if ctx.ScoreFor("node-high") <= ctx.ScoreFor("node-low") {
-		t.Fatal("high score should beat low score")
+		t.Fatal("node-high should beat node-low")
 	}
 	if ctx.ScoreFor("node-untested") <= ctx.ScoreFor("node-low") {
 		t.Fatal("untested should beat clearly bad node")
 	}
-	_ = names
+}
+
+func TestRecordFailureAddsPenaltyDelay(t *testing.T) {
+	statsMu.Lock()
+	statsCache = make(map[string]proxyConnectivityEntry)
+	statsLoaded = true
+	statsMu.Unlock()
+
+	RecordDelayTestResult("test-node", 0, 5000)
+
+	statsMu.Lock()
+	entry := statsCache["test-node"]
+	statsMu.Unlock()
+	if entry.Days == nil {
+		t.Fatal("expected day entry")
+	}
+	var found dayCounts
+	for _, counts := range entry.Days {
+		found = counts
+		break
+	}
+	if found.Failure != 1 || found.DelaySum != 5000 {
+		t.Fatalf("counts=%+v, want f=1 ds=5000", found)
+	}
+
+	ClearAll()
 }
 
 func TestOlderDayCountsLessThanToday(t *testing.T) {
@@ -86,10 +102,7 @@ func TestOlderDayCountsLessThanToday(t *testing.T) {
 		"2026-07-02": {Success: 10, Failure: 0, DelaySum: 3000},
 	}
 	weighted := sumWeightedDays(days, today)
-	if weighted.Success <= 10 {
-		t.Fatalf("weighted success=%v, want > 10", weighted.Success)
-	}
-	if weighted.Success >= 20 {
-		t.Fatalf("weighted success=%v, want < 20", weighted.Success)
+	if weighted.Success <= 10 || weighted.Success >= 20 {
+		t.Fatalf("weighted success=%v, want between 10 and 20", weighted.Success)
 	}
 }

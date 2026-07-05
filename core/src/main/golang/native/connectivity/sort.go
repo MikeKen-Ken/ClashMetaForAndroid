@@ -7,7 +7,7 @@ type nameScoreKey struct {
 	score float64
 }
 
-// SortNamesByConnectivity 全局按综合分（可靠×速度）降序，相同时保留原顺序。
+// SortNamesByConnectivity 全局按惩罚有效延迟综合分降序，相同时保留原顺序。
 func SortNamesByConnectivity(names []string) []string {
 	if len(names) <= 1 {
 		return names

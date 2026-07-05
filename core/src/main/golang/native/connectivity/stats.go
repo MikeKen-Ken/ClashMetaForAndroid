@@ -11,17 +11,17 @@ import (
 )
 
 const (
-	retentionDays              = 30
-	decayHalfLifeDays          = 3.0
-	priorVirtualSamples        = 20.0
-	fallbackPriorRate          = 0.75
-	speedReferenceDelayMs      = 400.0
-	neutralSpeedScore          = 0.5
+	retentionDays           = 30
+	decayHalfLifeDays       = 3.0
+	priorVirtualSamples     = 20.0
+	fallbackDelayMs         = 400.0
+	scoreReferenceDelayMs   = 400.0
+	defaultPenaltyDelayMs   = 5000
 )
 
 type dayCounts struct {
-	Success int `json:"s"`
-	Failure int `json:"f"`
+	Success  int `json:"s"`
+	Failure  int `json:"f"`
 	DelaySum int `json:"ds,omitempty"`
 }
 
@@ -34,29 +34,22 @@ type statsFileV2 struct {
 	Data map[string]proxyConnectivityEntry `json:"data"`
 }
 
-// legacy flat entry (v1)
 type legacyEntry struct {
 	Success int `json:"success"`
 	Failure int `json:"failure"`
 }
 
-// WeightedStats 指数衰减加权后的成功/失败/延迟总和（可为小数）。
+// WeightedStats 指数衰减加权后的成功/失败/有效延迟总和（可为小数）。
 type WeightedStats struct {
 	Success  float64
 	Failure  float64
 	DelaySum float64
 }
 
-// BayesianPrior 贝叶斯平滑先验参数。
-type BayesianPrior struct {
-	Alpha float64
-	Beta  float64
-}
-
 // ScoreContext 批量排序时一次性构建，避免重复扫描统计。
 type ScoreContext struct {
-	byProxy map[string]WeightedStats
-	prior   BayesianPrior
+	byProxy      map[string]WeightedStats
+	priorDelayMs float64
 }
 
 var (
@@ -99,7 +92,6 @@ func dayAgeInDays(dayKey string, today time.Time) int {
 	return int(todayStart.Sub(dayStart).Hours() / 24)
 }
 
-// DecayWeight 方案 B：weight = 0.5 ^ (ageDays / halfLife)。
 func DecayWeight(ageDays int) float64 {
 	if ageDays < 0 || ageDays >= retentionDays {
 		return 0
@@ -127,6 +119,10 @@ func sumWeightedDays(days map[string]dayCounts, today time.Time) WeightedStats {
 	return stats
 }
 
+func weightedTrialCount(stats WeightedStats) float64 {
+	return stats.Success + stats.Failure
+}
+
 func collectWeightedStatsFromCache(
 	cache map[string]proxyConnectivityEntry,
 	today time.Time,
@@ -144,48 +140,44 @@ func collectWeightedStatsFromCache(
 		byProxy[name] = weighted
 		global.Success += weighted.Success
 		global.Failure += weighted.Failure
+		global.DelaySum += weighted.DelaySum
 	}
 	return global, byProxy
 }
 
-func computeBayesianPrior(global WeightedStats) BayesianPrior {
-	total := global.Success + global.Failure
-	rate := fallbackPriorRate
-	if total > 0 {
-		rate = global.Success / total
+func computePriorEffectiveDelayMs(global WeightedStats) float64 {
+	trials := weightedTrialCount(global)
+	if trials <= 0 {
+		return fallbackDelayMs
 	}
-	return BayesianPrior{
-		Alpha: rate * priorVirtualSamples,
-		Beta:  (1 - rate) * priorVirtualSamples,
+	avg := global.DelaySum / trials
+	if math.IsNaN(avg) || math.IsInf(avg, 0) || avg < 0 {
+		return fallbackDelayMs
 	}
+	return avg
 }
 
-func bayesianScore(success, failure float64, prior BayesianPrior) float64 {
-	denom := success + failure + prior.Alpha + prior.Beta
-	if denom <= 0 {
-		return fallbackPriorRate
+func smoothedEffectiveAvgDelay(stats WeightedStats, priorDelayMs float64) float64 {
+	trials := weightedTrialCount(stats)
+	prior := priorDelayMs
+	if math.IsNaN(prior) || math.IsInf(prior, 0) || prior <= 0 {
+		prior = fallbackDelayMs
 	}
-	return (success + prior.Alpha) / denom
+	return (stats.DelaySum + priorVirtualSamples*prior) / (trials + priorVirtualSamples)
 }
 
-func speedScore(success, delaySum float64) float64 {
-	if success <= 0 {
-		return neutralSpeedScore
+func connectivityScoreFromAvgDelay(avgDelayMs float64) float64 {
+	if math.IsNaN(avgDelayMs) || math.IsInf(avgDelayMs, 0) || avgDelayMs < 0 {
+		return 1.0 / (1.0 + fallbackDelayMs/scoreReferenceDelayMs)
 	}
-	avgDelay := delaySum / success
-	if math.IsNaN(avgDelay) || math.IsInf(avgDelay, 0) || avgDelay < 0 {
-		return neutralSpeedScore
-	}
-	return 1.0 / (1.0 + avgDelay/speedReferenceDelayMs)
+	return 1.0 / (1.0 + avgDelayMs/scoreReferenceDelayMs)
 }
 
-func compositeScore(stats WeightedStats, prior BayesianPrior) float64 {
-	reliability := bayesianScore(stats.Success, stats.Failure, prior)
-	speed := speedScore(stats.Success, stats.DelaySum)
-	return reliability * speed
+func penalizedDelayScore(stats WeightedStats, priorDelayMs float64) float64 {
+	avg := smoothedEffectiveAvgDelay(stats, priorDelayMs)
+	return connectivityScoreFromAvgDelay(avg)
 }
 
-// BuildScoreContext 构建联通评分上下文（与桌面端公式一致）。
 func BuildScoreContext() ScoreContext {
 	statsMu.Lock()
 	defer statsMu.Unlock()
@@ -193,15 +185,14 @@ func BuildScoreContext() ScoreContext {
 	today := time.Now()
 	global, byProxy := collectWeightedStatsFromCache(statsCache, today)
 	return ScoreContext{
-		byProxy: byProxy,
-		prior:   computeBayesianPrior(global),
+		byProxy:      byProxy,
+		priorDelayMs: computePriorEffectiveDelayMs(global),
 	}
 }
 
-// ScoreFor 返回节点的综合分（可靠 × 速度）。
 func (ctx ScoreContext) ScoreFor(proxyName string) float64 {
 	stats := ctx.byProxy[proxyName]
-	return compositeScore(stats, ctx.prior)
+	return penalizedDelayScore(stats, ctx.priorDelayMs)
 }
 
 func ensureStatsLoaded() {
@@ -251,7 +242,7 @@ func persistConnectivityStats() {
 	_ = os.WriteFile(statsFilePath(), data, 0o644)
 }
 
-// RecordDelayTestResult 根据测速 delay 累加成功/失败（0 < delay <= timeout 为成功），最多保留 30 天。
+// RecordDelayTestResult 成功记真实 delay，失败记 timeout 惩罚延迟，最多保留 30 天。
 func RecordDelayTestResult(proxyName string, delay int, timeoutMs int) {
 	if proxyName == "" || proxyName == "DIRECT" || proxyName == "REJECT" {
 		return
@@ -262,7 +253,7 @@ func RecordDelayTestResult(proxyName string, delay int, timeoutMs int) {
 
 	effectiveTimeout := timeoutMs
 	if effectiveTimeout <= 0 {
-		effectiveTimeout = 5000
+		effectiveTimeout = defaultPenaltyDelayMs
 	}
 	isSuccess := delay > 0 && delay <= effectiveTimeout
 
@@ -283,6 +274,7 @@ func RecordDelayTestResult(proxyName string, delay int, timeoutMs int) {
 		counts.DelaySum += delay
 	} else {
 		counts.Failure++
+		counts.DelaySum += effectiveTimeout
 	}
 	entry.Days[day] = counts
 	pruneDays(entry.Days, now)
@@ -290,7 +282,6 @@ func RecordDelayTestResult(proxyName string, delay int, timeoutMs int) {
 	persistConnectivityStats()
 }
 
-// ClearAll 清空全部测速联通统计（本地文件一并删除）。
 func ClearAll() {
 	statsMu.Lock()
 	defer statsMu.Unlock()
