@@ -234,6 +234,10 @@ function main(config) {
             ["cn", "cn.mrs", "domain", "mrs"],
             ["cnip", "cnip.mrs", "ipcidr", "mrs"],
 
+            // fake-ip-filter 专用（dns.fake-ip-filter 引用；c-real-ip 由 CI 从 games 过滤生成）
+            ["c-real-ip", "c-real-ip.mrs", "domain", "mrs"],
+            ["c-real-ip-kw", "c-real-ip-kw.list", "classical", "text"],
+
             ["c-reject", "c-reject.mrs", "domain", "mrs"],
             ["c-proc-rej", "c-proc-rej.list", "classical", "text"],
             ["c-proc-wl-dir", "c-proc-wl-dir.list", "classical", "text"],

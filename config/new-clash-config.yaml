@@ -21,6 +21,8 @@ dns:
   fake-ip-filter:
     - RULE-SET,fakeip-filter,real-ip
     - RULE-SET,trackerslist,real-ip
+    - RULE-SET,c-real-ip,real-ip
+    - RULE-SET,c-real-ip-kw,real-ip
     - MATCH,fake-ip
 
   default-nameserver:
