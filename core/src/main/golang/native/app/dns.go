@@ -3,9 +3,9 @@ package app
 import (
 	"strings"
 
-	"cfa/native/tunnel"
 	"github.com/metacubex/mihomo/component/resolver"
 	"github.com/metacubex/mihomo/dns"
+	"github.com/metacubex/mihomo/tunnel"
 )
 
 func NotifyDnsChanged(dnsList string) {
@@ -14,6 +14,7 @@ func NotifyDnsChanged(dnsList string) {
 		addr = strings.Split(dnsList, ",")
 	}
 	dns.UpdateSystemDNS(addr)
+	// 直接调用内核 tunnel，避免 app → cfa/native/tunnel → … → delegate → app 导入环
 	tunnel.CloseAllConnections()
 	_ = resolver.FlushFakeIP()
 	dns.FlushCacheWithDefaultResolver()
