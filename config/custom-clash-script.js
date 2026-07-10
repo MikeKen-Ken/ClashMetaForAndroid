@@ -3,6 +3,7 @@ function main(config) {
     const DIRECT = "⬆️";
     const FALLBACK = "↩️";
     const NO_HK = "🚫 🇭🇰";
+    const DOWNLOAD = "📥";
 
     const DEFAULT_AUTO = "🚀 节点选择";
     const DEFAULT_DIRECT = "🎯 全球直连";
@@ -19,6 +20,7 @@ function main(config) {
     const PROXY_GROUP_ORDER = [
         AUTO,
         NO_HK,
+        DOWNLOAD,
         DIRECT,
         FALLBACK,
         PROXY_GROUP_ORDER_REST,
@@ -169,12 +171,28 @@ function main(config) {
             const firstGroup = config["proxy-groups"][0];
             const firstGroupProxies = Array.isArray(firstGroup.proxies) ? firstGroup.proxies : [];
 
+            const downloadProxies = firstGroupProxies.filter((proxy) => proxy.includes("✅"));
+            if (downloadProxies.length === 0) {
+                console.warn(`未找到名称含 ✅ 的节点，${DOWNLOAD} 策略组回退为 ${AUTO}`);
+            }
+
             const newGroups = [
                 {
                     name: NO_HK,
                     proxies: firstGroupProxies.filter((proxy) => !proxy.includes("🇭🇰")),
                 },
-            ].map((group) => ({ ...firstGroup, ...group }));
+                {
+                    name: DOWNLOAD,
+                    type: "select",
+                    proxies: downloadProxies.length > 0 ? downloadProxies : [AUTO],
+                    "disable-udp": false,
+                },
+            ].map((group) => {
+                if (group.name === DOWNLOAD) {
+                    return group;
+                }
+                return { ...firstGroup, ...group };
+            });
 
             config["proxy-groups"].splice(1, 0, ...newGroups);
 
@@ -248,15 +266,21 @@ function main(config) {
             ["c-pxy", "c-pxy.mrs", "domain", "mrs"],
             ["c-nohk", "c-nohk.mrs", "domain", "mrs"],
             ["c-dir", "c-dir.mrs", "domain", "mrs"],
+
+            // Sukka download（CI 同步为 c-download.*，每日刷新）
+            ["c-download", "c-download.mrs", "domain", "mrs", 86400],
+            ["c-download-kw", "c-download-kw.list", "classical", "text", 86400],
         ];
 
         const resolveRulesetBase = (name) =>
             isCustomeRuleset(name) ? RULESET_RAW_BASE.custome : RULESET_RAW_BASE.dustinwin;
 
         // 每个 provider 间隔错开 2 分钟，避免大量 provider 同时到期、集中刷新时持有写锁阻塞连接
+        // 元组第 5 项可指定 interval（秒）；c-download 等为 86400（每日）
         config["rule-providers"] = Object.fromEntries(
-            ruleProvidersList.map(([name, filename, behavior, format], index) => {
+            ruleProvidersList.map(([name, filename, behavior, format, intervalOverride], index) => {
                 const base = resolveRulesetBase(name);
+                const interval = intervalOverride ?? 28800 + index * 120;
                 return [
                     name,
                     {
@@ -265,7 +289,7 @@ function main(config) {
                         format,
                         path: `./ruleset/${filename}`,
                         url: `${base}/${filename}`,
-                        interval: 28800 + index * 120,
+                        interval,
                     },
                 ];
             })
@@ -319,6 +343,8 @@ function main(config) {
                     "cnip",
                 ],
             },
+
+            { kind: "proxy", names: ["c-download", "c-download-kw"], target: DOWNLOAD },
 
             { kind: "footer" },
         ];
