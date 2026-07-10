@@ -39,8 +39,8 @@
     <string name="global_mode">Global Mode</string>
     <string name="offline_mode">Offline Mode</string>
     <string name="proxy_empty_tips">No groups can be displayed</string>
-    <string name="flush_fake_ip">清空 DNS 缓存</string>
-    <string name="flush_fake_ip_done">DNS 缓存已清空</string>
+    <string name="flush_fake_ip">清空 DNS 与 Fake-IP</string>
+    <string name="flush_fake_ip_done">已清空全部 DNS 缓存与 Fake-IP 映射</string>
     <string name="feedback_proxy_started">代理已开启</string>
     <string name="feedback_proxy_stopped">代理已关闭</string>
     <string name="url_test_started">测速已开始：%1$s</string>

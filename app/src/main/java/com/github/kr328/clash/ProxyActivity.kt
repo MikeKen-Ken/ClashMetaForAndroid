@@ -309,8 +309,9 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                             ProxyDesign.Request.FlushFakeIpCache -> {
                                 launch {
                                     try {
+                                        closeAllConnections()
                                         withClash { flushFakeIpCache() }
-                                        Log.i("[$LOG_FLUSH_FAKE_IP] 代理页清除 Fake-IP 缓存成功")
+                                        Log.i("[$LOG_FLUSH_FAKE_IP] 代理页清空 DNS 与 Fake-IP 成功")
                                         design.showFlushFakeIpDone()
                                     } catch (e: Exception) {
                                         Log.i(
