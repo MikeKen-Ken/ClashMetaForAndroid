@@ -30,7 +30,8 @@ import kotlinx.coroutines.sync.withPermit
 
 class ProxyActivity : BaseActivity<ProxyDesign>() {
     companion object {
-        private val SKIP_DELAY_CHECK_GROUPS = setOf("⬆️", "↩️")
+        /** 与 config/custom-clash-script.js 中 DIRECT / FALLBACK 输出名一致；整组测速时跳过 */
+        private val SKIP_DELAY_CHECK_GROUPS = setOf("Direct", "Final")
 
         /** 代理页工具栏「整组测速」与 UI 测速数量步长解耦时的并发上限（与桌面端全量测速一致） */
         private const val PROXY_GROUP_DELAY_TEST_MAX_CONCURRENCY = 200

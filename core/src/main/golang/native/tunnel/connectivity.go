@@ -13,9 +13,10 @@ import (
 	"github.com/metacubex/mihomo/tunnel"
 )
 
+// 与 config/custom-clash-script.js 中 DIRECT / FALLBACK 输出名一致
 var skipDelayCheckGroups = map[string]struct{}{
-	"⬆️": {},
-	"↩️": {},
+	"Direct": {},
+	"Final":  {},
 }
 
 func shouldSkipDelayCheckGroup(name string) bool {

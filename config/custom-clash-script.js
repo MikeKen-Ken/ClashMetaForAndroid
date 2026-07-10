@@ -1,9 +1,11 @@
 function main(config) {
-    const AUTO = "🔀";
-    const DIRECT = "⬆️";
-    const FALLBACK = "↩️";
-    const NO_HK = "🚫 🇭🇰";
-    const DOWNLOAD = "📥";
+    const AUTO = "Auto";
+    const DIRECT = "Direct";
+    const FALLBACK = "Final";
+    const NO_HK = "NoHK";
+    const DOWNLOAD = "Download";
+    /** 订阅节点名称中用于筛选低倍率/下载节点的标记（与策略组显示名分离） */
+    const DOWNLOAD_NODE_MARK = "✅";
 
     const DEFAULT_AUTO = "🚀 节点选择";
     const DEFAULT_DIRECT = "🎯 全球直连";
@@ -171,9 +173,9 @@ function main(config) {
             const firstGroup = config["proxy-groups"][0];
             const firstGroupProxies = Array.isArray(firstGroup.proxies) ? firstGroup.proxies : [];
 
-            const downloadProxies = firstGroupProxies.filter((proxy) => proxy.includes("✅"));
+            const downloadProxies = firstGroupProxies.filter((proxy) => proxy.includes(DOWNLOAD_NODE_MARK));
             if (downloadProxies.length === 0) {
-                console.warn(`未找到名称含 ✅ 的节点，${DOWNLOAD} 策略组回退为 ${AUTO}`);
+                console.warn(`未找到名称含 ${DOWNLOAD_NODE_MARK} 的节点，${DOWNLOAD} 策略组回退为全部节点`);
             }
 
             const newGroups = [
@@ -183,20 +185,17 @@ function main(config) {
                 },
                 {
                     name: DOWNLOAD,
-                    type: "select",
-                    proxies: downloadProxies.length > 0 ? downloadProxies : [AUTO],
-                    "disable-udp": false,
+                    proxies: downloadProxies.length > 0 ? downloadProxies : firstGroupProxies,
                 },
-            ].map((group) => {
-                if (group.name === DOWNLOAD) {
-                    return group;
-                }
-                return { ...firstGroup, ...group };
-            });
+            ].map((group) => ({ ...firstGroup, ...group }));
 
             config["proxy-groups"].splice(1, 0, ...newGroups);
 
             config["proxy-groups"].slice(2).forEach((group, index) => {
+                // Download 与 Auto 同为节点列表组，勿改写为策略组引用
+                if (group.name === DOWNLOAD) {
+                    return;
+                }
                 if (group.proxies && Array.isArray(group.proxies)) {
                     group.proxies = [];
                     if (index === 0) {

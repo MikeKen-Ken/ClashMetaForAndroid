@@ -168,7 +168,7 @@ func prepareSessionOverrideForDecode(content string) string {
 }
 
 // patchDirectGlobalMode: when session mode is direct/global/offline, force mode=rule and override rules + dns
-// so that traffic uses MATCH,⬆️ / MATCH,🔀 / MATCH,REJECT (same behavior as desktop for direct/global).
+// so that traffic uses MATCH,Direct / MATCH,Auto / MATCH,REJECT（与脚本输出组名、电脑端 enhance 一致）。
 func patchDirectGlobalMode(cfg *config.RawConfig, _ string) error {
 	if sessionExtendedUiMode == extendedUiModeOffline {
 		cfg.Mode = T.Rule
@@ -181,13 +181,13 @@ func patchDirectGlobalMode(cfg *config.RawConfig, _ string) error {
 	switch cfg.Mode {
 	case T.Direct:
 		cfg.Mode = T.Rule
-		cfg.Rule = []string{"MATCH,⬆️"}
+		cfg.Rule = []string{"MATCH,Direct"}
 		cfg.DNS.NameServer = append([]string(nil), directNameservers...)
 		cfg.DNS.NameServerPolicy = nil
 		log.Infoln("Applied direct mode overrides (rules + dns)")
 	case T.Global:
 		cfg.Mode = T.Rule
-		cfg.Rule = []string{"MATCH,🔀"}
+		cfg.Rule = []string{"MATCH,Auto"}
 		cfg.DNS.NameServer = append([]string(nil), globalNameservers...)
 		cfg.DNS.NameServerPolicy = nil
 		log.Infoln("Applied global mode overrides (rules + dns)")
