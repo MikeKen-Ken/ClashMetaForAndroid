@@ -20,24 +20,10 @@ import (
 	T "github.com/metacubex/mihomo/tunnel"
 )
 
-var (
-	directNameservers = []string{
-		"https://dns.alidns.com/dns-query",
-		"https://120.53.53.53/dns-query",
-		"tls://119.29.29.29:853",
-	}
-	globalNameservers = []string{
-		"https://1.1.1.1/dns-query",
-		"https://8.8.8.8/dns-query",
-		"https://9.9.9.9/dns-query",
-		"tls://1.0.0.1:853",
-	}
-)
-
 var processors = []processor{
 	patchExternalController, // must before patchOverride, so we only apply ExternalController in Override settings
 	patchOverride,
-	patchDirectGlobalMode, // after patchOverride: force rule mode + override rules/dns when session mode is direct/global/offline
+	patchDirectGlobalMode, // after patchOverride: force rule mode + override rules when session mode is direct/global/offline
 	patchProxyAdsBlock,
 	patchProxyGroupTimeout,
 	patchGeneral,
@@ -167,8 +153,9 @@ func prepareSessionOverrideForDecode(content string) string {
 	return string(filtered)
 }
 
-// patchDirectGlobalMode: when session mode is direct/global/offline, force mode=rule and override rules + dns
+// patchDirectGlobalMode: when session mode is direct/global/offline, force mode=rule and override rules
 // so that traffic uses MATCH,Direct / MATCH,Auto / MATCH,REJECT（与脚本输出组名、电脑端 enhance 一致）。
+// 不修改 dns.nameserver / nameserver，保留配置原有 DNS。
 func patchDirectGlobalMode(cfg *config.RawConfig, _ string) error {
 	if sessionExtendedUiMode == extendedUiModeOffline {
 		cfg.Mode = T.Rule
@@ -182,15 +169,13 @@ func patchDirectGlobalMode(cfg *config.RawConfig, _ string) error {
 	case T.Direct:
 		cfg.Mode = T.Rule
 		cfg.Rule = []string{"MATCH,Direct"}
-		cfg.DNS.NameServer = append([]string(nil), directNameservers...)
 		cfg.DNS.NameServerPolicy = nil
-		log.Infoln("Applied direct mode overrides (rules + dns)")
+		log.Infoln("Applied direct mode overrides (rules)")
 	case T.Global:
 		cfg.Mode = T.Rule
 		cfg.Rule = []string{"MATCH,Auto"}
-		cfg.DNS.NameServer = append([]string(nil), globalNameservers...)
 		cfg.DNS.NameServerPolicy = nil
-		log.Infoln("Applied global mode overrides (rules + dns)")
+		log.Infoln("Applied global mode overrides (rules)")
 	default:
 		// rule or other: no override
 	}
