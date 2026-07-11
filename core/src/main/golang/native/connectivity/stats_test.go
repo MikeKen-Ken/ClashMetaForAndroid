@@ -106,3 +106,30 @@ func TestOlderDayCountsLessThanToday(t *testing.T) {
 		t.Fatalf("weighted success=%v, want between 10 and 20", weighted.Success)
 	}
 }
+
+func TestIsSelectorGroup(t *testing.T) {
+	if !isSelectorGroup(map[string]any{"type": "select"}) {
+		t.Fatal("select should be selector group")
+	}
+	if !isSelectorGroup(map[string]any{"type": "Selector"}) {
+		t.Fatal("Selector should be selector group")
+	}
+	if isSelectorGroup(map[string]any{"type": "url-test"}) {
+		t.Fatal("url-test should not be selector group")
+	}
+	if isSelectorGroup(nil) {
+		t.Fatal("nil should not be selector group")
+	}
+}
+
+func TestSortGroupProxiesFieldSkipsSelector(t *testing.T) {
+	group := map[string]any{
+		"type":    "select",
+		"proxies": []any{"b", "a", "c"},
+	}
+	sortGroupProxiesField(group)
+	list := group["proxies"].([]any)
+	if list[0] != "b" || list[1] != "a" || list[2] != "c" {
+		t.Fatalf("selector proxies reordered: %v", list)
+	}
+}

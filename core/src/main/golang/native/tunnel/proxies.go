@@ -120,7 +120,10 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 
 		sort.Sort(wrapper)
 	case Default:
-		sortProxiesByConnectivity(proxies)
+		// Selector 组保持配置默认顺序，不按联通评分重排
+		if g.Type() != C.Selector {
+			sortProxiesByConnectivity(proxies)
+		}
 	default:
 	}
 
