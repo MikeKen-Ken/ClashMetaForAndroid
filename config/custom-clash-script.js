@@ -11,6 +11,46 @@ function main(config) {
     const DEFAULT_DIRECT = "🎯 全球直连";
     const DEFAULT_FALLBACK = "🐟 漏网之鱼";
 
+    /** 最终锁定 Direct / Final 的 select 成员顺序（须在 proxy-groups 全部改写完成后调用） */
+    const finalizeScriptSelectGroupOrders = (config) => {
+        const groups = config["proxy-groups"];
+        if (!Array.isArray(groups)) {
+            return;
+        }
+        const autoName = groups.find((g) => g?.name === AUTO)?.name ?? AUTO;
+        const noHkName = groups.find((g) => g?.name === NO_HK)?.name ?? NO_HK;
+        for (const group of groups) {
+            if (!group || typeof group.name !== "string") {
+                continue;
+            }
+            const isDirect =
+                group.name === DIRECT ||
+                group.name === DEFAULT_DIRECT ||
+                group.name.includes("全球直连");
+            const isFinal =
+                group.name === FALLBACK ||
+                group.name === DEFAULT_FALLBACK ||
+                group.name.includes("漏网之鱼");
+            if (isDirect) {
+                group.name = DIRECT;
+                group.type = "select";
+                group.proxies = ["DIRECT", autoName, noHkName];
+                delete group.url;
+                delete group.interval;
+                delete group.timeout;
+                delete group.lazy;
+            } else if (isFinal) {
+                group.name = FALLBACK;
+                group.type = "select";
+                group.proxies = [autoName, noHkName, "DIRECT"];
+                delete group.url;
+                delete group.interval;
+                delete group.timeout;
+                delete group.lazy;
+            }
+        }
+    };
+
     /** 占位：将「未在 PROXY_GROUP_ORDER 中单独列出的组」按当前数组中的相对顺序插入到此处（一般为订阅里其余策略组） */
     const PROXY_GROUP_ORDER_REST = "__REST__";
 
@@ -222,6 +262,7 @@ function main(config) {
             });
 
             config["proxy-groups"] = reorderProxyGroupsByTemplate(config["proxy-groups"], PROXY_GROUP_ORDER);
+            finalizeScriptSelectGroupOrders(config);
         }
 
         /** raw 规则集分支：DustinWin mihomo-ruleset；custome-rule release（c-*） */
@@ -374,6 +415,8 @@ function main(config) {
                 return proxy;
             });
         }
+
+        finalizeScriptSelectGroupOrders(config);
 
         return config;
     } catch (error) {
