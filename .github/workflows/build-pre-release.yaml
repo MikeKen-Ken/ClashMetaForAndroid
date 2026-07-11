@@ -125,19 +125,12 @@ jobs:
         if: success()
         run: ./gradlew --no-daemon --no-build-cache app:assembleAlphaRelease
 
-      # Delete old Prerelease-alpha
+      # 删除旧 Prerelease-alpha 的 release 与 tag；后续由 action-gh-release 在当前 commit 重建 tag
       - uses: dev-drprasad/delete-tag-and-release@v1.1
         with:
           tag_name: Prerelease-alpha
           github_token: ${{ secrets.GITHUB_TOKEN }}
           delete_release: true
-
-      - name: Tag Repo
-        uses: richardsimko/update-tag@v1
-        with:
-          tag_name: Prerelease-alpha
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check tags
         id: check-tags
