@@ -107,29 +107,32 @@ func TestOlderDayCountsLessThanToday(t *testing.T) {
 	}
 }
 
-func TestIsSelectorGroup(t *testing.T) {
-	if !isSelectorGroup(map[string]any{"type": "select"}) {
-		t.Fatal("select should be selector group")
+func TestShouldApplyConnectivityOrder(t *testing.T) {
+	if shouldApplyConnectivityOrder(map[string]any{"type": "select"}) {
+		t.Fatal("select should not apply connectivity order")
 	}
-	if !isSelectorGroup(map[string]any{"type": "Selector"}) {
-		t.Fatal("Selector should be selector group")
+	if shouldApplyConnectivityOrder(map[string]any{"type": "Selector"}) {
+		t.Fatal("Selector should not apply connectivity order")
 	}
-	if isSelectorGroup(map[string]any{"type": "url-test"}) {
-		t.Fatal("url-test should not be selector group")
+	if !shouldApplyConnectivityOrder(map[string]any{"type": "url-test"}) {
+		t.Fatal("url-test should apply connectivity order")
 	}
-	if isSelectorGroup(nil) {
-		t.Fatal("nil should not be selector group")
+	if !shouldApplyConnectivityOrder(map[string]any{"type": "fallback"}) {
+		t.Fatal("fallback should apply connectivity order")
+	}
+	if shouldApplyConnectivityOrder(nil) {
+		t.Fatal("nil should not apply connectivity order")
 	}
 }
 
 func TestSortGroupProxiesFieldSkipsSelector(t *testing.T) {
 	group := map[string]any{
 		"type":    "select",
-		"proxies": []any{"b", "a", "c"},
+		"proxies": []any{"DIRECT", "Auto", "NoHK"},
 	}
 	sortGroupProxiesField(group)
 	list := group["proxies"].([]any)
-	if list[0] != "b" || list[1] != "a" || list[2] != "c" {
-		t.Fatalf("selector proxies reordered: %v", list)
+	if list[0] != "DIRECT" || list[1] != "Auto" || list[2] != "NoHK" {
+		t.Fatalf("select proxies reordered: %v", list)
 	}
 }

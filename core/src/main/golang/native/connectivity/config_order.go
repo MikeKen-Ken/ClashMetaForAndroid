@@ -35,13 +35,13 @@ func sortProxyMappings(proxies []map[string]any) {
 	})
 }
 
-func isSelectorGroup(group map[string]any) bool {
+func shouldApplyConnectivityOrder(group map[string]any) bool {
 	if group == nil {
 		return false
 	}
 	raw, _ := group["type"].(string)
 	switch strings.ToLower(raw) {
-	case "select", "selector":
+	case "url-test", "fallback":
 		return true
 	default:
 		return false
@@ -49,7 +49,7 @@ func isSelectorGroup(group map[string]any) bool {
 }
 
 func sortGroupProxiesField(group map[string]any) {
-	if isSelectorGroup(group) {
+	if !shouldApplyConnectivityOrder(group) {
 		return
 	}
 	raw, ok := group["proxies"]
@@ -84,7 +84,7 @@ func sortGroupProxiesField(group map[string]any) {
 }
 
 // ApplyProxyOrderToRawConfig 在配置加载/重载前按联通评分重排 proxies 与各组 proxies 列表（不触发额外 reload）。
-// Selector 组保持配置默认顺序，不参与联通重排。
+// 仅 url-test / fallback 参与联通重排；select 等手动组保持配置默认顺序。
 func ApplyProxyOrderToRawConfig(cfg *config.RawConfig) {
 	if cfg == nil {
 		return

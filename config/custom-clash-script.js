@@ -191,25 +191,22 @@ function main(config) {
 
             config["proxy-groups"].splice(1, 0, ...newGroups);
 
-            config["proxy-groups"].slice(2).forEach((group, index) => {
+            config["proxy-groups"].slice(2).forEach((group) => {
                 // Download 与 Auto 同为节点列表组，勿改写为策略组引用
                 if (group.name === DOWNLOAD) {
                     return;
                 }
                 if (group.proxies && Array.isArray(group.proxies)) {
                     group.proxies = [];
-                    if (index === 0) {
-                        group.proxies.push(
-                            "DIRECT",
-                            config["proxy-groups"][0].name,
-                            config["proxy-groups"][1].name
-                        );
+                    const autoName = config["proxy-groups"][0].name;
+                    const noHkName = config["proxy-groups"][1].name;
+                    // Direct（全球直连）优先直连；其余策略组（如 Final）优先走节点组
+                    const isDirectGroup =
+                        group.name === DEFAULT_DIRECT || group.name === DIRECT;
+                    if (isDirectGroup) {
+                        group.proxies.push("DIRECT", autoName, noHkName);
                     } else {
-                        group.proxies.push(
-                            config["proxy-groups"][0].name,
-                            config["proxy-groups"][1].name,
-                            "DIRECT"
-                        );
+                        group.proxies.push(autoName, noHkName, "DIRECT");
                     }
                 }
                 if (group.name === DEFAULT_DIRECT) {
@@ -233,8 +230,8 @@ function main(config) {
             custome: "https://raw.githubusercontent.com/MikeKen-Ken/custome-rule/release",
         };
 
-        /** 与 custome-rule release 文件名一致：c-* 自建 */
-        const isCustomeRuleset = (name) => name.startsWith("c-");
+        /** 与 custome-rule release 文件名一致：c-* 自建；games-cn 为上游合并补丁 */
+        const isCustomeRuleset = (name) => name.startsWith("c-") || name === "games-cn";
 
         const ruleProvidersList = [
             // https://github.com/DustinWin/ruleset_geodata/tree/mihomo-ruleset
@@ -243,6 +240,7 @@ function main(config) {
             ["privateip", "privateip.mrs", "ipcidr", "mrs"],
             ["ads", "ads.mrs", "domain", "mrs"],
             ["trackerslist", "trackerslist.mrs", "domain", "mrs"],
+            // custome-rule：DustinWin games-cn + games-cn.extra.yaml 补丁
             ["games-cn", "games-cn.mrs", "domain", "mrs"],
             ["microsoft-cn", "microsoft-cn.mrs", "domain", "mrs"],
             ["apple-cn", "apple-cn.mrs", "domain", "mrs"],
