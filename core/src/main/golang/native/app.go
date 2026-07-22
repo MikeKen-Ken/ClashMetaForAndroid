@@ -9,6 +9,7 @@ import (
 
 	"cfa/native/app"
 	"cfa/native/connectivity"
+	"cfa/native/tunnel"
 
 	"github.com/metacubex/mihomo/log"
 )
@@ -48,6 +49,18 @@ func flushFakeIPCache() *C.char {
 //export clearProxyConnectivityStats
 func clearProxyConnectivityStats() {
 	connectivity.ClearAll()
+}
+
+//export clearProxyConnectivityStatsFor
+func clearProxyConnectivityStatsFor(name C.c_string) {
+	connectivity.ClearProxy(C.GoString(name))
+}
+
+//export queryProxyConnectivityStats
+func queryProxyConnectivityStats() *C.char {
+	names := tunnel.QueryLeafProxyNames()
+	rows := connectivity.QueryScoreRows(names)
+	return marshalJson(rows)
 }
 
 //export notifyInstalledAppsChanged

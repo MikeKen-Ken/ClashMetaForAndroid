@@ -286,10 +286,6 @@ class ProxyDesign(
         requests.trySend(Request.ClearConnectivityStats)
     }
 
-    suspend fun showClearConnectivityStatsDone() {
-        showNativeToast("已清空测速联通统计", Toast.LENGTH_SHORT)
-    }
-
     suspend fun showFlushFakeIpDone() {
         showNativeToast(R.string.flush_fake_ip_done, Toast.LENGTH_SHORT)
     }

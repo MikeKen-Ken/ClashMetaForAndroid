@@ -108,7 +108,7 @@
                             android:layout_marginStart="@dimen/item_tailing_margin"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:clickable="true"
-                            android:contentDescription="清空测速联通统计"
+                            android:contentDescription="节点测速统计"
                             android:focusable="true"
                             android:onClick="@{() -> self.requestClearConnectivityStats()}"
                             android:padding="@dimen/toolbar_image_action_padding"

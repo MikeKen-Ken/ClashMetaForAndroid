@@ -38,6 +38,8 @@ interface IClashManager {
     fun flushFakeIpCache()
 
     fun clearProxyConnectivityStats()
+    fun clearProxyConnectivityStatsFor(name: String)
+    fun queryProxyConnectivityStats(): String
 
     fun setLogObserver(observer: ILogObserver?)
 }

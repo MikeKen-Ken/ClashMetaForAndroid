@@ -259,3 +259,30 @@ func collectProviders(providers []provider.ProxyProvider, uiSubtitlePattern *reg
 
 	return result
 }
+
+// QueryLeafProxyNames 返回全部叶子出站名（排除策略组与内置 DIRECT/REJECT 等）。
+func QueryLeafProxyNames() []string {
+	excluded := map[string]struct{}{
+		"DIRECT":      {},
+		"REJECT":      {},
+		"REJECT-DROP": {},
+		"PASS":        {},
+		"COMPATIBLE":  {},
+	}
+	proxies := tunnel.Proxies()
+	names := make([]string, 0, len(proxies))
+	for name, p := range proxies {
+		if _, skip := excluded[name]; skip {
+			continue
+		}
+		if p == nil {
+			continue
+		}
+		if _, ok := p.Adapter().(outboundgroup.ProxyGroup); ok {
+			continue
+		}
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}

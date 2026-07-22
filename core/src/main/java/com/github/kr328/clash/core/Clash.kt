@@ -342,6 +342,14 @@ object Clash {
         Bridge.nativeClearProxyConnectivityStats()
     }
 
+    fun clearProxyConnectivityStatsFor(name: String) {
+        Bridge.nativeClearProxyConnectivityStatsFor(name)
+    }
+
+    fun queryProxyConnectivityStats(): String {
+        return Bridge.nativeQueryProxyConnectivityStats()
+    }
+
     fun subscribeLogcat(): ReceiveChannel<LogMessage> {
         return Channel<LogMessage>(32).apply {
             Bridge.nativeSubscribeLogcat(object : LogcatInterface {

@@ -64,6 +64,8 @@ object Bridge {
     external fun nativeCloseLanConnections()
     external fun nativeFlushFakeIpCache(): String?
     external fun nativeClearProxyConnectivityStats()
+    external fun nativeClearProxyConnectivityStatsFor(name: String)
+    external fun nativeQueryProxyConnectivityStats(): String
     external fun nativeSubscribeLogcat(callback: LogcatInterface)
     external fun nativeSubscribeHealthCheck(callback: HealthCheckCallback)
     external fun nativeCoreVersion(): String

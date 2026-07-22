@@ -208,6 +208,14 @@ class ClashManager(private val context: Context) : IClashManager,
         Clash.clearProxyConnectivityStats()
     }
 
+    override fun clearProxyConnectivityStatsFor(name: String) {
+        Clash.clearProxyConnectivityStatsFor(name)
+    }
+
+    override fun queryProxyConnectivityStats(): String {
+        return Clash.queryProxyConnectivityStats()
+    }
+
     override suspend fun healthCheck(group: String) {
         Clash.healthCheck(group).await()
         store.activeProfile?.let { uuid ->

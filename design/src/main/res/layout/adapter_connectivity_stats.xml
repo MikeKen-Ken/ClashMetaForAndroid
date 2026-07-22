@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+    <data>
+        <variable
+            name="row"
+            type="com.github.kr328.clash.design.model.ConnectivityScoreRow" />
+        <variable
+            name="subtitle"
+            type="String" />
+        <variable
+            name="clear"
+            type="android.view.View.OnClickListener" />
+        <variable
+            name="clearEnabled"
+            type="boolean" />
+
+        <import type="android.view.View" />
+    </data>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="@dimen/item_min_height"
+        android:paddingStart="@dimen/item_header_margin"
+        android:paddingEnd="0dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:layout_toStartOf="@id/clear_view"
+            android:orientation="vertical"
+            android:paddingEnd="@dimen/item_tailing_margin">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="@{row.name}"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Body1" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:text="@{subtitle}"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+                android:textColor="?android:attr/textColorSecondary" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/clear_view"
+            android:layout_width="@dimen/item_tailing_component_size"
+            android:layout_height="@dimen/item_tailing_component_size"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="@dimen/item_tailing_margin"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="@{clearEnabled}"
+            android:contentDescription="清空该节点统计"
+            android:enabled="@{clearEnabled}"
+            android:focusable="@{clearEnabled}"
+            android:onClick="@{clear}"
+            android:padding="@dimen/toolbar_image_action_padding"
+            android:src="@drawable/ic_baseline_delete" />
+    </RelativeLayout>
+</layout>

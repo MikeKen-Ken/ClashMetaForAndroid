@@ -445,6 +445,24 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeClearProxyConnectivityStats
 }
 
 JNIEXPORT void JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeClearProxyConnectivityStatsFor(JNIEnv *env, jobject thiz,
+                                                                                    jstring name) {
+    TRACE_METHOD();
+
+    scoped_string _name = get_string(name);
+    clearProxyConnectivityStatsFor(_name);
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeQueryProxyConnectivityStats(JNIEnv *env, jobject thiz) {
+    TRACE_METHOD();
+
+    scoped_string response = queryProxyConnectivityStats();
+
+    return new_string(response);
+}
+
+JNIEXPORT void JNICALL
 Java_com_github_kr328_clash_core_bridge_Bridge_nativeSubscribeLogcat(JNIEnv *env, jobject thiz,
                                                                      jobject callback) {
     TRACE_METHOD();

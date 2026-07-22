@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"math"
 	"os"
+	"sort"
 	"sync"
 	"time"
 
@@ -288,4 +289,70 @@ func ClearAll() {
 	statsCache = make(map[string]proxyConnectivityEntry)
 	statsLoaded = true
 	_ = os.Remove(statsFilePath())
+}
+
+// ClearProxy 清空单个节点的测速联通统计。
+func ClearProxy(proxyName string) {
+	if proxyName == "" {
+		return
+	}
+	statsMu.Lock()
+	defer statsMu.Unlock()
+	ensureStatsLoaded()
+	if _, ok := statsCache[proxyName]; !ok {
+		return
+	}
+	delete(statsCache, proxyName)
+	persistConnectivityStats()
+}
+
+// ScoreRow 面板列表行。
+type ScoreRow struct {
+	Name                string  `json:"name"`
+	Score               float64 `json:"score"`
+	WeightedSuccess     float64 `json:"weightedSuccess"`
+	WeightedFailure     float64 `json:"weightedFailure"`
+	EffectiveAvgDelayMs float64 `json:"effectiveAvgDelayMs"`
+	HasStats            bool    `json:"hasStats"`
+}
+
+// QueryScoreRows 按联通分降序列出节点（同分保序）。
+func QueryScoreRows(names []string) []ScoreRow {
+	if len(names) == 0 {
+		return []ScoreRow{}
+	}
+	ctx := BuildScoreContext()
+	type keyed struct {
+		index int
+		row   ScoreRow
+	}
+	keys := make([]keyed, len(names))
+	for i, name := range names {
+		stats := ctx.byProxy[name]
+		hasStats := stats.Success > 0 || stats.Failure > 0
+		avg := smoothedEffectiveAvgDelay(stats, ctx.priorDelayMs)
+		keys[i] = keyed{
+			index: i,
+			row: ScoreRow{
+				Name:                name,
+				Score:               penalizedDelayScore(stats, ctx.priorDelayMs),
+				WeightedSuccess:     stats.Success,
+				WeightedFailure:     stats.Failure,
+				EffectiveAvgDelayMs: avg,
+				HasStats:            hasStats,
+			},
+		}
+	}
+	sort.SliceStable(keys, func(i, j int) bool {
+		a, b := keys[i], keys[j]
+		if a.row.Score != b.row.Score {
+			return a.row.Score > b.row.Score
+		}
+		return a.index < b.index
+	})
+	out := make([]ScoreRow, len(keys))
+	for i, k := range keys {
+		out[i] = k.row
+	}
+	return out
 }

@@ -133,6 +133,11 @@
             android:exported="false"
             android:label="@string/proxy" />
         <activity
+            android:name=".ConnectivityStatsActivity"
+            android:configChanges="uiMode"
+            android:exported="false"
+            android:label="节点测速统计" />
+        <activity
             android:name=".ProvidersActivity"
             android:configChanges="uiMode"
             android:exported="false"

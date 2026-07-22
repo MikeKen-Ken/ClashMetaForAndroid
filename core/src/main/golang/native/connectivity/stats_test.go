@@ -107,6 +107,60 @@ func TestOlderDayCountsLessThanToday(t *testing.T) {
 	}
 }
 
+func TestClearProxyRemovesOnlyTarget(t *testing.T) {
+	statsMu.Lock()
+	statsCache = map[string]proxyConnectivityEntry{
+		"keep": {Days: map[string]dayCounts{"2026-07-22": {Success: 1, DelaySum: 100}}},
+		"drop": {Days: map[string]dayCounts{"2026-07-22": {Success: 2, DelaySum: 200}}},
+	}
+	statsLoaded = true
+	statsMu.Unlock()
+
+	ClearProxy("drop")
+
+	statsMu.Lock()
+	_, dropOk := statsCache["drop"]
+	_, keepOk := statsCache["keep"]
+	statsMu.Unlock()
+	if dropOk {
+		t.Fatal("drop should be removed")
+	}
+	if !keepOk {
+		t.Fatal("keep should remain")
+	}
+	ClearAll()
+}
+
+func TestQueryScoreRowsOrder(t *testing.T) {
+	statsMu.Lock()
+	statsCache = map[string]proxyConnectivityEntry{
+		"low": {
+			Days: map[string]dayCounts{
+				todayKey(time.Now()): {Success: 2, Failure: 8, DelaySum: 2*200 + 8*5000},
+			},
+		},
+		"high": {
+			Days: map[string]dayCounts{
+				todayKey(time.Now()): {Success: 45, Failure: 2, DelaySum: 45*200 + 2*5000},
+			},
+		},
+	}
+	statsLoaded = true
+	statsMu.Unlock()
+
+	rows := QueryScoreRows([]string{"low", "high", "none"})
+	if len(rows) != 3 {
+		t.Fatalf("len=%d", len(rows))
+	}
+	if rows[0].Name != "high" {
+		t.Fatalf("first=%s want high", rows[0].Name)
+	}
+	if rows[2].Name != "none" || rows[2].HasStats {
+		t.Fatalf("last=%+v want none without stats", rows[2])
+	}
+	ClearAll()
+}
+
 func TestShouldApplyConnectivityOrder(t *testing.T) {
 	if shouldApplyConnectivityOrder(map[string]any{"type": "select"}) {
 		t.Fatal("select should not apply connectivity order")
