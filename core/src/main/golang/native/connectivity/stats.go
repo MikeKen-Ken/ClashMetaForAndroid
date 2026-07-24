@@ -18,6 +18,8 @@ const (
 	fallbackDelayMs         = 400.0
 	scoreReferenceDelayMs   = 400.0
 	defaultPenaltyDelayMs   = 5000
+	// 同一节点一分钟内最多记 1 次失败，避免重连/健康检查风暴把分数打崩。
+	failureRecordMinInterval = time.Minute
 )
 
 type dayCounts struct {
@@ -54,9 +56,11 @@ type ScoreContext struct {
 }
 
 var (
-	statsMu     sync.Mutex
-	statsCache  map[string]proxyConnectivityEntry
-	statsLoaded bool
+	statsMu          sync.Mutex
+	statsCache       map[string]proxyConnectivityEntry
+	statsLoaded      bool
+	lastFailureAt    map[string]time.Time
+	failureMinInterval = failureRecordMinInterval // 单测可改短
 )
 
 func statsFilePath() string {
@@ -244,6 +248,7 @@ func persistConnectivityStats() {
 }
 
 // RecordDelayTestResult 成功记真实 delay，失败记 timeout 惩罚延迟，最多保留 30 天。
+// 同一节点在 failureMinInterval 内的重复失败只记一次。
 func RecordDelayTestResult(proxyName string, delay int, timeoutMs int) {
 	if proxyName == "" || proxyName == "DIRECT" || proxyName == "REJECT" {
 		return
@@ -265,6 +270,15 @@ func RecordDelayTestResult(proxyName string, delay int, timeoutMs int) {
 	defer statsMu.Unlock()
 	ensureStatsLoaded()
 
+	if !isSuccess {
+		if lastFailureAt == nil {
+			lastFailureAt = make(map[string]time.Time)
+		}
+		if last, ok := lastFailureAt[proxyName]; ok && now.Sub(last) < failureMinInterval {
+			return
+		}
+	}
+
 	entry := statsCache[proxyName]
 	if entry.Days == nil {
 		entry.Days = make(map[string]dayCounts)
@@ -276,6 +290,7 @@ func RecordDelayTestResult(proxyName string, delay int, timeoutMs int) {
 	} else {
 		counts.Failure++
 		counts.DelaySum += effectiveTimeout
+		lastFailureAt[proxyName] = now
 	}
 	entry.Days[day] = counts
 	pruneDays(entry.Days, now)
@@ -287,6 +302,7 @@ func ClearAll() {
 	statsMu.Lock()
 	defer statsMu.Unlock()
 	statsCache = make(map[string]proxyConnectivityEntry)
+	lastFailureAt = make(map[string]time.Time)
 	statsLoaded = true
 	_ = os.Remove(statsFilePath())
 }
@@ -303,6 +319,7 @@ func ClearProxy(proxyName string) {
 		return
 	}
 	delete(statsCache, proxyName)
+	delete(lastFailureAt, proxyName)
 	persistConnectivityStats()
 }
 
