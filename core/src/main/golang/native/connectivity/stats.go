@@ -87,6 +87,46 @@ func pruneDays(days map[string]dayCounts, now time.Time) {
 	}
 }
 
+// pruneExpiredEntries 清理各节点过期天键；days 已空则删除 proxy 条目，并清掉孤儿 lastFailureAt。
+// 调用方须已持有 statsMu。
+func pruneExpiredEntries(now time.Time) (changed bool) {
+	if statsCache == nil {
+		return false
+	}
+	for name, entry := range statsCache {
+		if entry.Days == nil {
+			delete(statsCache, name)
+			delete(lastFailureAt, name)
+			changed = true
+			continue
+		}
+		before := len(entry.Days)
+		pruneDays(entry.Days, now)
+		if len(entry.Days) == 0 {
+			delete(statsCache, name)
+			delete(lastFailureAt, name)
+			changed = true
+			continue
+		}
+		if len(entry.Days) != before {
+			statsCache[name] = entry
+			changed = true
+		}
+	}
+	for name, at := range lastFailureAt {
+		if _, ok := statsCache[name]; !ok {
+			delete(lastFailureAt, name)
+			changed = true
+			continue
+		}
+		if now.Sub(at) >= failureMinInterval {
+			delete(lastFailureAt, name)
+			changed = true
+		}
+	}
+	return changed
+}
+
 func dayAgeInDays(dayKey string, today time.Time) int {
 	parsed, err := time.ParseInLocation("2006-01-02", dayKey, today.Location())
 	if err != nil {
@@ -232,6 +272,9 @@ func ensureStatsLoaded() {
 	if statsCache == nil {
 		statsCache = make(map[string]proxyConnectivityEntry)
 	}
+	if pruneExpiredEntries(time.Now()) {
+		persistConnectivityStats()
+	}
 	statsLoaded = true
 }
 
@@ -294,7 +337,14 @@ func RecordDelayTestResult(proxyName string, delay int, timeoutMs int) {
 	}
 	entry.Days[day] = counts
 	pruneDays(entry.Days, now)
-	statsCache[proxyName] = entry
+	if len(entry.Days) == 0 {
+		delete(statsCache, proxyName)
+		delete(lastFailureAt, proxyName)
+	} else {
+		statsCache[proxyName] = entry
+	}
+	// 顺带清掉其他节点已过期的空条目，避免换订阅后历史节点名只增不减
+	_ = pruneExpiredEntries(now)
 	persistConnectivityStats()
 }
 

@@ -29,12 +29,17 @@ import com.github.kr328.clash.design.ui.ToastDuration
 import com.github.kr328.clash.design.landevices.LanRemoteDeviceFilter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 
-private val RETENTION_HOURS_OPTIONS = listOf(1, 3, 8, 24)
+private val CLOSED_LIMIT_OPTIONS = listOf(1000, 5000, 10000, 20000)
+
+/** 已关闭列表落盘节流间隔，与桌面端 CONNECTION_PERSIST_THROTTLE_MS 对齐 */
+private const val CLOSED_PERSIST_THROTTLE_MS = 30_000L
 
 class ConnectionsDesign(
     context: Context,
@@ -101,7 +106,7 @@ class ConnectionsDesign(
 
     /** 已关闭连接（带时间戳）；内存与 [ClosedConnectionsStorage] 同步，持久化保留 24 小时 */
     private val closedEntries = mutableListOf<ClosedEntry>()
-    private var closedPersistScheduled = false
+    private var closedPersistJob: Job? = null
     private var tabMode: TabMode = TabMode.Active
     var mergeByDomain: Boolean = false
         set(value) {
@@ -110,15 +115,18 @@ class ConnectionsDesign(
             if (tabMode == TabMode.Closed) launch { refreshDisplayItems() }
         }
 
-    val retentionHoursOptions: List<Int> get() = RETENTION_HOURS_OPTIONS
-    var retentionHours: Int
+    val closedLimitOptions: List<Int> get() = CLOSED_LIMIT_OPTIONS
+    var closedLimit: Int
         get() {
-            val v = uiStore.connectionsClosedRetentionHours
-            return if (v in RETENTION_HOURS_OPTIONS) v else 8
+            val v = uiStore.connectionsClosedLimit
+            return if (v in CLOSED_LIMIT_OPTIONS) v else ClosedConnectionsStorage.DEFAULT_MAX_CLOSED_COUNT
         }
         set(value) {
-            if (value !in RETENTION_HOURS_OPTIONS) return
-            uiStore.connectionsClosedRetentionHours = value
+            if (value !in CLOSED_LIMIT_OPTIONS) return
+            uiStore.connectionsClosedLimit = value
+            val before = closedEntries.size
+            trimClosedEntriesToLimit()
+            if (closedEntries.size != before) schedulePersistClosedEntries()
             launch {
                 if (tabMode == TabMode.Closed) refreshDisplayItems()
                 withContext(Dispatchers.Main) { updateTabLabels() }
@@ -126,22 +134,16 @@ class ConnectionsDesign(
         }
 
     val activeCount: Int get() = lastSnapshot?.connections?.size ?: 0
-    /** 与已关闭列表相同的保留时长过滤 */
-    val closedCount: Int
-        get() {
-            val retentionMs = retentionHours * 3600 * 1000L
-            val nowMs = System.currentTimeMillis()
-            return closedEntries.count { nowMs - it.closedAt <= retentionMs }
-        }
+    val closedCount: Int get() = closedEntries.size
 
     override val root: View
         get() = binding.root
 
     /** 进入连接页时从磁盘恢复已关闭列表（与桌面端 IndexedDB 恢复一致） */
     suspend fun loadPersistedClosedEntries() {
-        val loaded = ClosedConnectionsStorage.load(context).compactRejectClosedEntries()
+        val loaded = ClosedConnectionsStorage.load(context, closedLimit).compactRejectClosedEntries()
         closedEntries.clear()
-        closedEntries.addAll(loaded)
+        closedEntries.addAll(ClosedConnectionsStorage.trimToMaxCount(loaded, closedLimit))
         withContext(Dispatchers.Main) { updateTabLabels() }
     }
 
@@ -170,9 +172,8 @@ class ConnectionsDesign(
             closedPersistChanged = true
         }
 
-        val persistRetentionMs = ClosedConnectionsStorage.PERSIST_RETENTION_HOURS * 3600 * 1000L
         val beforePrune = closedEntries.size
-        closedEntries.removeAll { nowMs - it.closedAt > persistRetentionMs }
+        trimClosedEntriesToLimit()
         if (closedEntries.size != beforePrune) closedPersistChanged = true
         if (closedPersistChanged) schedulePersistClosedEntries()
 
@@ -236,11 +237,7 @@ class ConnectionsDesign(
     }
 
     private fun buildClosedDisplayItems(): List<ConnectionDisplayItem> {
-        val retentionMs = retentionHours * 3600 * 1000L
-        val nowMs = System.currentTimeMillis()
-        var conns = closedEntries
-            .filter { nowMs - it.closedAt <= retentionMs }
-            .map { it.connection }
+        var conns = closedEntries.map { it.connection }
         if (mergeByDomain && conns.isNotEmpty()) {
             conns = mergeConnectionsByHost(conns)
         }
@@ -345,20 +342,32 @@ class ConnectionsDesign(
     }
 
     fun clearClosedConnections() {
+        closedPersistJob?.cancel()
+        closedPersistJob = null
         closedEntries.clear()
-        launch { ClosedConnectionsStorage.save(context, emptyList()) }
+        launch { ClosedConnectionsStorage.save(context, emptyList(), closedLimit) }
         launch {
             if (tabMode == TabMode.Closed) refreshDisplayItems()
             withContext(Dispatchers.Main) { updateTabLabels() }
         }
     }
 
+    /** 仅按条数上限裁剪，保留 closedAt 最新的条目 */
+    private fun trimClosedEntriesToLimit() {
+        val max = closedLimit
+        if (closedEntries.size <= max) return
+        closedEntries.sortByDescending { it.closedAt }
+        while (closedEntries.size > max) {
+            closedEntries.removeAt(closedEntries.lastIndex)
+        }
+    }
+
+    /** 节流写盘：已有定时任务时不重置，连续变更时最多约每 30 秒落盘一次 */
     private fun schedulePersistClosedEntries() {
-        if (closedPersistScheduled) return
-        closedPersistScheduled = true
-        launch {
-            closedPersistScheduled = false
-            ClosedConnectionsStorage.save(context, closedEntries.toList())
+        if (closedPersistJob?.isActive == true) return
+        closedPersistJob = launch {
+            delay(CLOSED_PERSIST_THROTTLE_MS)
+            ClosedConnectionsStorage.save(context, closedEntries.toList(), closedLimit)
         }
     }
 
@@ -401,8 +410,10 @@ class ConnectionsDesign(
 
     /** 离开连接页时持久化活跃快照与已关闭列表（与桌面端 setConnectionSnapshot 一致） */
     suspend fun persistState() {
+        closedPersistJob?.cancel()
+        closedPersistJob = null
         lastSnapshot?.let { LastConnectionsSnapshotStorage.save(context, it) }
-        ClosedConnectionsStorage.save(context, closedEntries.toList())
+        ClosedConnectionsStorage.save(context, closedEntries.toList(), closedLimit)
     }
 
     private fun updateTabAndToolbarVisibility() {
@@ -427,32 +438,32 @@ class ConnectionsDesign(
         binding.recyclerList.applyLinearAdapter(context, adapter)
         binding.sortOrderView.setOnClickListener { toggleSortOrder() }
         updateTabAndToolbarVisibility()
-        setupRetentionSpinner()
+        setupClosedLimitSpinner()
         binding.mergeByDomainButton?.text = context.getString(
             if (mergeByDomain) R.string.connections_cancel_merge else R.string.connections_merge_by_domain
         )
     }
 
-    private fun setupRetentionSpinner() {
+    private fun setupClosedLimitSpinner() {
         val spinner = binding.retentionSpinner ?: return
-        val labels = retentionHoursOptions.map { h ->
-            context.getString(when (h) {
-                1 -> R.string.connections_retention_1h
-                3 -> R.string.connections_retention_3h
-                8 -> R.string.connections_retention_8h
-                24 -> R.string.connections_retention_24h
-                else -> R.string.connections_retention_8h
+        val labels = closedLimitOptions.map { n ->
+            context.getString(when (n) {
+                1000 -> R.string.connections_limit_1000
+                5000 -> R.string.connections_limit_5000
+                10000 -> R.string.connections_limit_10000
+                20000 -> R.string.connections_limit_20000
+                else -> R.string.connections_limit_5000
             })
         }
         val adapter = android.widget.ArrayAdapter(context, android.R.layout.simple_spinner_item, labels).apply {
             setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         }
         spinner.adapter = adapter
-        val currentIndex = retentionHoursOptions.indexOf(retentionHours).coerceAtLeast(0)
+        val currentIndex = closedLimitOptions.indexOf(closedLimit).coerceAtLeast(0)
         spinner.setSelection(currentIndex)
         spinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
-                retentionHours = retentionHoursOptions.getOrNull(position) ?: return
+                closedLimit = closedLimitOptions.getOrNull(position) ?: return
             }
             override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
         }

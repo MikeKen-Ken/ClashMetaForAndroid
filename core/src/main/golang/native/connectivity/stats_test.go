@@ -198,6 +198,50 @@ func TestClearProxyRemovesOnlyTarget(t *testing.T) {
 	ClearAll()
 }
 
+func TestPruneExpiredEntriesRemovesEmptyProxyKeys(t *testing.T) {
+	now := time.Now()
+	expiredDay := now.AddDate(0, 0, -(retentionDays + 1)).Format("2006-01-02")
+	freshDay := todayKey(now)
+
+	statsMu.Lock()
+	statsCache = map[string]proxyConnectivityEntry{
+		"stale": {Days: map[string]dayCounts{expiredDay: {Success: 1, DelaySum: 100}}},
+		"keep":  {Days: map[string]dayCounts{freshDay: {Success: 2, DelaySum: 200}}},
+		"empty": {Days: map[string]dayCounts{}},
+	}
+	lastFailureAt = map[string]time.Time{
+		"stale": now.Add(-2 * time.Minute),
+		"keep":  now.Add(-2 * time.Minute),
+		"orphan": now.Add(-time.Hour),
+	}
+	statsLoaded = true
+	changed := pruneExpiredEntries(now)
+	_, staleOk := statsCache["stale"]
+	_, keepOk := statsCache["keep"]
+	_, emptyOk := statsCache["empty"]
+	_, orphanFailOk := lastFailureAt["orphan"]
+	_, staleFailOk := lastFailureAt["stale"]
+	_, keepFailOk := lastFailureAt["keep"]
+	statsMu.Unlock()
+	defer ClearAll()
+
+	if !changed {
+		t.Fatal("expected prune to report changes")
+	}
+	if staleOk || emptyOk {
+		t.Fatalf("stale/empty should be removed: stale=%v empty=%v", staleOk, emptyOk)
+	}
+	if !keepOk {
+		t.Fatal("keep should remain")
+	}
+	if orphanFailOk || staleFailOk {
+		t.Fatalf("orphan/stale lastFailureAt should be cleared: orphan=%v stale=%v", orphanFailOk, staleFailOk)
+	}
+	if keepFailOk {
+		t.Fatal("keep lastFailureAt past failureMinInterval should be cleared")
+	}
+}
+
 func TestQueryScoreRowsOrder(t *testing.T) {
 	statsMu.Lock()
 	statsCache = map[string]proxyConnectivityEntry{

@@ -9,41 +9,54 @@ import kotlinx.serialization.json.Json
 import java.io.File
 
 /**
- * 已关闭连接持久化（与桌面端 PERSIST_RETENTION_HOURS 一致）：
- * 落盘保留 24 小时内的记录，供重启、后台恢复后仍能展示。
+ * 已关闭连接持久化（与桌面端一致）：
+ * 仅按条数上限保留 closedAt 最新的记录，无时间限制。
+ * 调用方应对写盘做节流，避免连接快照高频刷新时整表反复写入。
  */
 object ClosedConnectionsStorage {
     private const val FILE_NAME = "closed_connections.json"
 
-    /** 持久化保留时长（小时），与桌面端 use-connection-data 一致 */
-    const val PERSIST_RETENTION_HOURS = 24
+    /** 默认条数上限，与桌面端 DEFAULT_CLOSED_CONNECTIONS_LIMIT 一致 */
+    const val DEFAULT_MAX_CLOSED_COUNT = 5000
+
+    /** 可选上限中的最大值，用于无设置时的硬顶 */
+    const val ABSOLUTE_MAX_CLOSED_COUNT = 20000
 
     private val json = Json { ignoreUnknownKeys = true }
     private val listSerializer = ListSerializer(ClosedEntry.serializer())
 
     fun file(context: Context): File = File(context.filesDir, FILE_NAME)
 
-    fun filterByPersistRetention(entries: List<ClosedEntry>, nowMs: Long = System.currentTimeMillis()): List<ClosedEntry> {
-        val maxAgeMs = PERSIST_RETENTION_HOURS * 3600 * 1000L
-        return entries.filter { nowMs - it.closedAt <= maxAgeMs }
+    fun trimToMaxCount(
+        entries: List<ClosedEntry>,
+        maxCount: Int = DEFAULT_MAX_CLOSED_COUNT,
+    ): List<ClosedEntry> {
+        val cap = maxCount.coerceIn(1, ABSOLUTE_MAX_CLOSED_COUNT)
+        if (entries.size <= cap) return entries
+        return entries.sortedByDescending { it.closedAt }.take(cap)
     }
 
-    suspend fun load(context: Context): List<ClosedEntry> = withContext(Dispatchers.IO) {
-        try {
-            val f = file(context)
-            if (!f.exists()) return@withContext emptyList()
-            val text = f.readText()
-            if (text.isBlank()) return@withContext emptyList()
-            val loaded = json.decodeFromString(listSerializer, text)
-            filterByPersistRetention(loaded)
-        } catch (_: Throwable) {
-            emptyList()
+    suspend fun load(context: Context, maxCount: Int = DEFAULT_MAX_CLOSED_COUNT): List<ClosedEntry> =
+        withContext(Dispatchers.IO) {
+            try {
+                val f = file(context)
+                if (!f.exists()) return@withContext emptyList()
+                val text = f.readText()
+                if (text.isBlank()) return@withContext emptyList()
+                val loaded = json.decodeFromString(listSerializer, text)
+                trimToMaxCount(loaded, maxCount)
+            } catch (_: Throwable) {
+                emptyList()
+            }
         }
-    }
 
-    suspend fun save(context: Context, entries: List<ClosedEntry>) = withContext(Dispatchers.IO) {
+    suspend fun save(
+        context: Context,
+        entries: List<ClosedEntry>,
+        maxCount: Int = DEFAULT_MAX_CLOSED_COUNT,
+    ) = withContext(Dispatchers.IO) {
         try {
-            val trimmed = filterByPersistRetention(entries)
+            val trimmed = trimToMaxCount(entries, maxCount)
             val f = file(context)
             if (trimmed.isEmpty()) {
                 if (f.exists()) f.delete()

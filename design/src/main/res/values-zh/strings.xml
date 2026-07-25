@@ -68,10 +68,10 @@
     <string name="connections_sort_order">按时间排序</string>
     <string name="connections_active">活跃</string>
     <string name="connections_closed">已关闭</string>
-    <string name="connections_retention_1h">1 小时</string>
-    <string name="connections_retention_3h">3 小时</string>
-    <string name="connections_retention_8h">8 小时</string>
-    <string name="connections_retention_24h">24 小时</string>
+    <string name="connections_limit_1000">1000 条</string>
+    <string name="connections_limit_5000">5000 条</string>
+    <string name="connections_limit_10000">10000 条</string>
+    <string name="connections_limit_20000">20000 条</string>
     <string name="connections_merge_by_domain">按域名合并</string>
     <string name="connections_cancel_merge">取消合并</string>
     <string name="connections_clear_closed">清除</string>

@@ -75,10 +75,10 @@ class UiStore(context: Context) {
         defaultValue = false,
     )
 
-    /** 已关闭连接保留时间（小时），可选 1、3、8、24，默认 8 */
-    var connectionsClosedRetentionHours: Int by store.int(
-        key = "connections_closed_retention_hours",
-        defaultValue = 8,
+    /** 已关闭连接保留条数上限，可选 1000/5000/10000/20000，默认 5000 */
+    var connectionsClosedLimit: Int by store.int(
+        key = "connections_closed_limit",
+        defaultValue = 5000,
     )
 
     /** 已禁用的局域网来源 IP（用于设备级拦截） */

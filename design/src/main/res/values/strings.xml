@@ -14,10 +14,10 @@
     <string name="connections_active">Active</string>
     <string name="connections_closed">Closed</string>
     <string name="connections_devices">Devices</string>
-    <string name="connections_retention_1h">1 hour</string>
-    <string name="connections_retention_3h">3 hours</string>
-    <string name="connections_retention_8h">8 hours</string>
-    <string name="connections_retention_24h">24 hours</string>
+    <string name="connections_limit_1000">1000</string>
+    <string name="connections_limit_5000">5000</string>
+    <string name="connections_limit_10000">10000</string>
+    <string name="connections_limit_20000">20000</string>
     <string name="connections_merge_by_domain">Merge by domain</string>
     <string name="connections_cancel_merge">Cancel merge</string>
     <string name="connections_clear_closed">Clear</string>
