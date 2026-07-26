@@ -299,6 +299,7 @@ function main(config) {
             ["c-proc-wl-dir", "c-proc-wl-dir.list", "classical", "text"],
             ["c-proc-dir", "c-proc-dir.list", "classical", "text"],
             ["c-proc-pxy", "c-proc-pxy.list", "classical", "text"],
+            ["c-proc-nohk", "c-proc-nohk.list", "classical", "text"],
             ["c-wl-dir", "c-wl-dir.mrs", "domain", "mrs"],
             ["c-wl-pxy", "c-wl-pxy.mrs", "domain", "mrs"],
             ["c-pxy", "c-pxy.mrs", "domain", "mrs"],
@@ -365,7 +366,7 @@ function main(config) {
 
             { kind: "direct", names: ["c-proc-dir", "c-dir"] },
 
-            { kind: "proxy", names: ["c-nohk", "ai"], target: NO_HK },
+            { kind: "proxy", names: ["c-proc-nohk", "c-nohk", "ai"], target: NO_HK },
             { kind: "proxy", name: "c-proc-pxy", target: AUTO },
             { kind: "proxy", name: "c-pxy", target: AUTO },
 
