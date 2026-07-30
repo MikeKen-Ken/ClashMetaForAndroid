@@ -11,46 +11,6 @@ function main(config) {
     const DEFAULT_DIRECT = "🎯 全球直连";
     const DEFAULT_FALLBACK = "🐟 漏网之鱼";
 
-    /** 最终锁定 Direct / Final 的 select 成员顺序（须在 proxy-groups 全部改写完成后调用） */
-    const finalizeScriptSelectGroupOrders = (config) => {
-        const groups = config["proxy-groups"];
-        if (!Array.isArray(groups)) {
-            return;
-        }
-        const autoName = groups.find((g) => g?.name === AUTO)?.name ?? AUTO;
-        const noHkName = groups.find((g) => g?.name === NO_HK)?.name ?? NO_HK;
-        for (const group of groups) {
-            if (!group || typeof group.name !== "string") {
-                continue;
-            }
-            const isDirect =
-                group.name === DIRECT ||
-                group.name === DEFAULT_DIRECT ||
-                group.name.includes("全球直连");
-            const isFinal =
-                group.name === FALLBACK ||
-                group.name === DEFAULT_FALLBACK ||
-                group.name.includes("漏网之鱼");
-            if (isDirect) {
-                group.name = DIRECT;
-                group.type = "select";
-                group.proxies = ["DIRECT", autoName, noHkName];
-                delete group.url;
-                delete group.interval;
-                delete group.timeout;
-                delete group.lazy;
-            } else if (isFinal) {
-                group.name = FALLBACK;
-                group.type = "select";
-                group.proxies = [autoName, noHkName, "DIRECT"];
-                delete group.url;
-                delete group.interval;
-                delete group.timeout;
-                delete group.lazy;
-            }
-        }
-    };
-
     /** 占位：将「未在 PROXY_GROUP_ORDER 中单独列出的组」按当前数组中的相对顺序插入到此处（一般为订阅里其余策略组） */
     const PROXY_GROUP_ORDER_REST = "__REST__";
 
@@ -237,16 +197,14 @@ function main(config) {
                     return;
                 }
                 if (group.proxies && Array.isArray(group.proxies)) {
-                    group.proxies = [];
                     const autoName = config["proxy-groups"][0].name;
-                    const noHkName = config["proxy-groups"][1].name;
-                    // Direct（全球直连）优先直连；其余策略组（如 Final）优先走节点组
-                    const isDirectGroup =
-                        group.name === DEFAULT_DIRECT || group.name === DIRECT;
-                    if (isDirectGroup) {
-                        group.proxies.push("DIRECT", autoName, noHkName);
+                    const nohkName = config["proxy-groups"][1].name;
+                    group.proxies = [];
+                    // 按组名定序：Direct 默认 DIRECT；其余（如 Final）默认 Auto
+                    if (group.name === DEFAULT_DIRECT || group.name === DIRECT) {
+                        group.proxies.push("DIRECT", autoName, nohkName);
                     } else {
-                        group.proxies.push(autoName, noHkName, "DIRECT");
+                        group.proxies.push(autoName, nohkName, "DIRECT");
                     }
                 }
                 if (group.name === DEFAULT_DIRECT) {
@@ -262,7 +220,6 @@ function main(config) {
             });
 
             config["proxy-groups"] = reorderProxyGroupsByTemplate(config["proxy-groups"], PROXY_GROUP_ORDER);
-            finalizeScriptSelectGroupOrders(config);
         }
 
         /** raw 规则集分支：DustinWin mihomo-ruleset；custome-rule release（c-*） */
@@ -271,8 +228,8 @@ function main(config) {
             custome: "https://raw.githubusercontent.com/MikeKen-Ken/custome-rule/release",
         };
 
-        /** 与 custome-rule release 文件名一致：c-* 自建；games-cn 为上游合并补丁 */
-        const isCustomeRuleset = (name) => name.startsWith("c-") || name === "games-cn";
+        /** 与 custome-rule release 文件名一致：c-* 自建 */
+        const isCustomeRuleset = (name) => name.startsWith("c-");
 
         const ruleProvidersList = [
             // https://github.com/DustinWin/ruleset_geodata/tree/mihomo-ruleset
@@ -281,7 +238,6 @@ function main(config) {
             ["privateip", "privateip.mrs", "ipcidr", "mrs"],
             ["ads", "ads.mrs", "domain", "mrs"],
             ["trackerslist", "trackerslist.mrs", "domain", "mrs"],
-            // custome-rule：DustinWin games-cn + games-cn.extra.yaml 补丁
             ["games-cn", "games-cn.mrs", "domain", "mrs"],
             ["microsoft-cn", "microsoft-cn.mrs", "domain", "mrs"],
             ["apple-cn", "apple-cn.mrs", "domain", "mrs"],
@@ -416,8 +372,6 @@ function main(config) {
                 return proxy;
             });
         }
-
-        finalizeScriptSelectGroupOrders(config);
 
         return config;
     } catch (error) {
