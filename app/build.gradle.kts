@@ -25,6 +25,8 @@ dependencies {
     implementation(libs.quickie.bundled)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.zxing.core)
+    implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))
+    implementation("com.squareup.okhttp3:okhttp")
 }
 
 tasks.getByName("clean", type = Delete::class) {

@@ -17,6 +17,7 @@ class MainDesign(context: Context) : Design<MainDesign.Request>(context) {
     enum class Request {
         ToggleStatus,
         OpenRunningConfig,
+        CheckAppUpdate,
         OpenConnections,
         OpenProxy,
         OpenProfiles,

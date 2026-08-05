@@ -57,6 +57,17 @@
     <string name="help">Help</string>
     <string name="about">About</string>
 
+    <string name="check_app_update">检查更新</string>
+    <string name="check_app_update_summary">检查 GitHub 预发布是否有新版本并安装</string>
+    <string name="app_update_checking">正在检查更新…</string>
+    <string name="app_update_downloading">正在下载更新…</string>
+    <string name="app_update_latest">当前已是最新版本</string>
+    <string name="app_update_available_title">发现新版本</string>
+    <string name="app_update_available_message">当前：%1$s\n远端：%2$s\n是否下载并安装？</string>
+    <string name="app_update_download_install">下载并安装</string>
+    <string name="app_update_need_permission">需要允许安装未知应用才能继续</string>
+    <string name="app_update_failed">检查或安装更新失败：%1$s</string>
+
     <string name="copied">Copied</string>
 
     <string name="recently">Recently</string>

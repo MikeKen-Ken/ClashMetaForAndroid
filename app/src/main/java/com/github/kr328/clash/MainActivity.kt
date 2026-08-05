@@ -17,6 +17,7 @@ import com.github.kr328.clash.util.stopClashService
 import com.github.kr328.clash.util.withClash
 import com.github.kr328.clash.util.withProfile
 import com.github.kr328.clash.core.bridge.*
+import com.github.kr328.clash.update.AppUpdateFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -84,6 +85,12 @@ class MainActivity : BaseActivity<MainDesign>() {
                         }
                         MainDesign.Request.OpenRunningConfig ->
                             startActivity(RunningConfigActivity::class.intent)
+                        MainDesign.Request.CheckAppUpdate ->
+                            launch {
+                                AppUpdateFlow.run(this@MainActivity) { text, duration ->
+                                    design.showToast(text, duration)
+                                }
+                            }
                         MainDesign.Request.OpenConnections ->
                             startActivity(ConnectionsActivity::class.intent)
                         MainDesign.Request.OpenProxy ->
