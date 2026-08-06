@@ -7,7 +7,7 @@
 | 组件 | 仓库 | 当前钉扎 |
 |------|------|----------|
 | Android 应用 | [MikeKen-Ken/ClashMetaForAndroid](https://github.com/MikeKen-Ken/ClashMetaForAndroid) | 本仓 |
-| 内核 Mihomo | [MikeKen-Ken/mihomo](https://github.com/MikeKen-Ken/mihomo) | `8c805465` / `alpha-8c80546` |
+| 内核 Mihomo | [MikeKen-Ken/mihomo](https://github.com/MikeKen-Ken/mihomo) | `a615b8e5` / `alpha-a615b8e` |
 | 桌面客户端 | [MikeKen-Ken/clash-verge-rev](https://github.com/MikeKen-Ken/clash-verge-rev) | submodule |
 | 桌面特权服务 | [MikeKen-Ken/clash-verge-service-ipc](https://github.com/MikeKen-Ken/clash-verge-service-ipc) | `pin/v2.1.2` (`dc7238ef`) |
 
