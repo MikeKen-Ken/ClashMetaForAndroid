@@ -2,17 +2,23 @@ cmake_minimum_required(VERSION 3.0)
 
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR= ${CMAKE_CURRENT_SOURCE_DIR}")
 
-# 获取 mihomo submodule 的完整 commit hash
-message(STATUS "Getting mihomo commit hash")
-execute_process(
-    COMMAND git submodule foreach git log -1 --format=%H   
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} 
-    OUTPUT_VARIABLE COMMIT_HASH
-)
-string(REPLACE "\n" ";" COMMIT_HASH "${COMMIT_HASH}")
-list(GET COMMIT_HASH 1 COMMIT_HASH)
-string(REGEX REPLACE "[\n\t\r]" "" COMMIT_HASH ${COMMIT_HASH})
-# 使用完整的 commit hash，不截取
+# 获取 MikeKen-Ken/mihomo（clash-foss）子模块完整 commit，按路径读取，不依赖 foreach 顺序
+set(MIHOMO_SUBMODULE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../foss/golang/clash")
+message(STATUS "Getting mihomo commit hash from ${MIHOMO_SUBMODULE_DIR}")
+if (EXISTS "${MIHOMO_SUBMODULE_DIR}/.git" OR EXISTS "${MIHOMO_SUBMODULE_DIR}/go.mod")
+    execute_process(
+        COMMAND git -C "${MIHOMO_SUBMODULE_DIR}" rev-parse HEAD
+        OUTPUT_VARIABLE COMMIT_HASH
+        RESULT_VARIABLE MIHOMO_GIT_RESULT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    if (NOT MIHOMO_GIT_RESULT EQUAL 0 OR COMMIT_HASH STREQUAL "")
+        message(FATAL_ERROR "Failed to read mihomo commit hash; init submodule core/src/foss/golang/clash first")
+    endif ()
+else ()
+    message(FATAL_ERROR "mihomo submodule missing at ${MIHOMO_SUBMODULE_DIR}; run: git submodule update --init core/src/foss/golang/clash")
+endif ()
 set(GIT_VERSION "${COMMIT_HASH}")
 message(STATUS "mihomo commit hash= ${GIT_VERSION}")
 

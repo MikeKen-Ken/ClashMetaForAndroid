@@ -73,6 +73,8 @@ func queryGroup(name C.c_string, sortMode C.c_string) *C.char {
 //export healthCheck
 func healthCheck(completable unsafe.Pointer, name C.c_string) {
 	go func(name string) {
+		defer C.release_object(completable)
+
 		tunnel.HealthCheck(name)
 
 		C.complete(completable, nil)
@@ -82,6 +84,8 @@ func healthCheck(completable unsafe.Pointer, name C.c_string) {
 //export healthCheckWithTimeout
 func healthCheckWithTimeout(completable unsafe.Pointer, name C.c_string, timeoutMs C.int, concurrency C.int) {
 	go func(name string, timeout int, conc int) {
+		defer C.release_object(completable)
+
 		tunnel.HealthCheckWithTimeout(name, timeout, conc)
 
 		C.complete(completable, nil)

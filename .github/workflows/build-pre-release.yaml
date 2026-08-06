@@ -33,7 +33,8 @@ jobs:
           fi
           git config --global url."https://x-access-token:${SUBMODULE_TOKEN}@github.com/".insteadOf "https://github.com/"
           git submodule sync --recursive
-          git submodule update --init --recursive --remote --force
+          # 钉死父仓 gitlink，不跟 --remote / 上游浮动 tip；内核与服务一律用本组织仓库当前指针
+          git submodule update --init --recursive --force
 
       - name: Setup Java
         uses: actions/setup-java@v4

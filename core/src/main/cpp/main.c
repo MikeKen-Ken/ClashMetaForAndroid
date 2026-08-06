@@ -473,6 +473,13 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeSubscribeLogcat(JNIEnv *env
 }
 
 JNIEXPORT void JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeUnsubscribeLogcat(JNIEnv *env, jobject thiz) {
+    TRACE_METHOD();
+
+    unsubscribeLogcat();
+}
+
+JNIEXPORT void JNICALL
 Java_com_github_kr328_clash_core_bridge_Bridge_nativeSubscribeHealthCheck(JNIEnv *env, jobject thiz,
                                                                            jobject callback) {
     TRACE_METHOD();

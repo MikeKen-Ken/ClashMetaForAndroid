@@ -5,6 +5,7 @@ import "C"
 
 import (
 	"strings"
+	"sync"
 	"time"
 	"unsafe"
 
@@ -43,49 +44,107 @@ func init() {
 	}()
 }
 
+var (
+	logcatMu     sync.Mutex
+	logcatDone   chan struct{}
+	logcatRemote unsafe.Pointer
+)
+
+func stopLogcatLocked() {
+	if logcatDone != nil {
+		close(logcatDone)
+		logcatDone = nil
+	}
+	if logcatRemote != nil {
+		C.release_object(logcatRemote)
+		logcatRemote = nil
+	}
+}
+
 //export subscribeLogcat
 func subscribeLogcat(remote unsafe.Pointer) {
-	go func(remote unsafe.Pointer) {
+	logcatMu.Lock()
+	stopLogcatLocked()
+	done := make(chan struct{})
+	logcatDone = done
+	logcatRemote = remote
+	logcatMu.Unlock()
+
+	go func(remote unsafe.Pointer, done <-chan struct{}) {
 		sub := log.Subscribe()
 		defer log.UnSubscribe(sub)
 
-		for msg := range sub {
-			if msg.LogLevel < log.Level() && !strings.HasPrefix(msg.Payload, "[APP]") {
-				continue
-			}
-
-			rMsg := &message{
-				Level:   msg.LogLevel.String(),
-				Message: msg.Payload,
-				Time:    time.Now().UnixNano() / 1000 / 1000,
-			}
-
-			if C.logcat_received(remote, marshalJson(rMsg)) != 0 {
+		defer func() {
+			logcatMu.Lock()
+			if logcatRemote == remote {
 				C.release_object(remote)
+				logcatRemote = nil
+				logcatDone = nil
+			}
+			logcatMu.Unlock()
+		}()
 
-				log.Debugln("Logcat subscriber closed")
+		for {
+			select {
+			case <-done:
+				log.Debugln("Logcat subscriber unsubscribed")
+				return
+			case msg, ok := <-sub:
+				if !ok {
+					return
+				}
+				if msg.LogLevel < log.Level() && !strings.HasPrefix(msg.Payload, "[APP]") {
+					continue
+				}
 
-				break
+				rMsg := &message{
+					Level:   msg.LogLevel.String(),
+					Message: msg.Payload,
+					Time:    time.Now().UnixNano() / 1000 / 1000,
+				}
+
+				if C.logcat_received(remote, marshalJson(rMsg)) != 0 {
+					log.Debugln("Logcat subscriber closed")
+					return
+				}
 			}
 		}
-	}(remote)
+	}(remote, done)
 
 	log.Infoln("[APP] Logcat level: %s", log.Level().String())
 }
 
-var healthCheckCallback unsafe.Pointer
+//export unsubscribeLogcat
+func unsubscribeLogcat() {
+	logcatMu.Lock()
+	defer logcatMu.Unlock()
+	stopLogcatLocked()
+}
+
+var (
+	healthCheckMu       sync.Mutex
+	healthCheckCallback unsafe.Pointer
+)
 
 //export subscribeHealthCheck
 func subscribeHealthCheck(remote unsafe.Pointer) {
+	healthCheckMu.Lock()
+	if healthCheckCallback != nil {
+		C.release_object(healthCheckCallback)
+	}
 	healthCheckCallback = remote
+	healthCheckMu.Unlock()
+
 	log.Infoln("[APP] Health check callback registered")
-	
-	// Set the callback function in delegate package
-	delegate.SetHealthCheckNotifyFunc(func(groupName string) {
-		if healthCheckCallback == nil {
+
+	delegate.SetHealthCheckNotifyFunc(func(payload string) {
+		healthCheckMu.Lock()
+		cb := healthCheckCallback
+		healthCheckMu.Unlock()
+		if cb == nil {
 			return
 		}
-		cGroupName := C.CString(groupName)
-		C.health_check_triggered(healthCheckCallback, cGroupName)
+		cPayload := C.CString(payload)
+		C.health_check_triggered(cb, cPayload)
 	})
 }

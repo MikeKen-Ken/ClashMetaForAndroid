@@ -22,6 +22,11 @@ object Clash {
         encodeDefaults = false
     }
 
+    private val BridgeJson = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+    }
+
     /** Persist 覆写槽读写互斥：与 [mutatePersistOverride]、[withPersistOverrideSync] 共用，防止服务内读改写与 Binder 整包替换交叉导致丢失更新。 */
     private val persistOverrideSync = Any()
 
@@ -156,7 +161,7 @@ object Clash {
 
     fun queryGroup(name: String, sort: ProxySort): ProxyGroup {
         return Bridge.nativeQueryGroup(name, sort.name)
-            ?.let { Json.Default.decodeFromString(ProxyGroup.serializer(), it) }
+            ?.let { BridgeJson.decodeFromString(ProxyGroup.serializer(), it) }
             ?: ProxyGroup(Proxy.Type.Unknown, emptyList(), "")
     }
 
@@ -357,6 +362,9 @@ object Clash {
                     trySend(Json.decodeFromString(LogMessage.serializer(), jsonPayload))
                 }
             })
+            invokeOnClose {
+                Bridge.nativeUnsubscribeLogcat()
+            }
         }
     }
 }

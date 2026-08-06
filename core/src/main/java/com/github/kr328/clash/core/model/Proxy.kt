@@ -3,7 +3,13 @@ package com.github.kr328.clash.core.model
 import android.os.Parcel
 import android.os.Parcelable
 import com.github.kr328.clash.core.util.Parcelizer
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
 @Serializable
 data class Proxy(
@@ -13,6 +19,11 @@ data class Proxy(
     val type: Type,
     val delay: Int,
 ) : Parcelable {
+    /**
+     * Wire format uses stable type names (not ordinals) so unknown core types map to [Unknown]
+     * instead of crashing when the service/core advances ahead of UI models.
+     */
+    @Serializable(with = ProxyTypeSerializer::class)
     @Suppress("unused")
     enum class Type(val group: Boolean) {
         Direct(false),
@@ -53,6 +64,20 @@ data class Proxy(
         GostRelay(false),
 
         Unknown(false);
+    }
+
+    object ProxyTypeSerializer : KSerializer<Type> {
+        override val descriptor: SerialDescriptor =
+            PrimitiveSerialDescriptor("Proxy.Type", PrimitiveKind.STRING)
+
+        override fun serialize(encoder: Encoder, value: Type) {
+            encoder.encodeString(value.name)
+        }
+
+        override fun deserialize(decoder: Decoder): Type {
+            val raw = decoder.decodeString()
+            return Type.entries.find { it.name.equals(raw, ignoreCase = true) } ?: Type.Unknown
+        }
     }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {

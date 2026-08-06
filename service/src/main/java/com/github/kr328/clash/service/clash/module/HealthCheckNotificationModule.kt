@@ -17,6 +17,7 @@ import com.github.kr328.clash.service.util.sendProxyGroupRefresh
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.selects.select
+import org.json.JSONObject
 
 class HealthCheckNotificationModule(service: Service) : Module<Unit>(service) {
     private val notificationManager = NotificationManagerCompat.from(service)
@@ -56,14 +57,15 @@ class HealthCheckNotificationModule(service: Service) : Module<Unit>(service) {
         // Register callback
         Bridge.nativeSubscribeHealthCheck(object : HealthCheckCallback {
             override fun onHealthCheckTriggered(groupName: String) {
-                if (groupName.startsWith(PROXY_GROUP_REFRESH_PREFIX)) {
-                    refreshGroup(groupName.removePrefix(PROXY_GROUP_REFRESH_PREFIX))
-                    return
+                when (val parsed = parseEvent(groupName)) {
+                    is ParsedEvent.Refresh -> {
+                        refreshGroup(parsed.groupName)
+                    }
+                    is ParsedEvent.Notify -> {
+                        events.trySend(parsed.notification)
+                        refreshGroup(parsed.notification.groupName)
+                    }
                 }
-
-                val notification = parseNotification(groupName)
-                events.trySend(notification)
-                refreshGroup(notification.groupName)
             }
         })
         
@@ -82,8 +84,43 @@ class HealthCheckNotificationModule(service: Service) : Module<Unit>(service) {
         ProxyGroupRefresh.notifyGroupChanged(groupName)
         service.sendProxyGroupRefresh(groupName)
     }
+
+    private sealed class ParsedEvent {
+        data class Refresh(val groupName: String) : ParsedEvent()
+        data class Notify(val notification: GroupNotification) : ParsedEvent()
+    }
+
+    /**
+     * Prefer versioned JSON from core; keep legacy tab-prefix parsing for older cores.
+     */
+    private fun parseEvent(payload: String): ParsedEvent {
+        val trimmed = payload.trim()
+        if (trimmed.startsWith("{")) {
+            try {
+                val json = JSONObject(trimmed)
+                val type = json.optString("type")
+                val group = json.optString("group")
+                val proxy = json.optString("proxy")
+                return when (type) {
+                    "proxy-group-refresh" -> ParsedEvent.Refresh(group)
+                    "max-connect-times" -> ParsedEvent.Notify(
+                        GroupNotification.MaxConnectTimesTest(group, proxy)
+                    )
+                    else -> ParsedEvent.Notify(GroupNotification.HealthCheck(group.ifBlank { trimmed }))
+                }
+            } catch (_: Exception) {
+                // fall through to legacy
+            }
+        }
+
+        if (trimmed.startsWith(PROXY_GROUP_REFRESH_PREFIX)) {
+            return ParsedEvent.Refresh(trimmed.removePrefix(PROXY_GROUP_REFRESH_PREFIX))
+        }
+
+        return ParsedEvent.Notify(parseLegacyNotification(trimmed))
+    }
     
-    private fun parseNotification(payload: String): GroupNotification {
+    private fun parseLegacyNotification(payload: String): GroupNotification {
         if (!payload.startsWith(MAX_CONNECT_TIMES_PREFIX)) {
             return GroupNotification.HealthCheck(payload)
         }

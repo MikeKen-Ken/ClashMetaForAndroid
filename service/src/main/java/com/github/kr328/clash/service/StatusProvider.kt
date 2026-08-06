@@ -11,9 +11,13 @@ class StatusProvider : ContentProvider() {
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         return when (method) {
             METHOD_CURRENT_PROFILE -> {
+                // Always expose running explicitly. When running without a loaded profile,
+                // return empty name (non-null) so legacy clients that treat
+                // currentProfile()!=null as "clash running" stay correct without UI changes.
                 return if (serviceRunning)
                     Bundle().apply {
-                        putString("name", currentProfile)
+                        putBoolean(EXTRA_RUNNING, true)
+                        putString("name", currentProfile ?: "")
                     }
                 else
                     null
@@ -59,6 +63,7 @@ class StatusProvider : ContentProvider() {
 
     companion object {
         const val METHOD_CURRENT_PROFILE = "currentProfile"
+        const val EXTRA_RUNNING = "running"
 
         private const val CLASH_SERVICE_RUNNING_FILE = "service_running.lock"
 
@@ -67,6 +72,9 @@ class StatusProvider : ContentProvider() {
                 field = value
 
                 shouldStartClashOnBoot = value
+                if (!value) {
+                    currentProfile = null
+                }
             }
         var shouldStartClashOnBoot: Boolean
             get() = Global.application.filesDir.resolve(CLASH_SERVICE_RUNNING_FILE).exists()

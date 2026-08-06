@@ -39,7 +39,9 @@ data class ProxyGroup(
     }
 
     constructor(parcel: Parcel) : this(
-        Proxy.Type.values()[parcel.readInt()],
+        // Prefer name-stable Parcelizer path for Proxy; group type still written as ordinal
+        // for this container — clamp unknown ordinals to Unknown.
+        Proxy.Type.entries.getOrElse(parcel.readInt()) { Proxy.Type.Unknown },
         SliceProxyList(parcel),
         parcel.readString()!!,
         parcel.readByte() != 0.toByte(),
@@ -48,6 +50,8 @@ data class ProxyGroup(
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
+        // Keep ordinal for ProxyGroup.type for in-APK Binder; clamp on read above.
+        // Individual Proxy entries use name-stable ProxyTypeSerializer via Parcelizer.
         parcel.writeInt(type.ordinal)
         SliceProxyList(proxies).writeToParcel(parcel, 0)
         parcel.writeString(now)

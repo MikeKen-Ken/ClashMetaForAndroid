@@ -1,14 +1,21 @@
-## Clash Meta for Android
+## Clash Meta for Android (MikeKen-Ken)
 
-A Graphical user interface of [Clash.Meta](https://github.com/MetaCubeX/Clash.Meta) for Android
+基于 Clash.Meta 的 Android GUI；自本 fork 当前版本起，**内核与桌面特权服务只对接自有仓库**，不再跟随 MetaCubeX / clash-verge-rev 上游浮动版本。
+
+### 自有仓库对接基线
+
+| 组件 | 仓库 | 当前钉扎 |
+|------|------|----------|
+| Android 应用 | [MikeKen-Ken/ClashMetaForAndroid](https://github.com/MikeKen-Ken/ClashMetaForAndroid) | 本仓 |
+| 内核 Mihomo | [MikeKen-Ken/mihomo](https://github.com/MikeKen-Ken/mihomo) | `8c805465` / `alpha-8c80546` |
+| 桌面客户端 | [MikeKen-Ken/clash-verge-rev](https://github.com/MikeKen-Ken/clash-verge-rev) | submodule |
+| 桌面特权服务 | [MikeKen-Ken/clash-verge-service-ipc](https://github.com/MikeKen-Ken/clash-verge-service-ipc) | `pin/v2.1.2` (`dc7238ef`) |
+
+升级内核时须同步：父仓 gitlink + `clash-verge-rev/scripts/mihomo.pin.json`。详见 `docs/own-repo-docking.md`。
 
 ### Feature
 
-Feature of [Clash.Meta](https://github.com/MetaCubeX/Clash.Meta)
-
-[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
-     alt="Get it on F-Droid"
-     height="80">](https://f-droid.org/packages/com.github.metacubex.clash.meta/)
+Feature of Clash.Meta / Mihomo（本 fork 内核）。
 
 ### Requirement
 
@@ -18,13 +25,13 @@ Feature of [Clash.Meta](https://github.com/MetaCubeX/Clash.Meta)
 
 ### Build
 
-1. Update submodules
+1. Update submodules（**不要**加 `--remote`，必须用父仓钉死的指针）
 
    ```bash
    git submodule update --init --recursive
    ```
 
-2. Install **OpenJDK 11**, **Android SDK**, **CMake** and **Golang**
+2. Install **OpenJDK 21**, **Android SDK**, **CMake** and **Golang**
 
 3. Create `local.properties` in project root with
 
@@ -35,10 +42,11 @@ Feature of [Clash.Meta](https://github.com/MetaCubeX/Clash.Meta)
 4. (Optional) Custom app package name. Add the following configuration to `local.properties`.
 
    ```properties
-   # config your ownn applicationId, or it will be 'com.github.metacubex.clash'
+   # config your own applicationId, or it will be 'com.github.metacubex.clash'
    custom.application.id=com.my.compile.clash
-   # remove application id suffix, or the applicaion id will be 'com.github.metacubex.clash.alpha'
+   # remove application id suffix, or the application id will be 'com.github.metacubex.clash.alpha'
    remove.suffix=true
+   ```
 
 5. Create `signing.properties` in project root with
 
@@ -57,14 +65,14 @@ Feature of [Clash.Meta](https://github.com/MetaCubeX/Clash.Meta)
 
 ### Automation
 
-APP package name is `com.github.metacubex.clash.meta`
+APP package name defaults to `com.github.metacubex.clash.meta`（可按 `local.properties` 覆盖）。Intent action 须与实际 `applicationId` 一致。
 
 - Toggle Clash.Meta service status
-  - Send intent to activity `com.github.kr328.clash.ExternalControlActivity` with action `com.github.metacubex.clash.meta.action.TOGGLE_CLASH`
+  - Send intent to activity `com.github.kr328.clash.ExternalControlActivity` with action `<applicationId>.action.TOGGLE_CLASH`
 - Start Clash.Meta service
-  - Send intent to activity `com.github.kr328.clash.ExternalControlActivity` with action `com.github.metacubex.clash.meta.action.START_CLASH`
+  - Send intent to activity `com.github.kr328.clash.ExternalControlActivity` with action `<applicationId>.action.START_CLASH`
 - Stop Clash.Meta service
-  - Send intent to activity `com.github.kr328.clash.ExternalControlActivity` with action `com.github.metacubex.clash.meta.action.STOP_CLASH`
+  - Send intent to activity `com.github.kr328.clash.ExternalControlActivity` with action `<applicationId>.action.STOP_CLASH`
 - Import a profile
   - URL Scheme `clash://install-config?url=<encoded URI>` or `clashmeta://install-config?url=<encoded URI>`
 
@@ -72,16 +80,11 @@ APP package name is `com.github.metacubex.clash.meta`
 
 #### Meta Kernel
 
-- CMFA uses the kernel from `android-real` branch under `MetaCubeX/Clash.Meta`, which is a merge of the main `Alpha` branch and `android-open`.
-  - If you want to contribute to the kernel, make PRs to `Alpha` branch of the Meta kernel repository.
-  - If you want to contribute Android-specific patches to the kernel, make PRs to  `android-open` branch of the Meta kernel repository.
+- 本仓内核来自 **MikeKen-Ken/mihomo**（submodule `core/src/foss/golang/clash`），不再使用 MetaCubeX `android-real` 自动同步。
+- 内核改动请提交到自有 `mihomo` 仓库，再更新本仓 gitlink 与桌面 `mihomo.pin.json`。
 
 #### Maintenance
 
-- When `MetaCubeX/Clash.Meta` kernel is updated to a new version, the `Update Dependencies` actions in this repo will be triggered automatically.
-  - It will pull the new version of the meta kernel, update all the golang dependencies, and create a PR without manual intervention.
-  - If there is any compile error in PR, you need to fix it before merging. Alternatively, you may merge the PR directly.
-- Manually triggering `Build Pre-Release` actions will compile and publish a `PreRelease` version.
-- Manually triggering `Build Release` actions will compile, tag and publish a `Release` version.
-  - You must fill the blank `Release Tag` with the tag you want to release in the format of `v1.2.3`.
-  - `versionName` and `versionCode` in `build.gradle.kts` will be automatically bumped to the tag you filled above.
+- CI `Build Pre-Release` 使用父仓 gitlink 初始化 submodule（已去掉 `--remote`）。
+- 桌面特权服务仅从 `vendor/clash-verge-service-ipc` 本地编译，不下载上游 service release。
+- 桌面 mihomo sidecar 版本以 `clash-verge-rev/scripts/mihomo.pin.json` 钉死。

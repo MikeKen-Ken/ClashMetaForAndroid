@@ -1,39 +1,37 @@
 package com.github.kr328.clash.util
 
 import android.os.DeadObjectException
+import android.os.RemoteException
 import com.github.kr328.clash.common.Global
 import com.github.kr328.clash.common.log.DebugLog
 import com.github.kr328.clash.common.log.Log
 import com.github.kr328.clash.remote.Remote
 import com.github.kr328.clash.service.remote.IClashManager
 import com.github.kr328.clash.service.remote.IProfileManager
+import com.github.kr328.clash.service.remote.IRemoteService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlin.coroutines.CoroutineContext
 
 private val clashPatchMutex = Mutex()
 
 private const val DBG_TAG_UI_OVERRIDE = "覆写UI"
+private const val REMOTE_BIND_TIMEOUT_MS = 15_000L
+private const val REMOTE_RETRY_LIMIT = 5
 
 suspend fun <T> withClash(
     context: CoroutineContext = Dispatchers.IO,
     block: suspend IClashManager.() -> T
 ): T {
-    while (true) {
-        val remote = Remote.service.remote.get()
-        val client = remote.clash()
-
-        try {
-            return withContext(context) { client.block() }
-        } catch (e: DeadObjectException) {
-            Log.w("Remote services panic")
-
-            Remote.service.remote.reset(remote)
-        }
+    return withRemoteRetry { remote ->
+        withContext(context) { remote.clash().block() }
     }
 }
 
@@ -69,16 +67,32 @@ suspend fun <T> withProfile(
     context: CoroutineContext = Dispatchers.IO,
     block: suspend IProfileManager.() -> T
 ): T {
+    return withRemoteRetry { remote ->
+        withContext(context) { remote.profile().block() }
+    }
+}
+
+private suspend fun <T> withRemoteRetry(block: suspend (IRemoteService) -> T): T {
+    var attempt = 0
     while (true) {
-        val remote = Remote.service.remote.get()
-        val client = remote.profile()
+        attempt++
+        val remote = try {
+            withTimeout(REMOTE_BIND_TIMEOUT_MS) {
+                Remote.service.remote.get()
+            }
+        } catch (e: TimeoutCancellationException) {
+            throw RemoteException("Clash service bind timeout after ${REMOTE_BIND_TIMEOUT_MS}ms")
+        }
 
         try {
-            return withContext(context) { client.block() }
+            return block(remote)
         } catch (e: DeadObjectException) {
-            Log.w("Remote services panic")
-
+            Log.w("Remote services panic (attempt $attempt/$REMOTE_RETRY_LIMIT)")
             Remote.service.remote.reset(remote)
+            if (attempt >= REMOTE_RETRY_LIMIT) {
+                throw RemoteException("Clash service unavailable after $REMOTE_RETRY_LIMIT retries").initCause(e)
+            }
+            delay(200L * attempt)
         }
     }
 }

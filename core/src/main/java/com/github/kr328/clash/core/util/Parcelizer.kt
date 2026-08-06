@@ -81,7 +81,15 @@ object Parcelizer {
         }
 
         override fun decodeEnum(enumDescriptor: SerialDescriptor): Int {
-            return decodeInt()
+            val index = decodeInt()
+            return if (index in 0 until enumDescriptor.elementsCount) {
+                index
+            } else {
+                // Prefer Unknown when present; otherwise clamp to last element.
+                val unknown = enumDescriptor.getElementIndex("Unknown")
+                if (unknown != CompositeDecoder.UNKNOWN_NAME) unknown
+                else (enumDescriptor.elementsCount - 1).coerceAtLeast(0)
+            }
         }
 
         override fun decodeFloat(): Float {
