@@ -8,7 +8,7 @@
 	branch = dev
 [submodule ".cursor"]
 	path = .cursor
-	url = https://github.com/MikeKen-Ken/cursor-rule.git
+	url = ssh://git@ssh.github.com:443/MikeKen-Ken/cursor-rule.git
 	update = none
 [submodule "custome-rule"]
 	path = custome-rule
