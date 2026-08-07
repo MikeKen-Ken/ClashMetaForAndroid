@@ -2,14 +2,16 @@ package com.github.kr328.clash.update
 
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import com.github.kr328.clash.common.compat.versionCodeCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
@@ -17,13 +19,34 @@ import java.util.concurrent.TimeUnit
 
 /**
  * 从自有 GitHub Release（固定 tag [RELEASE_TAG]）检查是否有新 APK。
+ *
+ * 优先通过 Release 资产直链拉取 `output-metadata.json`（直连 + 镜像），
+ * 避免未认证 GitHub API 的 403 rate limit；API 仅作可选回退。
  */
 internal object AppUpdateChecker {
     const val RELEASE_TAG = "Prerelease-alpha"
+    private const val TAG = "AppUpdateChecker"
     private const val OWNER = "MikeKen-Ken"
     private const val REPO = "ClashMetaForAndroid"
+    private const val USER_AGENT = "ClashMetaForAndroid-AppUpdate"
+
+    private const val RELEASE_DOWNLOAD_BASE =
+        "https://github.com/$OWNER/$REPO/releases/download/$RELEASE_TAG"
     private const val RELEASE_API =
         "https://api.github.com/repos/$OWNER/$REPO/releases/tags/$RELEASE_TAG"
+
+    /** 直连优先，镜像用于绕过 GitHub API/直连限流或网络阻断 */
+    private val METADATA_URLS = listOf(
+        "$RELEASE_DOWNLOAD_BASE/output-metadata.json",
+        "https://gh-proxy.com/$RELEASE_DOWNLOAD_BASE/output-metadata.json",
+        "https://mirror.ghproxy.com/$RELEASE_DOWNLOAD_BASE/output-metadata.json",
+    )
+
+    private val API_URLS = listOf(
+        RELEASE_API,
+        "https://gh-proxy.com/$RELEASE_API",
+        "https://mirror.ghproxy.com/$RELEASE_API",
+    )
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -42,9 +65,19 @@ internal object AppUpdateChecker {
         val localVersionCode = packageInfo.versionCodeCompat
         val localUpdatedAt = packageInfo.lastUpdateTime
 
-        val release = fetchRelease()
-        val remote = pickApk(release)
-            ?: throw IllegalStateException("Release 中没有可用的 APK")
+        Log.i(
+            TAG,
+            "开始检查更新：本地 versionName=$localVersionName versionCode=$localVersionCode",
+        )
+
+        val remote = resolveRemoteApk()
+            ?: throw AppUpdateCheckException.NoApk("Release 中没有匹配当前 ABI 的 APK")
+
+        Log.i(
+            TAG,
+            "远端 APK：${remote.fileName} versionName=${remote.versionName} " +
+                "versionCode=${remote.versionCode}",
+        )
 
         val newerByCode = remote.versionCode > localVersionCode
         val newerByTime =
@@ -57,27 +90,91 @@ internal object AppUpdateChecker {
         }
     }
 
-    private fun fetchRelease(): GitHubRelease {
-        val request = Request.Builder()
-            .url(RELEASE_API)
-            .header("Accept", "application/vnd.github+json")
-            .header("User-Agent", "ClashMetaForAndroid-AppUpdate")
-            .get()
-            .build()
-
-        http.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw IllegalStateException("检查更新失败：HTTP ${response.code}")
+    /**
+     * 优先读 output-metadata.json；失败再尝试 GitHub API（含代理）。
+     */
+    private fun resolveRemoteApk(): RemoteApk? {
+        val metadataErrors = mutableListOf<String>()
+        for (url in METADATA_URLS) {
+            try {
+                Log.i(TAG, "尝试拉取 Release 元数据：$url")
+                val metadata = fetchOutputMetadataRequired(url)
+                val remote = pickApkFromMetadata(metadata)
+                if (remote != null) {
+                    Log.i(TAG, "已通过 Release 资产直链完成检查")
+                    return remote
+                }
+                metadataErrors.add("$url → 元数据中无可用 APK")
+            } catch (e: AppUpdateCheckException) {
+                metadataErrors.add("${e.message}")
+                Log.i(TAG, "元数据源失败，尝试下一源：${e.message}")
+            } catch (e: IOException) {
+                metadataErrors.add("网络失败（$url）：${e.message ?: e.javaClass.simpleName}")
+                Log.i(TAG, "元数据网络失败，尝试下一源", e)
+            } catch (e: Exception) {
+                metadataErrors.add("解析失败（$url）：${e.message ?: e.javaClass.simpleName}")
+                Log.i(TAG, "元数据解析失败，尝试下一源", e)
             }
-            val body = response.body?.string().orEmpty()
-            if (body.isBlank()) {
-                throw IllegalStateException("检查更新失败：空响应")
-            }
-            return json.decodeFromString(GitHubRelease.serializer(), body)
         }
+
+        Log.i(TAG, "Release 资产直链均失败，回退 GitHub API")
+        val apiErrors = mutableListOf<String>()
+        for (url in API_URLS) {
+            try {
+                Log.i(TAG, "尝试 GitHub API：$url")
+                val release = fetchReleaseApi(url)
+                val remote = pickApkFromApiAssets(release)
+                if (remote != null) {
+                    Log.i(TAG, "已通过 GitHub API 完成检查")
+                    return remote
+                }
+                apiErrors.add("$url → API 响应中无可用 APK")
+            } catch (e: AppUpdateCheckException) {
+                apiErrors.add("${e.message}")
+                Log.i(TAG, "API 源失败，尝试下一源：${e.message}")
+            } catch (e: IOException) {
+                apiErrors.add("网络失败（$url）：${e.message ?: e.javaClass.simpleName}")
+                Log.i(TAG, "API 网络失败，尝试下一源", e)
+            } catch (e: Exception) {
+                apiErrors.add("解析失败（$url）：${e.message ?: e.javaClass.simpleName}")
+                Log.i(TAG, "API 解析失败，尝试下一源", e)
+            }
+        }
+
+        val detail = (metadataErrors + apiErrors).joinToString("；")
+        throw AppUpdateCheckException.AllSourcesFailed(
+            "检查更新失败：所有源均不可用。$detail",
+        )
     }
 
-    private fun pickApk(release: GitHubRelease): RemoteApk? {
+    private fun pickApkFromMetadata(metadata: OutputMetadata): RemoteApk? {
+        val elements = metadata.elements.filter { it.outputFile.endsWith(".apk", ignoreCase = true) }
+        if (elements.isEmpty()) return null
+
+        val preferredAbis = Build.SUPPORTED_ABIS.toList()
+        val matched = preferredAbis.firstNotNullOfOrNull { abi ->
+            elements.firstOrNull { element ->
+                element.outputFile.contains(abi, ignoreCase = true) ||
+                    element.filters.any {
+                        it.filterType.equals("ABI", ignoreCase = true) &&
+                            it.value.equals(abi, ignoreCase = true)
+                    }
+            }
+        } ?: elements.first()
+
+        val fileName = matched.outputFile
+        val fallback = parseVersionFromFileName(fileName)
+        return RemoteApk(
+            versionName = matched.versionName.ifBlank { fallback.versionName },
+            versionCode = matched.versionCode.takeIf { it > 0 }?.toLong() ?: fallback.versionCode,
+            fileName = fileName,
+            downloadUrl = buildDownloadUrl(fileName),
+            updatedAtMillis = 0L,
+            assetId = 0L,
+        )
+    }
+
+    private fun pickApkFromApiAssets(release: GitHubRelease): RemoteApk? {
         val apkAssets = release.assets.filter { it.name.endsWith(".apk", ignoreCase = true) }
         if (apkAssets.isEmpty()) return null
 
@@ -88,9 +185,11 @@ internal object AppUpdateChecker {
             }
         } ?: apkAssets.first()
 
-        val metaFromOutput = release.assets
+        val metaElement = release.assets
             .firstOrNull { it.name.equals("output-metadata.json", ignoreCase = true) }
-            ?.let { fetchOutputMetadata(it.browserDownloadUrl) }
+            ?.let { asset ->
+                fetchOutputMetadataOptional(asset.browserDownloadUrl)
+            }
             ?.elements
             ?.firstOrNull { element ->
                 element.outputFile.equals(matched.name, ignoreCase = true) ||
@@ -99,35 +198,105 @@ internal object AppUpdateChecker {
 
         val fallback = parseVersionFromFileName(matched.name)
         return RemoteApk(
-            versionName = metaFromOutput?.versionName ?: fallback.versionName,
-            versionCode = metaFromOutput?.versionCode?.toLong() ?: fallback.versionCode,
+            versionName = metaElement?.versionName?.takeIf { it.isNotBlank() } ?: fallback.versionName,
+            versionCode = metaElement?.versionCode?.takeIf { it > 0 }?.toLong() ?: fallback.versionCode,
             fileName = matched.name,
-            downloadUrl = matched.browserDownloadUrl,
+            downloadUrl = matched.browserDownloadUrl.ifBlank { buildDownloadUrl(matched.name) },
             updatedAtMillis = parseGithubTime(matched.updatedAt),
             assetId = matched.id,
         )
     }
 
-    private fun fetchOutputMetadata(url: String): OutputMetadata? {
+    private fun buildDownloadUrl(fileName: String): String {
+        return "$RELEASE_DOWNLOAD_BASE/$fileName"
+    }
+
+    /** 供下载器在直连失败时尝试的镜像地址 */
+    fun mirrorDownloadUrls(fileName: String): List<String> {
+        val direct = buildDownloadUrl(fileName)
+        return listOf(
+            direct,
+            "https://gh-proxy.com/$direct",
+            "https://mirror.ghproxy.com/$direct",
+        ).distinct()
+    }
+
+    private fun fetchOutputMetadataRequired(url: String): OutputMetadata {
+        return fetchJson(url, OutputMetadata.serializer())
+    }
+
+    private fun fetchOutputMetadataOptional(primaryUrl: String): OutputMetadata? {
+        val candidates = buildList {
+            add(primaryUrl)
+            if (primaryUrl.startsWith("https://github.com/")) {
+                add("https://gh-proxy.com/$primaryUrl")
+                add("https://mirror.ghproxy.com/$primaryUrl")
+            }
+        }.distinct()
+        for (url in candidates) {
+            try {
+                return fetchJson(url, OutputMetadata.serializer())
+            } catch (_: Exception) {
+                // 可选增强，失败则继续
+            }
+        }
+        return null
+    }
+
+    private fun fetchReleaseApi(url: String): GitHubRelease {
+        return fetchJson(
+            url,
+            GitHubRelease.serializer(),
+            extraHeaders = mapOf("Accept" to "application/vnd.github+json"),
+        )
+    }
+
+    private fun <T> fetchJson(
+        url: String,
+        deserializer: kotlinx.serialization.DeserializationStrategy<T>,
+        extraHeaders: Map<String, String> = emptyMap(),
+    ): T {
         val request = Request.Builder()
             .url(url)
-            .header("User-Agent", "ClashMetaForAndroid-AppUpdate")
+            .header("User-Agent", USER_AGENT)
+            .apply { extraHeaders.forEach { (k, v) -> header(k, v) } }
             .get()
             .build()
-        return try {
+
+        try {
             http.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return null
+                val code = response.code
+                if (!response.isSuccessful) {
+                    throw when (code) {
+                        403 -> AppUpdateCheckException.Forbidden(
+                            "检查更新被拒绝（HTTP 403，可能触发 GitHub 速率限制）：$url",
+                        )
+                        else -> AppUpdateCheckException.HttpError(
+                            "检查更新失败：HTTP $code（$url）",
+                            code,
+                        )
+                    }
+                }
                 val body = response.body?.string().orEmpty()
-                if (body.isBlank()) return null
-                json.decodeFromString(OutputMetadata.serializer(), body)
+                if (body.isBlank()) {
+                    throw AppUpdateCheckException.HttpError("检查更新失败：空响应（$url）", code)
+                }
+                return json.decodeFromString(deserializer, body)
             }
-        } catch (_: Exception) {
-            null
+        } catch (e: AppUpdateCheckException) {
+            throw e
+        } catch (e: IOException) {
+            throw e
+        } catch (e: Exception) {
+            throw AppUpdateCheckException.HttpError(
+                "检查更新失败：${e.message ?: e.javaClass.simpleName}（$url）",
+                -1,
+            )
         }
     }
 
     private fun parseVersionFromFileName(fileName: String): VersionMeta {
-        // cmfa-2.11.22-alpha-arm64-v8a-release.apk → versionCode 与工程约定：2*100000+11*1000+22
+        // cmfa-2.11.22-alpha-arm64-v8a-release.apk → versionCode：2*100000+11*1000+22
         val match = Regex("""cmfa-(\d+(?:\.\d+)*)(?:-([a-zA-Z0-9]+))?""", RegexOption.IGNORE_CASE)
             .find(fileName)
         val versionName = match?.groupValues?.getOrNull(1)?.let { base ->
@@ -173,9 +342,9 @@ internal object AppUpdateChecker {
 
     @Serializable
     private data class GitHubAsset(
-        val id: Long,
-        val name: String,
-        @SerialName("browser_download_url") val browserDownloadUrl: String,
+        val id: Long = 0L,
+        val name: String = "",
+        @SerialName("browser_download_url") val browserDownloadUrl: String = "",
         @SerialName("updated_at") val updatedAt: String = "",
     )
 
@@ -189,5 +358,22 @@ internal object AppUpdateChecker {
         val versionCode: Int = 0,
         val versionName: String = "",
         val outputFile: String = "",
+        val filters: List<OutputFilter> = emptyList(),
     )
+
+    @Serializable
+    private data class OutputFilter(
+        val filterType: String = "",
+        val value: String = "",
+    )
+}
+
+/**
+ * 检查更新过程中的可区分错误（网络 / 403 / 无 APK / 全源失败）。
+ */
+internal sealed class AppUpdateCheckException(message: String) : IllegalStateException(message) {
+    class Forbidden(message: String) : AppUpdateCheckException(message)
+    class HttpError(message: String, val code: Int) : AppUpdateCheckException(message)
+    class NoApk(message: String) : AppUpdateCheckException(message)
+    class AllSourcesFailed(message: String) : AppUpdateCheckException(message)
 }

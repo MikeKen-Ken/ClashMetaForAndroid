@@ -1,6 +1,7 @@
 package com.github.kr328.clash.update
 
 import android.content.Context
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -10,8 +11,11 @@ import java.util.concurrent.TimeUnit
 
 /**
  * 将远端 APK 下载到应用缓存目录。
+ * 直连失败时按镜像列表回退。
  */
 internal object ApkDownloader {
+    private const val TAG = "ApkDownloader"
+
     private val http = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(5, TimeUnit.MINUTES)
@@ -29,17 +33,52 @@ internal object ApkDownloader {
         dir.listFiles()?.forEach { it.delete() }
 
         val target = File(dir, remote.fileName)
+        val urls = buildList {
+            add(remote.downloadUrl)
+            addAll(AppUpdateChecker.mirrorDownloadUrls(remote.fileName))
+        }.distinct()
+
+        var lastError: Exception? = null
+        for (url in urls) {
+            try {
+                Log.i(TAG, "开始下载 APK：$url")
+                downloadToFile(url, target, onProgress)
+                if (target.exists() && target.length() > 0L) {
+                    Log.i(TAG, "下载完成：${target.length()} bytes")
+                    return@withContext target
+                }
+                lastError = IllegalStateException("下载失败：文件无效（$url）")
+            } catch (e: Exception) {
+                lastError = e
+                Log.i(TAG, "下载失败，尝试下一源：${e.message}")
+                if (target.exists()) target.delete()
+            }
+        }
+
+        throw lastError ?: IllegalStateException("下载失败：无可用下载源")
+    }
+
+    private fun downloadToFile(
+        url: String,
+        target: File,
+        onProgress: ((downloaded: Long, total: Long) -> Unit)?,
+    ) {
         val request = Request.Builder()
-            .url(remote.downloadUrl)
+            .url(url)
             .header("User-Agent", "ClashMetaForAndroid-AppUpdate")
             .get()
             .build()
 
         http.newCall(request).execute().use { response ->
+            val code = response.code
             if (!response.isSuccessful) {
-                throw IllegalStateException("下载失败：HTTP ${response.code}")
+                val msg = when (code) {
+                    403 -> "下载被拒绝（HTTP 403）：$url"
+                    else -> "下载失败：HTTP $code（$url）"
+                }
+                throw IllegalStateException(msg)
             }
-            val body = response.body ?: throw IllegalStateException("下载失败：空响应体")
+            val body = response.body ?: throw IllegalStateException("下载失败：空响应体（$url）")
             val total = body.contentLength()
             var downloaded = 0L
 
@@ -57,10 +96,5 @@ internal object ApkDownloader {
                 }
             }
         }
-
-        if (!target.exists() || target.length() <= 0L) {
-            throw IllegalStateException("下载失败：文件无效")
-        }
-        target
     }
 }
