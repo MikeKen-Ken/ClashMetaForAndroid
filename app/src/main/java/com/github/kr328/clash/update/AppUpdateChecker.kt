@@ -83,6 +83,12 @@ internal object AppUpdateChecker {
         val newerByTime =
             remote.versionCode == localVersionCode && remote.updatedAtMillis > localUpdatedAt + 60_000L
 
+        Log.i(
+            TAG,
+            "版本比较：newerByCode=$newerByCode newerByTime=$newerByTime " +
+                "localUpdatedAt=$localUpdatedAt remoteUpdatedAt=${remote.updatedAtMillis}",
+        )
+
         if (newerByCode || newerByTime) {
             AppUpdateCheckResult.Available(localVersionName, localVersionCode, remote)
         } else {
@@ -98,11 +104,14 @@ internal object AppUpdateChecker {
         for (url in METADATA_URLS) {
             try {
                 Log.i(TAG, "尝试拉取 Release 元数据：$url")
-                val metadata = fetchOutputMetadataRequired(url)
-                val remote = pickApkFromMetadata(metadata)
+                val fetched = fetchOutputMetadataWithHeaders(url)
+                val remote = pickApkFromMetadata(fetched)
                 if (remote != null) {
-                    Log.i(TAG, "已通过 Release 资产直链完成检查")
-                    return remote
+                    val updatedAt = probeAssetUpdatedAt(remote.fileName)
+                        .takeIf { it > 0L }
+                        ?: remote.updatedAtMillis
+                    Log.i(TAG, "已通过 Release 资产直链完成检查 updatedAt=$updatedAt")
+                    return remote.copy(updatedAtMillis = updatedAt)
                 }
                 metadataErrors.add("$url → 元数据中无可用 APK")
             } catch (e: AppUpdateCheckException) {
@@ -147,7 +156,8 @@ internal object AppUpdateChecker {
         )
     }
 
-    private fun pickApkFromMetadata(metadata: OutputMetadata): RemoteApk? {
+    private fun pickApkFromMetadata(fetched: FetchedMetadata): RemoteApk? {
+        val metadata = fetched.metadata
         val elements = metadata.elements.filter { it.outputFile.endsWith(".apk", ignoreCase = true) }
         if (elements.isEmpty()) return null
 
@@ -169,9 +179,39 @@ internal object AppUpdateChecker {
             versionCode = matched.versionCode.takeIf { it > 0 }?.toLong() ?: fallback.versionCode,
             fileName = fileName,
             downloadUrl = buildDownloadUrl(fileName),
-            updatedAtMillis = 0L,
+            updatedAtMillis = fetched.lastModifiedMillis,
             assetId = 0L,
         )
+    }
+
+    /** 通过 HEAD 获取远端 APK 的 Last-Modified，用于同 versionCode 重建包检测。 */
+    private fun probeAssetUpdatedAt(fileName: String): Long {
+        for (url in mirrorDownloadUrls(fileName)) {
+            val updatedAt = headLastModified(url)
+            if (updatedAt > 0L) {
+                Log.i(TAG, "远端 APK 更新时间：$updatedAt（$url）")
+                return updatedAt
+            }
+        }
+        return 0L
+    }
+
+    private fun headLastModified(url: String): Long {
+        val request = Request.Builder()
+            .url(url)
+            .header("User-Agent", USER_AGENT)
+            .header("Cache-Control", "no-cache")
+            .head()
+            .build()
+
+        return try {
+            http.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return 0L
+                parseHttpLastModified(response.header("Last-Modified").orEmpty())
+            }
+        } catch (_: Exception) {
+            0L
+        }
     }
 
     private fun pickApkFromApiAssets(release: GitHubRelease): RemoteApk? {
@@ -221,8 +261,47 @@ internal object AppUpdateChecker {
         ).distinct()
     }
 
-    private fun fetchOutputMetadataRequired(url: String): OutputMetadata {
-        return fetchJson(url, OutputMetadata.serializer())
+    private fun fetchOutputMetadataWithHeaders(url: String): FetchedMetadata {
+        val request = Request.Builder()
+            .url(url)
+            .header("User-Agent", USER_AGENT)
+            .header("Cache-Control", "no-cache")
+            .get()
+            .build()
+
+        try {
+            http.newCall(request).execute().use { response ->
+                val code = response.code
+                if (!response.isSuccessful) {
+                    throw when (code) {
+                        403 -> AppUpdateCheckException.Forbidden(
+                            "检查更新被拒绝（HTTP 403，可能触发 GitHub 速率限制）：$url",
+                        )
+                        else -> AppUpdateCheckException.HttpError(
+                            "检查更新失败：HTTP $code（$url）",
+                            code,
+                        )
+                    }
+                }
+                val body = response.body?.string().orEmpty()
+                if (body.isBlank()) {
+                    throw AppUpdateCheckException.HttpError("检查更新失败：空响应（$url）", code)
+                }
+                return FetchedMetadata(
+                    metadata = json.decodeFromString(OutputMetadata.serializer(), body),
+                    lastModifiedMillis = parseHttpLastModified(response.header("Last-Modified").orEmpty()),
+                )
+            }
+        } catch (e: AppUpdateCheckException) {
+            throw e
+        } catch (e: IOException) {
+            throw e
+        } catch (e: Exception) {
+            throw AppUpdateCheckException.HttpError(
+                "检查更新失败：${e.message ?: e.javaClass.simpleName}（$url）",
+                -1,
+            )
+        }
     }
 
     private fun fetchOutputMetadataOptional(primaryUrl: String): OutputMetadata? {
@@ -329,6 +408,31 @@ internal object AppUpdateChecker {
             0L
         }
     }
+
+    private fun parseHttpLastModified(value: String): Long {
+        if (value.isBlank()) return 0L
+        val patterns = listOf(
+            "EEE, dd MMM yyyy HH:mm:ss zzz",
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",
+        )
+        for (pattern in patterns) {
+            try {
+                val parser = SimpleDateFormat(pattern, Locale.US).apply {
+                    timeZone = TimeZone.getTimeZone("GMT")
+                }
+                val parsed = parser.parse(value)?.time
+                if (parsed != null) return parsed
+            } catch (_: Exception) {
+                // 尝试下一种格式
+            }
+        }
+        return 0L
+    }
+
+    private data class FetchedMetadata(
+        val metadata: OutputMetadata,
+        val lastModifiedMillis: Long,
+    )
 
     private data class VersionMeta(
         val versionName: String,
