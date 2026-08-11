@@ -376,7 +376,7 @@ function main(config) {
 
         return config;
     } catch (error) {
-        console.error("Generate config error:", error);
+        console.error("Generate config error: ", error);
         return null;
     }
 }
