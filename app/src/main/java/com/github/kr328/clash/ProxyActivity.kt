@@ -74,6 +74,10 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
 
         val pendingRefreshGroups = linkedSetOf<String>()
         var refreshScheduled = false
+        /** 当前正在执行组级测速的代理组名 */
+        val urlTestingGroups = mutableSetOf<String>()
+        /** 测速期间用户已手动切换的组，跳过测速结束后的自动切节点 */
+        val urlTestManualOverrides = mutableSetOf<String>()
         fun scheduleGroupReload(groupName: String) {
             if (names.indexOf(groupName) < 0) return
 
@@ -181,8 +185,11 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                 }
                             }
                             is ProxyDesign.Request.Select -> {
+                                val groupName = names[it.index]
+                                if (groupName in urlTestingGroups) {
+                                    urlTestManualOverrides.add(groupName)
+                                }
                                 withClash {
-                                    val groupName = names[it.index]
                                     if (it.clearManualSelection) {
                                         clearManualSelectionForGroup(groupName)
                                         // 清除手动选择后也关闭该组连接，让后续流量按当前自动选择重建
@@ -237,6 +244,8 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                         design.requests.send(ProxyDesign.Request.Reload(it.index))
                                         return@launch
                                     }
+                                    urlTestingGroups.add(groupName)
+                                    urlTestManualOverrides.remove(groupName)
                                     design.showNativeToast(
                                         getString(R.string.url_test_started, groupName),
                                     )
@@ -249,21 +258,25 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                                 PROXY_GROUP_DELAY_TEST_MAX_CONCURRENCY,
                                             )
 
-                                            // 测速后按当前排序结果选择最靠前的成功节点
-                                            val refreshed = queryProxyGroup(groupName, uiStore.proxySort)
-                                            val firstSuccess = refreshed.proxies.firstOrNull { proxy ->
-                                                proxy.type != Proxy.Type.Direct &&
-                                                    proxy.type != Proxy.Type.Reject &&
-                                                    proxy.delay in 1..timeoutMs
-                                            }
-                                            if (firstSuccess != null && firstSuccess.name != refreshed.now) {
-                                                patchSelector(groupName, firstSuccess.name)
-                                                closeConnectionsUsingProxyGroup(groupName)
+                                            // 测速后按当前排序结果选择最靠前的成功节点；测速期间用户已手动选择则跳过
+                                            if (groupName !in urlTestManualOverrides) {
+                                                val refreshed = queryProxyGroup(groupName, uiStore.proxySort)
+                                                val firstSuccess = refreshed.proxies.firstOrNull { proxy ->
+                                                    proxy.type != Proxy.Type.Direct &&
+                                                        proxy.type != Proxy.Type.Reject &&
+                                                        proxy.delay in 1..timeoutMs
+                                                }
+                                                if (firstSuccess != null && firstSuccess.name != refreshed.now) {
+                                                    patchSelector(groupName, firstSuccess.name)
+                                                    closeConnectionsUsingProxyGroup(groupName)
+                                                }
                                             }
 
                                             closeConnectionsExcludingDirect()
                                         }
                                     } finally {
+                                        urlTestingGroups.remove(groupName)
+                                        urlTestManualOverrides.remove(groupName)
                                         design.showNativeToast(
                                             getString(R.string.url_test_finished, groupName),
                                         )
