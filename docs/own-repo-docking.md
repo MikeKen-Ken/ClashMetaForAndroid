@@ -5,7 +5,7 @@
 | 组件 | 仓库 | 指针 / 版本 | 接入方式 |
 |------|------|-------------|----------|
 | Android 主仓 | MikeKen-Ken/ClashMetaForAndroid | 本仓 | �?|
-| Mihomo 内核 | MikeKen-Ken/mihomo | `1b98f612 / ���� `alpha-1b98f61`` | submodule `core/src/foss/golang/clash` |
+| Mihomo 内核 | MikeKen-Ken/mihomo | `1e691238 / ���� `alpha-1e69123`` | submodule `core/src/foss/golang/clash` |
 | 桌面客户�?| MikeKen-Ken/clash-verge-rev | 父仓 gitlink | submodule |
 | 桌面特权服务 | MikeKen-Ken/clash-verge-service-ipc | `pin/v2.1.2` = `dc7238ef` | path 依赖 + prebuild 本地 cargo 编译 |
 
@@ -19,7 +19,7 @@
 ## 验证清单
 
 - [ ] `git submodule status` �?mihomo �?` 8c805465…`（无前缀 `-`�?- [ ] 本地/CI 构建不再依赖 `--remote`
-- [ ] 桌面 `node scripts/prebuild.mjs` 日志�?`mihomo pinned: alpha-1b98f61`
+- [ ] 桌面 `node scripts/prebuild.mjs` 日志�?`mihomo pinned: alpha-1e69123`
 - [ ] 桌面「安装服务」仍来自本地 service-ipc 编译产物
 
 ## 后续修复（优先服务端�?026-08-06�?
