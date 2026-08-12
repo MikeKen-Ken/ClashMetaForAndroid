@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "purpose": "记录上次已扫过的上游提交窗口。下次只检查 reviewedThrough..最新上游 tip，不要从 fork 起点重扫。",
+  "howToContinue": {
+    "fetch": "git fetch <upstreamRemote> --prune（SSH remote）",
+    "newCommits": "git -C <path> log --oneline <reviewedThrough>..<upstreamRemote>/<upstreamRef>",
+    "keywords": [
+      "CVE",
+      "security",
+      "leak",
+      "memory",
+      "OOM",
+      "crash",
+      "panic",
+      "overflow",
+      "unbounded",
+      "race",
+      "漏洞",
+      "泄漏",
+      "崩溃"
+    ],
+    "afterReview": "把对应组件的 reviewedThrough 更新为当时的上游 tip SHA；把摘入/跳过的提交追加进 ported 或 skipped。"
+  },
+  "lastReview": {
+    "date": "2026-08-13",
+    "method": "按提交说明关键词扫描；只摘冲突面小的补丁，不做整树 merge/rebase"
+  },
+  "components": {
+    "android": {
+      "path": ".",
+      "upstreamRemote": "upstream",
+      "upstreamUrl": "git@github.com:MetaCubeX/ClashMetaForAndroid.git",
+      "upstreamRef": "main",
+      "localHeadAtReview": "d48185307fb1c85dd8db4bb5e91c1a1e576b0d0f",
+      "reviewedThrough": "82b73a4bca24f1606e4b443bc9574cf1758c9693",
+      "reviewedThroughSubject": "Bump version to 2.11.32 (211032)",
+      "note": "本仓 main 与 MetaCubeX main 历史分叉较大。增量窗口以 upstream/main 的 SHA 为准，不要用本仓 HEAD..upstream/main 当全量历史。",
+      "ported": [],
+      "skipped": [
+        {
+          "sha": "8453bfc07db2b5f7cdca41960547260661bd17b6",
+          "subject": "Fix crash when Hide App Icon is enabled alongside dynamic shortcuts",
+          "reason": "本 fork 无 ShortcutManager / setupShortcuts，补丁不适用"
+        }
+      ]
+    },
+    "mihomo": {
+      "path": "core/src/foss/golang/clash",
+      "upstreamRemote": "upstream",
+      "upstreamUrl": "git@github.com:MetaCubeX/mihomo.git",
+      "upstreamRef": "Alpha",
+      "localHeadAtReview": "1e6912389a02299999061ad21af41a90414dcb57",
+      "mergeBaseWithUpstreamAtReview": "f99d4e1be6bef9479fd5f13213ad17edcd0cd3e4",
+      "reviewedThrough": "dd7bc4c6dd4a12071f454d8b8c58db860f3299bc",
+      "reviewedThroughSubject": "chore: reduce ZeroTier packet processing overhead",
+      "note": "2026-08-13 已在工作区摘入下列补丁，但 submodule HEAD 仍可能停在 localHeadAtReview，直到提交到自有 mihomo 并更新 gitlink。",
+      "ported": [
+        {
+          "sha": "d924f1ca621ded10a8e44642b9eff05c8ed6681f",
+          "subject": "fix: CVE-2026-42505 for crypto/tls"
+        },
+        {
+          "sha": "793f61ec6798e335a0f8eed3b310a084c3d68514",
+          "subject": "fix: crash in AmneziaWG receive path with slice bounds out of range"
+        },
+        {
+          "sha": "11848509fb139e912285cc6b7fc5b6e71a1f2418",
+          "subject": "fix: quic sniffer out-of-bounds read causes process crash"
+        },
+        {
+          "sha": "5bdb1cc7e1ee8316fc3f1d68e33d346613fb3012",
+          "subject": "fix: trojan protocol WaitReadFrom panic via oversized UDP relay length field"
+        },
+        {
+          "sha": "5184081ac327394d9e15fa5d5f9f4a61e723fd94",
+          "subject": "fix: socks4 readUntilNull unbounded memory allocation"
+        },
+        {
+          "sha": "75a3ea8b2d904c7f8dc850ec771b473fa6a6cf57",
+          "subject": "fix: leaked openStreams on failure in TUIC client"
+        },
+        {
+          "sha": "98f1200d0d6c922e22d7f92ff63e174d5158d9d4",
+          "subject": "fix: panic when UDP is not supported in dns_dialer"
+        },
+        {
+          "sha": "c079b0cc127917288163864c31dbd53a41604b17",
+          "subject": "fix: panic on full-width IP-SUFFIX rules"
+        },
+        {
+          "sha": "e64f58f333d2488230c25c235b714c98544f5d41",
+          "subject": "fix: panic when rand.IntN calling on a nil slice"
+        }
+      ],
+      "skipped": [
+        {
+          "sha": "5b54b3ad467896d016a428e7db172a1115e7e464",
+          "subject": "fix: panic when dial failed in masque",
+          "reason": "本 fork 已有 DialQuic 失败返回，无需再摘"
+        }
+      ]
+    },
+    "clash-verge-rev": {
+      "path": "clash-verge-rev",
+      "upstreamRemote": "upstream",
+      "upstreamUrl": "git@github.com:clash-verge-rev/clash-verge-rev.git",
+      "upstreamRef": "dev",
+      "localHeadAtReview": "6f00a7409cfea28fa2a0f36ff2d5dc4bd6611296",
+      "mergeBaseWithUpstreamAtReview": "95281632a15f4af1fef189273cbb2a25743aa342",
+      "reviewedThrough": "aadceba0642b8f58cf7c6e426ff29bf6846cbfe1",
+      "reviewedThroughSubject": "fix(sysproxy): dconf command is no longer mandatory",
+      "ported": [
+        {
+          "sha": "85b5501faffc676e128a44990e7f0900a04ee9ca",
+          "subject": "fix(profile): prevent crash when editing proxies with empty name",
+          "how": "按上游逻辑改 proxies-editor-viewer.tsx，非 cherry-pick"
+        }
+      ],
+      "skipped": [
+        {
+          "sha": "45afb1c15af5482ee296871f5e574f0dde83f6c9",
+          "subject": "fix(frontend): reduce long-running memory pressure in connections",
+          "reason": "连接页大重构，与本 fork 分叉过深，未整段移植"
+        },
+        {
+          "sha": "b8fbabae04a7936d0f8498ac170ff1aad042d62f",
+          "subject": "fix: frontend memory leaks — Monaco dispose, TQ cache eviction, useEffect cleanup",
+          "reason": "本 fork 的 editor-viewer 卸载路径已 dispose Monaco"
+        },
+        {
+          "sha": "d203121abe1cdf0061c6239c21d9e711a7884b92",
+          "subject": "perf(ui): reduce CPU and memory pressure on hot frontend paths",
+          "reason": "热路径大重构，未整段移植"
+        },
+        {
+          "sha": "4fa2f9a3",
+          "subject": "fix(macos): recover webview and stop ws leak after render process terminate",
+          "reason": "仅 macOS WebView"
+        },
+        {
+          "sha": "711deccf",
+          "subject": "fix(security): upgrade rustls-webpki to 0.103.13",
+          "reason": "Cargo lock 与分叉纠缠，未动依赖升级"
+        },
+        {
+          "sha": "bcece774",
+          "subject": "fix(deps): security update thin-vec to 0.2.16",
+          "reason": "Cargo lock 与分叉纠缠，未动依赖升级"
+        }
+      ]
+    }
+  }
+}
