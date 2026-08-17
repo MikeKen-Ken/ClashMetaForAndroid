@@ -22,6 +22,10 @@ import java.util.concurrent.TimeUnit
  *
  * 优先通过 Release 资产直链拉取 `output-metadata.json`（直连 + 镜像），
  * 避免未认证 GitHub API 的 403 rate limit；API 仅作可选回退。
+ *
+ * HTTP 404 通常表示远端 GitHub Actions（Build Pre-Release）失败：
+ * 工作流会先删除旧的 [RELEASE_TAG] Release，再上传新资产；若中途失败，
+ * 清单与 APK 都不存在。
  */
 internal object AppUpdateChecker {
     const val RELEASE_TAG = "Prerelease-alpha"
@@ -100,7 +104,7 @@ internal object AppUpdateChecker {
      * 优先读 output-metadata.json；失败再尝试 GitHub API（含代理）。
      */
     private fun resolveRemoteApk(): RemoteApk? {
-        val metadataErrors = mutableListOf<String>()
+        val metadataErrors = mutableListOf<SourceFailure>()
         for (url in METADATA_URLS) {
             try {
                 Log.i(TAG, "尝试拉取 Release 元数据：$url")
@@ -113,21 +117,21 @@ internal object AppUpdateChecker {
                     Log.i(TAG, "已通过 Release 资产直链完成检查 updatedAt=$updatedAt")
                     return remote.copy(updatedAtMillis = updatedAt)
                 }
-                metadataErrors.add("$url → 元数据中无可用 APK")
+                metadataErrors.add(SourceFailure("$url → 元数据中无可用 APK"))
             } catch (e: AppUpdateCheckException) {
-                metadataErrors.add("${e.message}")
+                metadataErrors.add(sourceFailureFrom(e))
                 Log.i(TAG, "元数据源失败，尝试下一源：${e.message}")
             } catch (e: IOException) {
-                metadataErrors.add("网络失败（$url）：${e.message ?: e.javaClass.simpleName}")
+                metadataErrors.add(SourceFailure("网络失败（$url）：${e.message ?: e.javaClass.simpleName}"))
                 Log.i(TAG, "元数据网络失败，尝试下一源", e)
             } catch (e: Exception) {
-                metadataErrors.add("解析失败（$url）：${e.message ?: e.javaClass.simpleName}")
+                metadataErrors.add(SourceFailure("解析失败（$url）：${e.message ?: e.javaClass.simpleName}"))
                 Log.i(TAG, "元数据解析失败，尝试下一源", e)
             }
         }
 
         Log.i(TAG, "Release 资产直链均失败，回退 GitHub API")
-        val apiErrors = mutableListOf<String>()
+        val apiErrors = mutableListOf<SourceFailure>()
         for (url in API_URLS) {
             try {
                 Log.i(TAG, "尝试 GitHub API：$url")
@@ -137,23 +141,40 @@ internal object AppUpdateChecker {
                     Log.i(TAG, "已通过 GitHub API 完成检查")
                     return remote
                 }
-                apiErrors.add("$url → API 响应中无可用 APK")
+                apiErrors.add(SourceFailure("$url → API 响应中无可用 APK"))
             } catch (e: AppUpdateCheckException) {
-                apiErrors.add("${e.message}")
+                apiErrors.add(sourceFailureFrom(e))
                 Log.i(TAG, "API 源失败，尝试下一源：${e.message}")
             } catch (e: IOException) {
-                apiErrors.add("网络失败（$url）：${e.message ?: e.javaClass.simpleName}")
+                apiErrors.add(SourceFailure("网络失败（$url）：${e.message ?: e.javaClass.simpleName}"))
                 Log.i(TAG, "API 网络失败，尝试下一源", e)
             } catch (e: Exception) {
-                apiErrors.add("解析失败（$url）：${e.message ?: e.javaClass.simpleName}")
+                apiErrors.add(SourceFailure("解析失败（$url）：${e.message ?: e.javaClass.simpleName}"))
                 Log.i(TAG, "API 解析失败，尝试下一源", e)
             }
         }
 
-        val detail = (metadataErrors + apiErrors).joinToString("；")
-        throw AppUpdateCheckException.AllSourcesFailed(
-            "检查更新失败：所有源均不可用。$detail",
-        )
+        throwAllSourcesFailed(metadataErrors, apiErrors)
+    }
+
+    /**
+     * 全源失败时的用户可见说明。
+     * 若各源均为 HTTP 404，通常是工作流先删掉旧 [RELEASE_TAG] 后未能重新上传资产。
+     */
+    private fun throwAllSourcesFailed(
+        metadataErrors: List<SourceFailure>,
+        apiErrors: List<SourceFailure>,
+    ): Nothing {
+        val all = metadataErrors + apiErrors
+        val onlyNotFound = all.isNotEmpty() && all.all { it.httpCode == 404 }
+        val message = if (onlyNotFound) {
+            "更新清单失败（HTTP 404）：一般是远端 GitHub Actions（Build Pre-Release）" +
+                "构建或发布失败，当前 Release「$RELEASE_TAG」下没有 output-metadata.json。" +
+                "请到仓库 Actions 页查看该工作流。"
+        } else {
+            "检查更新失败：所有源均不可用。" + all.joinToString("；") { it.detail }
+        }
+        throw AppUpdateCheckException.AllSourcesFailed(message)
     }
 
     private fun pickApkFromMetadata(fetched: FetchedMetadata): RemoteApk? {
@@ -273,15 +294,7 @@ internal object AppUpdateChecker {
             http.newCall(request).execute().use { response ->
                 val code = response.code
                 if (!response.isSuccessful) {
-                    throw when (code) {
-                        403 -> AppUpdateCheckException.Forbidden(
-                            "检查更新被拒绝（HTTP 403，可能触发 GitHub 速率限制）：$url",
-                        )
-                        else -> AppUpdateCheckException.HttpError(
-                            "检查更新失败：HTTP $code（$url）",
-                            code,
-                        )
-                    }
+                    throwHttpFailure(code, url, isManifest = true)
                 }
                 val body = response.body?.string().orEmpty()
                 if (body.isBlank()) {
@@ -346,15 +359,7 @@ internal object AppUpdateChecker {
             http.newCall(request).execute().use { response ->
                 val code = response.code
                 if (!response.isSuccessful) {
-                    throw when (code) {
-                        403 -> AppUpdateCheckException.Forbidden(
-                            "检查更新被拒绝（HTTP 403，可能触发 GitHub 速率限制）：$url",
-                        )
-                        else -> AppUpdateCheckException.HttpError(
-                            "检查更新失败：HTTP $code（$url）",
-                            code,
-                        )
-                    }
+                    throwHttpFailure(code, url, isManifest = false)
                 }
                 val body = response.body?.string().orEmpty()
                 if (body.isBlank()) {
@@ -372,6 +377,33 @@ internal object AppUpdateChecker {
                 -1,
             )
         }
+    }
+
+    private fun throwHttpFailure(code: Int, url: String, isManifest: Boolean): Nothing {
+        throw when (code) {
+            404 -> AppUpdateCheckException.HttpError(
+                if (isManifest) {
+                    "更新清单失败（HTTP 404）：一般是远端 GitHub Actions（Build Pre-Release）" +
+                        "未发布成功，tag $RELEASE_TAG 下没有 output-metadata.json（$url）"
+                } else {
+                    "Release 不存在（HTTP 404）：一般是远端 GitHub Actions 删除旧 tag 后" +
+                        "未能重新发布 $RELEASE_TAG（$url）"
+                },
+                code,
+            )
+            403 -> AppUpdateCheckException.Forbidden(
+                "检查更新被拒绝（HTTP 403，可能触发 GitHub 速率限制）：$url",
+            )
+            else -> AppUpdateCheckException.HttpError(
+                "检查更新失败：HTTP $code（$url）",
+                code,
+            )
+        }
+    }
+
+    private fun sourceFailureFrom(e: AppUpdateCheckException): SourceFailure {
+        val code = (e as? AppUpdateCheckException.HttpError)?.code
+        return SourceFailure(e.message ?: e.javaClass.simpleName, code)
     }
 
     private fun parseVersionFromFileName(fileName: String): VersionMeta {
@@ -428,6 +460,11 @@ internal object AppUpdateChecker {
         }
         return 0L
     }
+
+    private data class SourceFailure(
+        val detail: String,
+        val httpCode: Int? = null,
+    )
 
     private data class FetchedMetadata(
         val metadata: OutputMetadata,
