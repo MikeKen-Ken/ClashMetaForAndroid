@@ -2,6 +2,7 @@ package com.github.kr328.clash
 
 import androidx.appcompat.app.AlertDialog
 import com.github.kr328.clash.design.ConnectivityStatsDesign
+import com.github.kr328.clash.design.R
 import com.github.kr328.clash.design.model.ConnectivityScoreRow
 import com.github.kr328.clash.util.withClash
 import kotlinx.coroutines.isActive
