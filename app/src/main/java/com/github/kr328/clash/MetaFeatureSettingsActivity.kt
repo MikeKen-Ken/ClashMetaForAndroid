@@ -104,7 +104,7 @@ class MetaFeatureSettingsActivity : BaseActivity<MetaFeatureSettingsDesign>() {
                         .setTitle(R.string.geofile_unknown_db_format)
                         .setMessage(getString(R.string.geofile_unknown_db_format_message,
                             validDatabaseExtensions.joinToString("/")))
-                        .setPositiveButton("OK") { _, _ -> }
+                        .setPositiveButton(R.string.ok) { _, _ -> }
                         .show()
                     return
                 }

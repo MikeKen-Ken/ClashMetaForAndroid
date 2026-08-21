@@ -108,7 +108,7 @@
                             android:layout_marginStart="@dimen/item_tailing_margin"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:clickable="true"
-                            android:contentDescription="节点测速统计"
+                            android:contentDescription="@string/connectivity_stats_title"
                             android:focusable="true"
                             android:onClick="@{() -> self.requestClearConnectivityStats()}"
                             android:padding="@dimen/toolbar_image_action_padding"
@@ -335,7 +335,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:paddingEnd="8dp"
-                    android:text="测速数量步长"
+                    android:text="@string/concurrency_step"
                     android:textSize="11sp" />
 
                 <HorizontalScrollView

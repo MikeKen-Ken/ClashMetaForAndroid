@@ -60,7 +60,7 @@
             android:layout_marginEnd="@dimen/item_tailing_margin"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="@{clearEnabled}"
-            android:contentDescription="清空该节点统计"
+            android:contentDescription="@string/connectivity_stats_clear"
             android:enabled="@{clearEnabled}"
             android:focusable="@{clearEnabled}"
             android:onClick="@{clear}"

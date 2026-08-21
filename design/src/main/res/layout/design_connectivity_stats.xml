@@ -46,7 +46,7 @@
                     android:layout_marginStart="@dimen/item_tailing_margin"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:clickable="true"
-                    android:contentDescription="一键清空"
+                    android:contentDescription="@string/connectivity_stats_clear_all"
                     android:focusable="true"
                     android:onClick="@{() -> self.requestClearAll()}"
                     android:padding="@dimen/toolbar_image_action_padding"
