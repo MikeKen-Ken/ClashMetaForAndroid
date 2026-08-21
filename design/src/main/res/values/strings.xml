@@ -39,14 +39,14 @@
     <string name="global_mode">Global Mode</string>
     <string name="offline_mode">Offline Mode</string>
     <string name="proxy_empty_tips">No groups can be displayed</string>
-    <string name="flush_fake_ip">清空 DNS 与 Fake-IP</string>
-    <string name="flush_fake_ip_done">已清空全部 DNS 缓存与 Fake-IP 映射</string>
-    <string name="feedback_proxy_started">代理已开启</string>
-    <string name="feedback_proxy_stopped">代理已关闭</string>
-    <string name="url_test_started">测速已开始：%1$s</string>
-    <string name="url_test_finished">测速已完成：%1$s</string>
-    <string name="provider_update_started">正在更新订阅：%1$s</string>
-    <string name="provider_update_done">订阅已更新：%1$s</string>
+    <string name="flush_fake_ip">Clear DNS and Fake-IP</string>
+    <string name="flush_fake_ip_done">All DNS caches and Fake-IP mappings cleared</string>
+    <string name="feedback_proxy_started">Proxy started</string>
+    <string name="feedback_proxy_stopped">Proxy stopped</string>
+    <string name="url_test_started">Delay test started: %1$s</string>
+    <string name="url_test_finished">Delay test completed: %1$s</string>
+    <string name="provider_update_started">Updating subscription: %1$s</string>
+    <string name="provider_update_done">Subscription updated: %1$s</string>
 
     <string name="profiles">Profiles</string>
     <string name="not_selected">Not selected</string>
@@ -57,16 +57,16 @@
     <string name="help">Help</string>
     <string name="about">About</string>
 
-    <string name="check_app_update">检查更新</string>
-    <string name="check_app_update_summary">检查 GitHub 预发布是否有新版本并安装</string>
-    <string name="app_update_checking">正在检查更新…</string>
-    <string name="app_update_downloading">正在下载更新…</string>
-    <string name="app_update_latest">当前已是最新版本</string>
-    <string name="app_update_available_title">发现新版本</string>
-    <string name="app_update_available_message">当前：%1$s\n远端：%2$s\n是否下载并安装？</string>
-    <string name="app_update_download_install">下载并安装</string>
-    <string name="app_update_need_permission">需要允许安装未知应用才能继续</string>
-    <string name="app_update_failed">检查或安装更新失败：%1$s</string>
+    <string name="check_app_update">Check for Updates</string>
+    <string name="check_app_update_summary">Check for and install new pre-release versions from GitHub</string>
+    <string name="app_update_checking">Checking for updates…</string>
+    <string name="app_update_downloading">Downloading update…</string>
+    <string name="app_update_latest">You are already using the latest version</string>
+    <string name="app_update_available_title">New Version Available</string>
+    <string name="app_update_available_message">Current: %1$s\nRemote: %2$s\nDownload and install it?</string>
+    <string name="app_update_download_install">Download and Install</string>
+    <string name="app_update_need_permission">Permission to install unknown apps is required to continue</string>
+    <string name="app_update_failed">Failed to check for or install update: %1$s</string>
 
     <string name="copied">Copied</string>
 
@@ -343,8 +343,8 @@
     <string name="concurrency_100">×100</string>
     <string name="concurrency_150">×150</string>
     <string name="concurrency_200">×200</string>
-    <string name="proxy_ads_on">广告</string>
-    <string name="proxy_ads_off">无广告</string>
+    <string name="proxy_ads_on">Ad Blocking</string>
+    <string name="proxy_ads_off">No Ad Blocking</string>
 
     <string name="format_provider_type">%1$s(%2$s)</string>
     <string name="rule">Rule</string>
@@ -363,7 +363,7 @@
     <string name="version_updated">App Updated</string>
     <string name="version_updated_tips">The settings have been reseted and the old profiles needs to be saved again.</string>
 
-    <string name="mode_switch_tips">仅在本次会话中有效</string>
+    <string name="mode_switch_tips">Effective only for this session</string>
 
     <string name="clash_meta_wiki">Clash Meta Wiki</string>
     <string name="clash_meta_wiki_url" translatable="false">https://wiki.metacubex.one</string>
@@ -427,4 +427,11 @@
     <string name="running_config_share_url_hint">This QR Code expires in %1$d seconds.\n%2$s</string>
     <string name="import_from_qr_no_permission">Camera access is restricted. Please enable it in Settings.</string>
     <string name="import_from_qr_exception">An unhandled system exception occurred.</string>
+    <string name="connectivity_stats_title">Node Connectivity Statistics</string>
+    <string name="connectivity_stats_no_stats">No statistics</string>
+    <string name="connectivity_stats_subtitle">Score %1$.3f · Success %2$s · Failure %3$s · Effective delay %4$s</string>
+    <string name="connectivity_stats_clear_one">Cleared connectivity statistics for “%s”</string>
+    <string name="connectivity_stats_clear_all_message">Clear connectivity statistics for all nodes? This action cannot be undone.</string>
+    <string name="connectivity_stats_clear">Clear</string>
+    <string name="connectivity_stats_cleared_all">Cleared connectivity statistics for all nodes</string>
 </resources>

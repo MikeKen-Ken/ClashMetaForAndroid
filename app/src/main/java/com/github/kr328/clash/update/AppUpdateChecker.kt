@@ -75,7 +75,7 @@ internal object AppUpdateChecker {
         )
 
         val remote = resolveRemoteApk()
-            ?: throw AppUpdateCheckException.NoApk("Release 中没有匹配当前 ABI 的 APK")
+            ?: throw AppUpdateCheckException.NoApk("No APK matching the current ABI was found in the Release")
 
         Log.i(
             TAG,
@@ -168,11 +168,11 @@ internal object AppUpdateChecker {
         val all = metadataErrors + apiErrors
         val onlyNotFound = all.isNotEmpty() && all.all { it.httpCode == 404 }
         val message = if (onlyNotFound) {
-            "更新清单失败（HTTP 404）：一般是远端 GitHub Actions（Build Pre-Release）" +
-                "构建或发布失败，当前 Release「$RELEASE_TAG」下没有 output-metadata.json。" +
-                "请到仓库 Actions 页查看该工作流。"
+            "Manifest update failed (HTTP 404): the remote GitHub Actions (Build Pre-Release) " +
+                "workflow may have failed to build or publish; output-metadata.json is missing " +
+                "from Release “$RELEASE_TAG”. Check the repository Actions page."
         } else {
-            "检查更新失败：所有源均不可用。" + all.joinToString("；") { it.detail }
+            "Update check failed: all sources are unavailable. " + all.joinToString("; ") { it.detail }
         }
         throw AppUpdateCheckException.AllSourcesFailed(message)
     }
@@ -298,7 +298,7 @@ internal object AppUpdateChecker {
                 }
                 val body = response.body?.string().orEmpty()
                 if (body.isBlank()) {
-                    throw AppUpdateCheckException.HttpError("检查更新失败：空响应（$url）", code)
+                    throw AppUpdateCheckException.HttpError("Update check failed: empty response ($url)", code)
                 }
                 return FetchedMetadata(
                     metadata = json.decodeFromString(OutputMetadata.serializer(), body),
@@ -311,7 +311,7 @@ internal object AppUpdateChecker {
             throw e
         } catch (e: Exception) {
             throw AppUpdateCheckException.HttpError(
-                "检查更新失败：${e.message ?: e.javaClass.simpleName}（$url）",
+                "Update check failed: ${e.message ?: e.javaClass.simpleName} ($url)",
                 -1,
             )
         }
@@ -363,7 +363,7 @@ internal object AppUpdateChecker {
                 }
                 val body = response.body?.string().orEmpty()
                 if (body.isBlank()) {
-                    throw AppUpdateCheckException.HttpError("检查更新失败：空响应（$url）", code)
+                    throw AppUpdateCheckException.HttpError("Update check failed: empty response ($url)", code)
                 }
                 return json.decodeFromString(deserializer, body)
             }
@@ -373,7 +373,7 @@ internal object AppUpdateChecker {
             throw e
         } catch (e: Exception) {
             throw AppUpdateCheckException.HttpError(
-                "检查更新失败：${e.message ?: e.javaClass.simpleName}（$url）",
+                "Update check failed: ${e.message ?: e.javaClass.simpleName} ($url)",
                 -1,
             )
         }
@@ -383,19 +383,20 @@ internal object AppUpdateChecker {
         throw when (code) {
             404 -> AppUpdateCheckException.HttpError(
                 if (isManifest) {
-                    "更新清单失败（HTTP 404）：一般是远端 GitHub Actions（Build Pre-Release）" +
-                        "未发布成功，tag $RELEASE_TAG 下没有 output-metadata.json（$url）"
+                    "Manifest update failed (HTTP 404): the remote GitHub Actions (Build Pre-Release) " +
+                        "workflow did not publish successfully; output-metadata.json is missing " +
+                        "under tag $RELEASE_TAG ($url)"
                 } else {
-                    "Release 不存在（HTTP 404）：一般是远端 GitHub Actions 删除旧 tag 后" +
-                        "未能重新发布 $RELEASE_TAG（$url）"
+                    "Release does not exist (HTTP 404): the remote GitHub Actions workflow may have " +
+                        "deleted the old tag without republishing $RELEASE_TAG ($url)"
                 },
                 code,
             )
             403 -> AppUpdateCheckException.Forbidden(
-                "检查更新被拒绝（HTTP 403，可能触发 GitHub 速率限制）：$url",
+                "Update check rejected (HTTP 403; GitHub rate limit may have been triggered): $url",
             )
             else -> AppUpdateCheckException.HttpError(
-                "检查更新失败：HTTP $code（$url）",
+                "Update check failed: HTTP $code ($url)",
                 code,
             )
         }

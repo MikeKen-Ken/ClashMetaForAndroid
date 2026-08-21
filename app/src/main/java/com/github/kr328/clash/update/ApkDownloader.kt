@@ -47,15 +47,15 @@ internal object ApkDownloader {
                     Log.i(TAG, "下载完成：${target.length()} bytes")
                     return@withContext target
                 }
-                lastError = IllegalStateException("下载失败：文件无效（$url）")
+                lastError = IllegalStateException("Download failed: invalid file ($url)")
             } catch (e: Exception) {
                 lastError = e
-                Log.i(TAG, "下载失败，尝试下一源：${e.message}")
+                Log.i(TAG, "Download failed; trying next source: ${e.message}")
                 if (target.exists()) target.delete()
             }
         }
 
-        throw lastError ?: IllegalStateException("下载失败：无可用下载源")
+        throw lastError ?: IllegalStateException("Download failed: no available download source")
     }
 
     private fun downloadToFile(
@@ -73,12 +73,12 @@ internal object ApkDownloader {
             val code = response.code
             if (!response.isSuccessful) {
                 val msg = when (code) {
-                    403 -> "下载被拒绝（HTTP 403）：$url"
-                    else -> "下载失败：HTTP $code（$url）"
+                    403 -> "Download rejected (HTTP 403): $url"
+                    else -> "Download failed: HTTP $code ($url)"
                 }
                 throw IllegalStateException(msg)
             }
-            val body = response.body ?: throw IllegalStateException("下载失败：空响应体（$url）")
+            val body = response.body ?: throw IllegalStateException("Download failed: empty response body ($url)")
             val total = body.contentLength()
             var downloaded = 0L
 

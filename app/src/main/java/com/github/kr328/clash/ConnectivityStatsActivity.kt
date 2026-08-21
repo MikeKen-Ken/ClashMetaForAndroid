@@ -33,21 +33,21 @@ class ConnectivityStatsActivity : BaseActivity<ConnectivityStatsDesign>() {
                         is ConnectivityStatsDesign.Request.ClearOne -> {
                             withClash { clearProxyConnectivityStatsFor(request.name) }
                             design.replaceRows(loadRows())
-                            design.showNativeToast("已清空「${request.name}」的测速统计")
+                            design.showNativeToast(getString(R.string.connectivity_stats_clear_one, request.name))
                             setResult(RESULT_OK)
                         }
                         ConnectivityStatsDesign.Request.ClearAll -> {
                             AlertDialog.Builder(this@ConnectivityStatsActivity)
-                                .setMessage("确定清空所有节点的测速成功/失败统计吗？此操作不可恢复。")
-                                .setPositiveButton("清空") { _, _ ->
+                                .setMessage(R.string.connectivity_stats_clear_all_message)
+                                .setPositiveButton(R.string.connectivity_stats_clear) { _, _ ->
                                     launch {
                                         withClash { clearProxyConnectivityStats() }
                                         design.replaceRows(loadRows())
-                                        design.showNativeToast("已清空节点测速统计")
+                                        design.showNativeToast(getString(R.string.connectivity_stats_cleared_all))
                                         setResult(RESULT_OK)
                                     }
                                 }
-                                .setNegativeButton("取消", null)
+                                .setNegativeButton(R.string.cancel, null)
                                 .show()
                         }
                     }

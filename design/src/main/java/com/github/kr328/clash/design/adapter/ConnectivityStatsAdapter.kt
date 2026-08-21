@@ -3,6 +3,7 @@ package com.github.kr328.clash.design.adapter
 import android.content.Context
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.github.kr328.clash.design.R
 import com.github.kr328.clash.design.databinding.AdapterConnectivityStatsBinding
 import com.github.kr328.clash.design.model.ConnectivityScoreRow
 import com.github.kr328.clash.design.util.layoutInflater
@@ -29,7 +30,7 @@ class ConnectivityStatsAdapter(
     override fun onBindViewHolder(holder: Holder, position: Int) {
         val row = rows[position]
         holder.binding.row = row
-        holder.binding.subtitle = formatSubtitle(row)
+        holder.binding.subtitle = formatSubtitle(context, row)
         holder.binding.clearEnabled = row.hasStats
         holder.binding.clearView.alpha = if (row.hasStats) 1f else 0.3f
         holder.binding.clear = android.view.View.OnClickListener {
@@ -43,8 +44,8 @@ class ConnectivityStatsAdapter(
     override fun getItemCount(): Int = rows.size
 
     companion object {
-        fun formatSubtitle(row: ConnectivityScoreRow): String {
-            if (!row.hasStats) return "无统计"
+        fun formatSubtitle(context: Context, row: ConnectivityScoreRow): String {
+            if (!row.hasStats) return context.getString(R.string.connectivity_stats_no_stats)
             val success = formatCount(row.weightedSuccess)
             val failure = formatCount(row.weightedFailure)
             val delay = if (row.effectiveAvgDelayMs.isFinite()) {
@@ -52,7 +53,7 @@ class ConnectivityStatsAdapter(
             } else {
                 "—"
             }
-            return "分数 ${"%.3f".format(row.score)} · 成功 $success · 失败 $failure · 有效延迟 $delay"
+            return context.getString(R.string.connectivity_stats_subtitle, row.score, success, failure, delay)
         }
 
         private fun formatCount(n: Double): String {

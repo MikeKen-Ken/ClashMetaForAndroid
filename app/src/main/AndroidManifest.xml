@@ -138,7 +138,7 @@
             android:name=".ConnectivityStatsActivity"
             android:configChanges="uiMode"
             android:exported="false"
-            android:label="节点测速统计" />
+            android:label="@string/connectivity_stats_title" />
         <activity
             android:name=".ProvidersActivity"
             android:configChanges="uiMode"
