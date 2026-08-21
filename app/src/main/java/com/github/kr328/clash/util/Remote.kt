@@ -46,7 +46,7 @@ fun scheduleCriticalWork(logTag: String, block: suspend () -> Unit) {
                 block()
             } catch (e: Exception) {
                 Log.e("$logTag: ${e.message}", e)
-                DebugLog.e(DBG_TAG_UI_OVERRIDE, "$logTag 失败: ${e.message}")
+                DebugLog.e(DBG_TAG_UI_OVERRIDE, "$logTag failed: ${e.message}")
             }
         }
     }
@@ -55,11 +55,11 @@ fun scheduleCriticalWork(logTag: String, block: suspend () -> Unit) {
 /** 在 [scheduleCriticalWork] 中调用 [withClash] 完成远程覆写或同类变更。 */
 fun scheduleClashMutation(logTag: String, block: suspend IClashManager.() -> Unit) {
     scheduleCriticalWork(logTag) {
-        DebugLog.i(DBG_TAG_UI_OVERRIDE, "开始 $logTag")
+        DebugLog.i(DBG_TAG_UI_OVERRIDE, "Starting $logTag")
         clashPatchMutex.withLock {
             withClash(block = block)
         }
-        DebugLog.i(DBG_TAG_UI_OVERRIDE, "完成 $logTag")
+        DebugLog.i(DBG_TAG_UI_OVERRIDE, "Completed $logTag")
     }
 }
 

@@ -25,7 +25,7 @@ class LogsActivity : BaseActivity<LogsDesign>() {
                     ?: LogMessage.Level.Info
             }
         } catch (e: Exception) {
-            Log.e("读取日志级别失败: ${e.message}", e)
+            Log.e("Failed to read log level: ${e.message}", e)
             LogMessage.Level.Info
         }
         val design = LogsDesign(this, initialLogLevel)

@@ -14,7 +14,7 @@ class RestartReceiver : BroadcastReceiver() {
                 if (StatusProvider.shouldStartClashOnBoot) {
                     val vpnRequest = context.startClashService()
                     if (vpnRequest != null) {
-                        Log.i("开机自启需要 VPN 授权，已跳过本次自动启动")
+                        Log.i("VPN permission is required for auto-start; skipping this startup")
                     }
                 }
             }

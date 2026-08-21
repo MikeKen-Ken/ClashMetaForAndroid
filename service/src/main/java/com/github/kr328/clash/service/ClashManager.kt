@@ -194,10 +194,10 @@ class ClashManager(private val context: Context) : IClashManager,
     override fun flushFakeIpCache() {
         try {
             Clash.flushFakeIpCache()
-            Log.i("[$LOG_FLUSH_FAKE_IP] :background 清除 Fake-IP 缓存成功")
+            Log.i("[$LOG_FLUSH_FAKE_IP] :background cleared Fake-IP cache successfully")
         } catch (e: Exception) {
             Log.i(
-                "[$LOG_FLUSH_FAKE_IP] :background 清除 Fake-IP 缓存失败: ${e.message ?: e.javaClass.simpleName}",
+                "[$LOG_FLUSH_FAKE_IP] :background failed to clear Fake-IP cache: ${e.message ?: e.javaClass.simpleName}",
                 e,
             )
             throw e

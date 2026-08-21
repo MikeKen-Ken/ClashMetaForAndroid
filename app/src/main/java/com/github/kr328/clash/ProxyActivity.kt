@@ -327,11 +327,11 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                             closeAllConnections()
                                             flushFakeIpCache()
                                         }
-                                        Log.i("[$LOG_FLUSH_FAKE_IP] 代理页清空 DNS 与 Fake-IP 成功")
+                                        Log.i("[$LOG_FLUSH_FAKE_IP] Proxy page cleared DNS and Fake-IP successfully")
                                         design.showFlushFakeIpDone()
                                     } catch (e: Exception) {
                                         Log.i(
-                                            "[$LOG_FLUSH_FAKE_IP] 代理页清除 Fake-IP 缓存失败: ${e.message ?: e.javaClass.simpleName}",
+                                            "[$LOG_FLUSH_FAKE_IP] Proxy page failed to clear Fake-IP cache: ${e.message ?: e.javaClass.simpleName}",
                                             e,
                                         )
                                         design.showExceptionToast(e)

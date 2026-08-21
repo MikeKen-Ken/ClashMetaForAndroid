@@ -71,7 +71,7 @@ internal object AppUpdateChecker {
 
         Log.i(
             TAG,
-            "开始检查更新：本地 versionName=$localVersionName versionCode=$localVersionCode",
+            "Checking for updates: local versionName=$localVersionName versionCode=$localVersionCode",
         )
 
         val remote = resolveRemoteApk()
@@ -79,7 +79,7 @@ internal object AppUpdateChecker {
 
         Log.i(
             TAG,
-            "远端 APK：${remote.fileName} versionName=${remote.versionName} " +
+            "Remote APK: ${remote.fileName} versionName=${remote.versionName} " +
                 "versionCode=${remote.versionCode}",
         )
 
@@ -89,7 +89,7 @@ internal object AppUpdateChecker {
 
         Log.i(
             TAG,
-            "版本比较：newerByCode=$newerByCode newerByTime=$newerByTime " +
+            "Version comparison: newerByCode=$newerByCode newerByTime=$newerByTime " +
                 "localUpdatedAt=$localUpdatedAt remoteUpdatedAt=${remote.updatedAtMillis}",
         )
 
@@ -107,50 +107,50 @@ internal object AppUpdateChecker {
         val metadataErrors = mutableListOf<SourceFailure>()
         for (url in METADATA_URLS) {
             try {
-                Log.i(TAG, "尝试拉取 Release 元数据：$url")
+                Log.i(TAG, "Fetching Release metadata: $url")
                 val fetched = fetchOutputMetadataWithHeaders(url)
                 val remote = pickApkFromMetadata(fetched)
                 if (remote != null) {
                     val updatedAt = probeAssetUpdatedAt(remote.fileName)
                         .takeIf { it > 0L }
                         ?: remote.updatedAtMillis
-                    Log.i(TAG, "已通过 Release 资产直链完成检查 updatedAt=$updatedAt")
+                    Log.i(TAG, "Update check completed via Release asset URL, updatedAt=$updatedAt")
                     return remote.copy(updatedAtMillis = updatedAt)
                 }
                 metadataErrors.add(SourceFailure("$url → 元数据中无可用 APK"))
             } catch (e: AppUpdateCheckException) {
                 metadataErrors.add(sourceFailureFrom(e))
-                Log.i(TAG, "元数据源失败，尝试下一源：${e.message}")
+                Log.i(TAG, "Metadata source failed; trying next source: ${e.message}")
             } catch (e: IOException) {
                 metadataErrors.add(SourceFailure("网络失败（$url）：${e.message ?: e.javaClass.simpleName}"))
-                Log.i(TAG, "元数据网络失败，尝试下一源", e)
+                Log.i(TAG, "Metadata network request failed; trying next source", e)
             } catch (e: Exception) {
                 metadataErrors.add(SourceFailure("解析失败（$url）：${e.message ?: e.javaClass.simpleName}"))
-                Log.i(TAG, "元数据解析失败，尝试下一源", e)
+                Log.i(TAG, "Metadata parsing failed; trying next source", e)
             }
         }
 
-        Log.i(TAG, "Release 资产直链均失败，回退 GitHub API")
+        Log.i(TAG, "All Release asset URLs failed; falling back to the GitHub API")
         val apiErrors = mutableListOf<SourceFailure>()
         for (url in API_URLS) {
             try {
-                Log.i(TAG, "尝试 GitHub API：$url")
+                Log.i(TAG, "Trying GitHub API: $url")
                 val release = fetchReleaseApi(url)
                 val remote = pickApkFromApiAssets(release)
                 if (remote != null) {
-                    Log.i(TAG, "已通过 GitHub API 完成检查")
+                    Log.i(TAG, "Update check completed via GitHub API")
                     return remote
                 }
                 apiErrors.add(SourceFailure("$url → API 响应中无可用 APK"))
             } catch (e: AppUpdateCheckException) {
                 apiErrors.add(sourceFailureFrom(e))
-                Log.i(TAG, "API 源失败，尝试下一源：${e.message}")
+                Log.i(TAG, "API source failed; trying next source: ${e.message}")
             } catch (e: IOException) {
                 apiErrors.add(SourceFailure("网络失败（$url）：${e.message ?: e.javaClass.simpleName}"))
-                Log.i(TAG, "API 网络失败，尝试下一源", e)
+                Log.i(TAG, "API network request failed; trying next source", e)
             } catch (e: Exception) {
                 apiErrors.add(SourceFailure("解析失败（$url）：${e.message ?: e.javaClass.simpleName}"))
-                Log.i(TAG, "API 解析失败，尝试下一源", e)
+                Log.i(TAG, "API parsing failed; trying next source", e)
             }
         }
 
@@ -210,7 +210,7 @@ internal object AppUpdateChecker {
         for (url in mirrorDownloadUrls(fileName)) {
             val updatedAt = headLastModified(url)
             if (updatedAt > 0L) {
-                Log.i(TAG, "远端 APK 更新时间：$updatedAt（$url）")
+                Log.i(TAG, "Remote APK last-modified time: $updatedAt ($url)")
                 return updatedAt
             }
         }

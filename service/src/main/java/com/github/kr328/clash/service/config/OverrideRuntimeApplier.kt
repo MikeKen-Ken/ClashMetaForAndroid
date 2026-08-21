@@ -32,7 +32,7 @@ internal object OverrideRuntimeApplier {
         val persist = Clash.queryOverride(Clash.OverrideSlot.Persist)
         persist.logLevel?.let { level ->
             if (!Clash.patchRuntimeLogLevel(level.toClashYamlKey())) {
-                Log.w("$TAG: 轻量 PATCH log-level（reload 后对齐）失败")
+                Log.w("$TAG: lightweight log-level PATCH failed after reload")
             }
         }
         val bindNext = persist.bindAddress?.trim().orEmpty()
@@ -47,7 +47,7 @@ internal object OverrideRuntimeApplier {
             ),
         )
         if (!Clash.patchConnectivityJsonSubset(json)) {
-            Log.w("$TAG: 轻量 PATCH allow-lan/bind-address（reload 后对齐）失败")
+            Log.w("$TAG: lightweight allow-lan/bind-address PATCH failed after reload")
         }
     }
 
@@ -73,7 +73,7 @@ internal object OverrideRuntimeApplier {
         )
 
         if (!Clash.patchConnectivityJsonSubset(json)) {
-            Log.w("$TAG: 轻量 PATCH allow-lan/bind-address 运行时应用失败")
+            Log.w("$TAG: failed to apply lightweight allow-lan/bind-address PATCH at runtime")
         }
     }
 

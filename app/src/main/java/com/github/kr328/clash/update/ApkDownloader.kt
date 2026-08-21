@@ -41,10 +41,10 @@ internal object ApkDownloader {
         var lastError: Exception? = null
         for (url in urls) {
             try {
-                Log.i(TAG, "开始下载 APK：$url")
+                Log.i(TAG, "Starting APK download: $url")
                 downloadToFile(url, target, onProgress)
                 if (target.exists() && target.length() > 0L) {
-                    Log.i(TAG, "下载完成：${target.length()} bytes")
+                    Log.i(TAG, "Download completed: ${target.length()} bytes")
                     return@withContext target
                 }
                 lastError = IllegalStateException("Download failed: invalid file ($url)")

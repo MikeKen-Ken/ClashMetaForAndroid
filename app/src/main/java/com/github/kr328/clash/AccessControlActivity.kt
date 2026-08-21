@@ -53,11 +53,11 @@ class AccessControlActivity : BaseActivity<AccessControlDesign>() {
                                 if (result.resultCode == RESULT_OK) {
                                     startClashService()
                                 } else {
-                                    Log.i("访问控制重启服务时用户拒绝 VPN 授权")
+                                    Log.i("User denied VPN permission while restarting the service from access control")
                                 }
                             }
                         } catch (e: Exception) {
-                            Log.w("访问控制重启服务时无法请求 VPN 授权: $e", e)
+                            Log.w("Unable to request VPN permission while restarting the service from access control: $e", e)
                         }
                     }
                 }
