@@ -12,11 +12,11 @@ import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.config.ConfigurationOverrideClassifier
 import com.github.kr328.clash.service.config.OverrideReloadDecision
 import com.github.kr328.clash.service.config.OverrideRuntimeApplier
-import com.github.kr328.clash.service.clash.module.RuntimeConfigNotification
 import com.github.kr328.clash.service.util.persistSummaryForDebug
 import com.github.kr328.clash.service.util.importedDir
 import com.github.kr328.clash.service.util.sendDebugUiLog
 import com.github.kr328.clash.service.util.sendOverrideChanged
+import com.github.kr328.clash.service.util.sendRuntimeConfigUpdated
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import java.io.File
@@ -107,7 +107,7 @@ class ClashManager(private val context: Context) : IClashManager,
                 OverrideReloadDecision.FullConfigurationReload -> context.sendOverrideChanged()
                 OverrideReloadDecision.RuntimeLightOnly -> {
                     if (OverrideRuntimeApplier.apply(previous, configuration)) {
-                        RuntimeConfigNotification.notifyUpdated(context)
+                        context.sendRuntimeConfigUpdated()
                     }
                 }
             }
@@ -130,7 +130,7 @@ class ClashManager(private val context: Context) : IClashManager,
             OverrideReloadDecision.FullConfigurationReload -> context.sendOverrideChanged()
             OverrideReloadDecision.RuntimeLightOnly -> {
                 if (OverrideRuntimeApplier.apply(previous, configuration)) {
-                    RuntimeConfigNotification.notifyUpdated(context)
+                    context.sendRuntimeConfigUpdated()
                 }
             }
         }
@@ -246,7 +246,7 @@ class ClashManager(private val context: Context) : IClashManager,
             config.proxySelections = selections.associate { it.proxy to it.selected }
         }
         Clash.loadWithManualConnectivityOrder(context.importedDir.resolve(profile.toString())).await()
-        RuntimeConfigNotification.notifyUpdated(context)
+        context.sendRuntimeConfigUpdated()
     }
 
     override suspend fun updateProvider(type: Provider.Type, name: String) {

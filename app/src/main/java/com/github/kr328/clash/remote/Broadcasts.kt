@@ -21,6 +21,7 @@ class Broadcasts(private val context: Application) {
         fun onProfileUpdateCompleted(uuid: UUID?)
         fun onProfileUpdateFailed(uuid: UUID?, reason: String?)
         fun onProfileLoaded()
+        fun onRuntimeConfigUpdated()
     }
 
     var clashRunning: Boolean = false
@@ -79,6 +80,11 @@ class Broadcasts(private val context: Application) {
                         it.onProfileLoaded()
                     }
                 }
+                Intents.ACTION_RUNTIME_CONFIG_UPDATED -> {
+                    receivers.forEach {
+                        it.onRuntimeConfigUpdated()
+                    }
+                }
                 Intents.ACTION_DEBUG_UI_LOG -> {
                     val tag = intent.getStringExtra(Intents.EXTRA_DEBUG_LOG_TAG) ?: "DebugUi"
                     val msg = intent.getStringExtra(Intents.EXTRA_DEBUG_LOG_MESSAGE).orEmpty()
@@ -111,6 +117,7 @@ class Broadcasts(private val context: Application) {
                 addAction(Intents.ACTION_PROFILE_UPDATE_COMPLETED)
                 addAction(Intents.ACTION_PROFILE_UPDATE_FAILED)
                 addAction(Intents.ACTION_PROFILE_LOADED)
+                addAction(Intents.ACTION_RUNTIME_CONFIG_UPDATED)
                 addAction(Intents.ACTION_DEBUG_UI_LOG)
             }, Permissions.RECEIVE_SELF_BROADCASTS, null)
 

@@ -15,6 +15,7 @@ import com.github.kr328.clash.design.Design
 import com.github.kr328.clash.design.model.DarkMode
 import com.github.kr328.clash.design.store.UiStore
 import com.github.kr328.clash.design.ui.DayNight
+import com.github.kr328.clash.design.ui.ToastDuration
 import com.github.kr328.clash.design.util.resolveThemedBoolean
 import com.github.kr328.clash.design.util.resolveThemedColor
 import com.github.kr328.clash.design.util.showExceptionToast
@@ -161,6 +162,14 @@ abstract class BaseActivity<D : Design<*>> : AppCompatActivity(),
 
     override fun onProfileLoaded() {
         events.trySend(Event.ProfileLoaded)
+    }
+
+    override fun onRuntimeConfigUpdated() {
+        if (activityStarted) {
+            launch {
+                design?.showToast(R.string.runtime_config_updated, ToastDuration.Long)
+            }
+        }
     }
 
     override fun onServiceRecreated() {

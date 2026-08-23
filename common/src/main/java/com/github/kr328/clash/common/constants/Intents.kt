@@ -22,6 +22,7 @@ object Intents {
     val ACTION_PROFILE_REQUEST_UPDATE = "$packageName.intent.action.REQUEST_UPDATE"
     val ACTION_PROFILE_SCHEDULE_UPDATES = "$packageName.intent.action.SCHEDULE_UPDATES"
     val ACTION_PROFILE_LOADED = "$packageName.intent.action.PROFILE_LOADED"
+    val ACTION_RUNTIME_CONFIG_UPDATED = "$packageName.intent.action.RUNTIME_CONFIG_UPDATED"
     val ACTION_OVERRIDE_CHANGED = "$packageName.intent.action.OVERRIDE_CHANGED"
     val ACTION_PROXY_GROUP_REFRESH = "$packageName.intent.action.PROXY_GROUP_REFRESH"
     /** 由 :background 进程发往主进程，写入 [com.github.kr328.clash.common.log.DebugLog] 供调试界面展示。 */

@@ -1,4 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="PluralsCandidate">
+    <string name="runtime_config_updated">Runtime configuration updated.</string>
     <string name="launch_name_meta">Speed X</string>
     <string name="launch_name_alpha">Speed X</string>
     <string name="application_name_meta">Speed X</string>

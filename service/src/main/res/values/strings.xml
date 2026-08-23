@@ -20,10 +20,6 @@
     <string name="profile_updating">Profile Updating</string>
     <string name="health_check_notification_channel">Health Check</string>
     <string name="health_check_notification_channel_description">Notification when a Fallback group triggers a health check</string>
-    <string name="runtime_config_notification_channel">Runtime Configuration</string>
-    <string name="runtime_config_notification_channel_description">Notification when the running configuration changes</string>
-    <string name="runtime_config_updated_title">Runtime Configuration Updated</string>
-    <string name="runtime_config_updated_message">The running configuration has been applied successfully.</string>
     <string name="health_check_triggered_title">Fallback Health Check</string>
     <string name="health_check_triggered_message">Group “%s” triggered a health check</string>
     <string name="max_connect_times_test_triggered_title">Request Count Delay Test</string>

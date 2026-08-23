@@ -15,6 +15,7 @@ import com.github.kr328.clash.service.util.persistSummaryForDebug
 import com.github.kr328.clash.service.config.OverrideRuntimeApplier
 import com.github.kr328.clash.service.util.sendDebugUiLog
 import com.github.kr328.clash.service.util.sendProfileLoaded
+import com.github.kr328.clash.service.util.sendRuntimeConfigUpdated
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.selects.select
 import java.util.*
@@ -90,7 +91,7 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
 
                 Clash.load(service.importedDir.resolve(active.uuid.toString())).await()
 
-                RuntimeConfigNotification.notifyUpdated(service)
+                service.sendRuntimeConfigUpdated()
 
                 OverrideRuntimeApplier.applyPersistRuntimeLightFieldsAfterFullLoad()
 
