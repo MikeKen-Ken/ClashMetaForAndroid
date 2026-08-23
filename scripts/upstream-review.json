@@ -22,8 +22,8 @@
     "afterReview": "把对应组件的 reviewedThrough 更新为当时的上游 tip SHA；把摘入/跳过的提交追加进 ported 或 skipped。"
   },
   "lastReview": {
-    "date": "2026-08-13",
-    "method": "按提交说明关键词扫描；只摘冲突面小的补丁，不做整树 merge/rebase"
+    "date": "2026-08-23",
+    "method": "按 reviewedThrough 增量审阅功能、安全与稳定性提交；仅评估，未摘入补丁"
   },
   "components": {
     "android": {
@@ -32,11 +32,16 @@
       "upstreamUrl": "git@github.com:MetaCubeX/ClashMetaForAndroid.git",
       "upstreamRef": "main",
       "localHeadAtReview": "d48185307fb1c85dd8db4bb5e91c1a1e576b0d0f",
-      "reviewedThrough": "82b73a4bca24f1606e4b443bc9574cf1758c9693",
-      "reviewedThroughSubject": "Bump version to 2.11.32 (211032)",
+      "reviewedThrough": "c454d0e73b047d9f4c0173e8d35088f08b65bc98",
+      "reviewedThroughSubject": "Bump version to 2.11.33 (211033)",
       "note": "本仓 main 与 MetaCubeX main 历史分叉较大。增量窗口以 upstream/main 的 SHA 为准，不要用本仓 HEAD..upstream/main 当全量历史。",
       "ported": [],
       "skipped": [
+        {
+          "sha": "12d4a5f83356275e4226a94f41c96f724c866f8d",
+          "subject": "Fix external Clash control shortcuts (#805)",
+          "reason": "本 fork 已使用 StatusClient 检查运行状态，等效修复已存在，无需重复移植"
+        },
         {
           "sha": "8453bfc07db2b5f7cdca41960547260661bd17b6",
           "subject": "Fix crash when Hide App Icon is enabled alongside dynamic shortcuts",
@@ -51,10 +56,25 @@
       "upstreamRef": "Alpha",
       "localHeadAtReview": "1e6912389a02299999061ad21af41a90414dcb57",
       "mergeBaseWithUpstreamAtReview": "f99d4e1be6bef9479fd5f13213ad17edcd0cd3e4",
-      "reviewedThrough": "dd7bc4c6dd4a12071f454d8b8c58db860f3299bc",
-      "reviewedThroughSubject": "chore: reduce ZeroTier packet processing overhead",
+      "reviewedThrough": "f295ba6da4928af24f6f4c15f732e728b045db0a",
+      "reviewedThroughSubject": "chore: update mipstack for api adjustment",
       "note": "2026-08-13 已在工作区摘入下列补丁，但 submodule HEAD 仍可能停在 localHeadAtReview，直到提交到自有 mihomo 并更新 gitlink。",
       "ported": [
+        {
+          "sha": "331545794414d9e04d3ef16795abd1decdfbf8ce",
+          "subject": "fix: CVE-2026-56862 for crypto/tls",
+          "how": "升级 github.com/metacubex/tls 至 v0.1.8"
+        },
+        {
+          "sha": "8c56780b56b82230e071551d7d471b045fa28dfa",
+          "subject": "feat: support AmneziaWG v3.1",
+          "how": "移植 random-trailers 和 disable-cookies 配置及 IPC 输出"
+        },
+        {
+          "sha": "b27c659a6e42c63bd59b2eda0b35ac2b87158885",
+          "subject": "feat: add client-metadata configuration to anytls and DON'T sent by default",
+          "how": "移植可选 client-metadata，默认不发送客户端版本"
+        },
         {
           "sha": "d924f1ca621ded10a8e44642b9eff05c8ed6681f",
           "subject": "fix: CVE-2026-42505 for crypto/tls"
@@ -107,9 +127,14 @@
       "upstreamRef": "dev",
       "localHeadAtReview": "6f00a7409cfea28fa2a0f36ff2d5dc4bd6611296",
       "mergeBaseWithUpstreamAtReview": "95281632a15f4af1fef189273cbb2a25743aa342",
-      "reviewedThrough": "aadceba0642b8f58cf7c6e426ff29bf6846cbfe1",
-      "reviewedThroughSubject": "fix(sysproxy): dconf command is no longer mandatory",
+      "reviewedThrough": "f68f204fc296d9f2151132bb9fe18c76d28db44f",
+      "reviewedThroughSubject": "chore(deps): revert dependency rust to v1.95.0 (#7796)",
       "ported": [
+        {
+          "sha": "4673360f693d0117c8f244159d2aae6d8a7896c5",
+          "subject": "feat(home): add fixed proxy indicator to current-proxy-card (#7790)",
+          "how": "在本 fork 的代理列表中以核心 fixed 字段作为图钉状态来源"
+        },
         {
           "sha": "85b5501faffc676e128a44990e7f0900a04ee9ca",
           "subject": "fix(profile): prevent crash when editing proxies with empty name",
@@ -117,6 +142,11 @@
         }
       ],
       "skipped": [
+        {
+          "sha": "daadb126e077c9a00cabbdf2df66e3828ffa2a22",
+          "subject": "feat: allow manually unfixing proxy nodes (#7756)",
+          "reason": "本 fork 已有清除核心固定状态与清理 profile 选择记录的完整交互，无需重复移植"
+        },
         {
           "sha": "45afb1c15af5482ee296871f5e574f0dde83f6c9",
           "subject": "fix(frontend): reduce long-running memory pressure in connections",
