@@ -110,6 +110,11 @@
         {
           "sha": "e64f58f333d2488230c25c235b714c98544f5d41",
           "subject": "fix: panic when rand.IntN calling on a nil slice"
+        },
+        {
+          "sha": "9a7e72665766e8874f9aef2e608b081e3e4e093c",
+          "subject": "fix: performance regression caused by unnecessary wrapping in stream encryption",
+          "how": "移除 AES-CTR/CFB 创建流时对 cipher.Block 的多余包装，并提交到自有 mihomo 为 5e7878d9"
         }
       ],
       "skipped": [

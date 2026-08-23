@@ -6,8 +6,6 @@ import com.github.kr328.clash.design.adapter.ConnectivityStatsAdapter
 import com.github.kr328.clash.design.databinding.DesignConnectivityStatsBinding
 import com.github.kr328.clash.design.model.ConnectivityScoreRow
 import com.github.kr328.clash.design.util.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 class ConnectivityStatsDesign(
     context: Context,
@@ -40,8 +38,6 @@ class ConnectivityStatsDesign(
     }
 
     suspend fun replaceRows(rows: List<ConnectivityScoreRow>) {
-        withContext(Dispatchers.Main) {
-            adapter.replaceAll(rows)
-        }
+        adapter.replaceAll(rows)
     }
 }

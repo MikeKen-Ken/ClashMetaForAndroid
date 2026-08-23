@@ -7,6 +7,7 @@ import com.github.kr328.clash.design.R
 import com.github.kr328.clash.design.databinding.AdapterConnectivityStatsBinding
 import com.github.kr328.clash.design.model.ConnectivityScoreRow
 import com.github.kr328.clash.design.util.layoutInflater
+import com.github.kr328.clash.design.util.patchDataSet
 
 class ConnectivityStatsAdapter(
     private val context: Context,
@@ -16,9 +17,8 @@ class ConnectivityStatsAdapter(
 
     class Holder(val binding: AdapterConnectivityStatsBinding) : RecyclerView.ViewHolder(binding.root)
 
-    fun replaceAll(newRows: List<ConnectivityScoreRow>) {
-        rows = newRows
-        notifyDataSetChanged()
+    suspend fun replaceAll(newRows: List<ConnectivityScoreRow>) {
+        patchDataSet(::rows, newRows, id = ConnectivityScoreRow::name)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
