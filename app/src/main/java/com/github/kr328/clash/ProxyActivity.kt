@@ -272,6 +272,8 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                                 }
                                             }
 
+                                            applyManualConnectivityOrder()
+
                                             closeConnectionsExcludingDirect()
                                         }
                                     } finally {

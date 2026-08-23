@@ -12,7 +12,9 @@ import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.config.ConfigurationOverrideClassifier
 import com.github.kr328.clash.service.config.OverrideReloadDecision
 import com.github.kr328.clash.service.config.OverrideRuntimeApplier
+import com.github.kr328.clash.service.clash.module.RuntimeConfigNotification
 import com.github.kr328.clash.service.util.persistSummaryForDebug
+import com.github.kr328.clash.service.util.importedDir
 import com.github.kr328.clash.service.util.sendDebugUiLog
 import com.github.kr328.clash.service.util.sendOverrideChanged
 import kotlinx.coroutines.*
@@ -103,8 +105,11 @@ class ClashManager(private val context: Context) : IClashManager,
             }
             when (decision) {
                 OverrideReloadDecision.FullConfigurationReload -> context.sendOverrideChanged()
-                OverrideReloadDecision.RuntimeLightOnly ->
-                    OverrideRuntimeApplier.apply(previous, configuration)
+                OverrideReloadDecision.RuntimeLightOnly -> {
+                    if (OverrideRuntimeApplier.apply(previous, configuration)) {
+                        RuntimeConfigNotification.notifyUpdated(context)
+                    }
+                }
             }
             // 与 ConfigurationModule 一致：运行配置/导出 YAML 合并时 Session 会参与；
             // 仅写 Persist 不同步 Session 会导致 Persist 已更新但运行配置仍显示旧值，直到下次整包 load。
@@ -123,7 +128,11 @@ class ClashManager(private val context: Context) : IClashManager,
 
         when (decision) {
             OverrideReloadDecision.FullConfigurationReload -> context.sendOverrideChanged()
-            OverrideReloadDecision.RuntimeLightOnly -> OverrideRuntimeApplier.apply(previous, configuration)
+            OverrideReloadDecision.RuntimeLightOnly -> {
+                if (OverrideRuntimeApplier.apply(previous, configuration)) {
+                    RuntimeConfigNotification.notifyUpdated(context)
+                }
+            }
         }
     }
 
@@ -228,6 +237,16 @@ class ClashManager(private val context: Context) : IClashManager,
         store.activeProfile?.let { uuid ->
             SelectionDao().removeSelected(uuid, group)
         }
+    }
+
+    override suspend fun applyManualConnectivityOrder() {
+        val profile = store.activeProfile ?: return
+        val selections = SelectionDao().querySelections(profile)
+        Clash.mutatePersistOverride { config ->
+            config.proxySelections = selections.associate { it.proxy to it.selected }
+        }
+        Clash.loadWithManualConnectivityOrder(context.importedDir.resolve(profile.toString())).await()
+        RuntimeConfigNotification.notifyUpdated(context)
     }
 
     override suspend fun updateProvider(type: Provider.Type, name: String) {

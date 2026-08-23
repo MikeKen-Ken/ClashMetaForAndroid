@@ -21,6 +21,7 @@ interface IClashManager {
 
     suspend fun healthCheck(group: String)
     suspend fun healthCheckWithTimeout(group: String, timeoutMs: Int, concurrency: Int)
+    suspend fun applyManualConnectivityOrder()
     suspend fun updateProvider(type: Provider.Type, name: String)
 
     fun queryOverride(slot: Clash.OverrideSlot): ConfigurationOverride

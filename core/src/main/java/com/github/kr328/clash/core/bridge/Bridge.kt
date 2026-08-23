@@ -44,6 +44,7 @@ object Bridge {
     )
 
     external fun nativeLoad(completable: CompletableDeferred<Unit>, path: String)
+    external fun nativeLoadWithManualConnectivityOrder(completable: CompletableDeferred<Unit>, path: String)
     external fun nativeQueryProviders(): String
     external fun nativeUpdateProvider(
         completable: CompletableDeferred<Unit>,

@@ -244,6 +244,12 @@ object Clash {
         }
     }
 
+    fun loadWithManualConnectivityOrder(path: File): CompletableDeferred<Unit> {
+        return CompletableDeferred<Unit>().apply {
+            Bridge.nativeLoadWithManualConnectivityOrder(this, path.absolutePath)
+        }
+    }
+
     fun queryProviders(): List<Provider> {
         val providers =
             Json.Default.decodeFromString(JsonArray.serializer(), Bridge.nativeQueryProviders())

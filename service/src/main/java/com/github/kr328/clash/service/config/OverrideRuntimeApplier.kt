@@ -52,9 +52,10 @@ internal object OverrideRuntimeApplier {
     }
 
     /** 在 native writeOverride 成功后调用，使轻量档位与持久化 overlay 一致。 */
-    fun apply(previous: ConfigurationOverride, next: ConfigurationOverride) {
+    fun apply(previous: ConfigurationOverride, next: ConfigurationOverride): Boolean {
+        var applied = false
         if (previous.logLevel != next.logLevel && next.logLevel != null) {
-            Clash.patchRuntimeLogLevel(next.logLevel!!.toClashYamlKey())
+            applied = Clash.patchRuntimeLogLevel(next.logLevel!!.toClashYamlKey()) || applied
         }
 
         val allowPush = previous.allowLan != next.allowLan && next.allowLan != null
@@ -62,7 +63,7 @@ internal object OverrideRuntimeApplier {
         val bindPush =
             normalizeBind(previous.bindAddress) != normalizeBind(next.bindAddress) && bindNext.isNotEmpty()
 
-        if (!allowPush && !bindPush) return
+        if (!allowPush && !bindPush) return applied
 
         val json = liteJson.encodeToString(
             ConnectivityLitePayload.serializer(),
@@ -72,9 +73,11 @@ internal object OverrideRuntimeApplier {
             ),
         )
 
-        if (!Clash.patchConnectivityJsonSubset(json)) {
+        val connectivityApplied = Clash.patchConnectivityJsonSubset(json)
+        if (!connectivityApplied) {
             Log.w("$TAG: failed to apply lightweight allow-lan/bind-address PATCH at runtime")
         }
+        return connectivityApplied || applied
     }
 
     private fun normalizeBind(raw: String?) = raw?.trim().orEmpty()

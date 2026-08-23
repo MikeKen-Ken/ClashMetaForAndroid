@@ -83,8 +83,7 @@ func sortGroupProxiesField(group map[string]any) {
 	}
 }
 
-// ApplyProxyOrderToRawConfig 在配置加载/重载前按联通评分重排 proxies 与各组 proxies 列表（不触发额外 reload）。
-// 仅 url-test / fallback 参与联通重排；select 等手动组保持配置默认顺序。
+// ApplyProxyOrderToRawConfig 在配置加载/重载前按联通评分重排 proxies 与自动选组的 proxies 列表。
 func ApplyProxyOrderToRawConfig(cfg *config.RawConfig) {
 	if cfg == nil {
 		return
@@ -95,6 +94,47 @@ func ApplyProxyOrderToRawConfig(cfg *config.RawConfig) {
 	for _, group := range cfg.ProxyGroup {
 		if group != nil {
 			sortGroupProxiesField(group)
+		}
+	}
+}
+
+// ApplyManualProxyOrderToRawConfig 在用户手动完成延迟测试后，按最新联通评分重排所有组的 proxies 列表。
+// 这只改变生成的运行时配置；订阅/配置源文件保持不变。
+func ApplyManualProxyOrderToRawConfig(cfg *config.RawConfig) {
+	if cfg == nil {
+		return
+	}
+	if len(cfg.Proxy) > 1 {
+		sortProxyMappings(cfg.Proxy)
+	}
+	for _, group := range cfg.ProxyGroup {
+		if group == nil {
+			continue
+		}
+		raw, ok := group["proxies"]
+		if !ok || raw == nil {
+			continue
+		}
+		switch list := raw.(type) {
+		case []any:
+			names := make([]string, 0, len(list))
+			for _, item := range list {
+				name, ok := item.(string)
+				if ok && name != "" {
+					names = append(names, name)
+				}
+			}
+			if len(names) > 1 {
+				out := make([]any, len(names))
+				for i, name := range SortNamesByConnectivity(names) {
+					out[i] = name
+				}
+				group["proxies"] = out
+			}
+		case []string:
+			if len(list) > 1 {
+				group["proxies"] = SortNamesByConnectivity(list)
+			}
 		}
 	}
 }

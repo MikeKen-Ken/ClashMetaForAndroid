@@ -90,6 +90,8 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
 
                 Clash.load(service.importedDir.resolve(active.uuid.toString())).await()
 
+                RuntimeConfigNotification.notifyUpdated(service)
+
                 OverrideRuntimeApplier.applyPersistRuntimeLightFieldsAfterFullLoad()
 
                 val remove = SelectionDao().querySelections(active.uuid)

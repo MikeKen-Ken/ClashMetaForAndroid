@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	"cfa/native/app"
+	"cfa/native/connectivity"
 	"cfa/native/tunnel"
 
 	"github.com/metacubex/mihomo/config"
@@ -51,6 +52,22 @@ func Load(path string) error {
 		return err
 	}
 
+	return loadRawConfig(rawCfg, path)
+}
+
+// LoadWithManualConnectivityOrder reloads a profile after a user-requested delay test.
+// It applies the freshly calculated score order to every group's runtime proxy list.
+func LoadWithManualConnectivityOrder(path string) error {
+	rawCfg, err := UnmarshalAndPatch(path)
+	if err != nil {
+		log.Errorln("Load %s: %s", path, err.Error())
+		return err
+	}
+	connectivity.ApplyManualProxyOrderToRawConfig(rawCfg)
+	return loadRawConfig(rawCfg, path)
+}
+
+func loadRawConfig(rawCfg *config.RawConfig, path string) error {
 	cfg, err := Parse(rawCfg)
 	if err != nil {
 		log.Errorln("Load %s: %s", path, err.Error())
