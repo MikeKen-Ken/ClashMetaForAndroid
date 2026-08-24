@@ -36,7 +36,14 @@ class ProxyAdapter(
             allStates
         }
 
-        this.swapDataSet(this::states, visibleStates, false)
+        if (states.size == visibleStates.size) {
+            states = visibleStates
+            notifyItemRangeChanged(0, visibleStates.size)
+        } else {
+            notifyItemRangeRemoved(0, states.size)
+            states = visibleStates
+            notifyItemRangeInserted(0, visibleStates.size)
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
