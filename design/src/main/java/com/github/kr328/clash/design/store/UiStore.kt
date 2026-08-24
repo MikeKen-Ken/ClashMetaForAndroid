@@ -36,6 +36,11 @@ class UiStore(context: Context) {
         defaultValue = false,
     )
 
+    var proxyHideUnavailable by store.boolean(
+        key = "proxy_hide_unavailable",
+        defaultValue = false,
+    )
+
     var proxyLine: Int by store.int(
         key = "proxy_line",
         defaultValue = 3

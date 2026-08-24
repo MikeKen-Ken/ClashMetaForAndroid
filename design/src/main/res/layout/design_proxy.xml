@@ -89,6 +89,20 @@
                         </FrameLayout>
 
                         <ImageView
+                            android:id="@+id/hide_unavailable_view"
+                            android:layout_width="@dimen/item_tailing_component_size"
+                            android:layout_height="@dimen/item_tailing_component_size"
+                            android:layout_marginStart="@dimen/item_tailing_margin"
+                            android:alpha="0.55"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:contentDescription="@string/hide_unavailable_proxies"
+                            android:focusable="true"
+                            android:onClick="@{() -> self.toggleHideUnavailable()}"
+                            android:padding="@dimen/toolbar_image_action_padding"
+                            android:src="@drawable/ic_baseline_hide" />
+
+                        <ImageView
                             android:id="@+id/flush_fake_ip_view"
                             android:layout_width="@dimen/item_tailing_component_size"
                             android:layout_height="@dimen/item_tailing_component_size"

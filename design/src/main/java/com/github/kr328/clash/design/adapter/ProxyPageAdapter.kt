@@ -44,7 +44,7 @@ class ProxyPageAdapter(
         withContext(Dispatchers.Main) {
             adapters[position].apply {
                 this.selectable = selectable
-                this.swapDataSet(this::states, states, false)
+                updateStates(states)
             }
 
             requestRedrawVisible(position)
@@ -101,6 +101,10 @@ class ProxyPageAdapter(
     }
 
     fun getProxyAdapter(position: Int): ProxyAdapter = adapters[position]
+
+    fun setHideUnavailable(enabled: Boolean) {
+        adapters.forEach { it.setHideUnavailable(enabled) }
+    }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         this.parent = recyclerView

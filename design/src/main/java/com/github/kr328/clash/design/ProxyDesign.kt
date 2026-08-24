@@ -122,6 +122,15 @@ class ProxyDesign(
     init {
         binding.self = this
 
+        binding.hideUnavailableView.apply {
+            isActivated = uiStore.proxyHideUnavailable
+            alpha = if (uiStore.proxyHideUnavailable) 1f else 0.55f
+            contentDescription = context.getString(
+                if (uiStore.proxyHideUnavailable) R.string.show_unavailable_proxies
+                else R.string.hide_unavailable_proxies
+            )
+        }
+
         binding.activityBarLayout.applyFrom(context)
 
         // 先设置初始选中状态，再添加监听器，避免初始化时触发 tips
@@ -211,6 +220,7 @@ class ProxyDesign(
             binding.emptyView.visibility = View.VISIBLE
             binding.scrollToCurrentFab.visibility = View.GONE
             binding.urlTestView.visibility = View.GONE
+            binding.hideUnavailableView.visibility = View.GONE
             binding.modeScrollView.visibility = View.GONE
             binding.timeoutScrollView.visibility = View.GONE
             binding.adsScrollView.visibility = View.GONE
@@ -244,6 +254,7 @@ class ProxyDesign(
                     if (it == currentItem)
                         updateUrlTestButtonStatus()
                 }
+                this@ProxyDesign.adapter.setHideUnavailable(uiStore.proxyHideUnavailable)
 
                 registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                     override fun onPageScrollStateChanged(state: Int) {
@@ -284,6 +295,20 @@ class ProxyDesign(
 
     fun requestClearConnectivityStats() {
         requests.trySend(Request.ClearConnectivityStats)
+    }
+
+    fun toggleHideUnavailable() {
+        val hideUnavailable = !uiStore.proxyHideUnavailable
+        uiStore.proxyHideUnavailable = hideUnavailable
+        adapter.setHideUnavailable(hideUnavailable)
+        binding.hideUnavailableView.apply {
+            isActivated = hideUnavailable
+            alpha = if (hideUnavailable) 1f else 0.55f
+            contentDescription = context.getString(
+                if (hideUnavailable) R.string.show_unavailable_proxies
+                else R.string.hide_unavailable_proxies
+            )
+        }
     }
 
     suspend fun showFlushFakeIpDone() {

@@ -14,6 +14,30 @@ class ProxyAdapter(
 
     var selectable: Boolean = false
     var states: List<ProxyViewState> = emptyList()
+    private var allStates: List<ProxyViewState> = emptyList()
+    private var hideUnavailable: Boolean = false
+
+    fun updateStates(states: List<ProxyViewState>) {
+        allStates = states
+        updateVisibleStates()
+    }
+
+    fun setHideUnavailable(enabled: Boolean) {
+        if (hideUnavailable == enabled) return
+
+        hideUnavailable = enabled
+        updateVisibleStates()
+    }
+
+    private fun updateVisibleStates() {
+        val visibleStates = if (hideUnavailable) {
+            allStates.filter { it.proxy.delay >= 0 }
+        } else {
+            allStates
+        }
+
+        this.swapDataSet(this::states, visibleStates, false)
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
         return Holder(ProxyView(config.context, config))
