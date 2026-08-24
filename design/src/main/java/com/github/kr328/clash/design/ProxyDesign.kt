@@ -177,15 +177,15 @@ class ProxyDesign(
         }
 
         if (proxyAdsBlock) {
-            binding.adsToggleGroup.check(R.id.ads_off_btn)
-        } else {
             binding.adsToggleGroup.check(R.id.ads_on_btn)
+        } else {
+            binding.adsToggleGroup.check(R.id.ads_off_btn)
         }
         binding.adsToggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
             val enabled = when (checkedId) {
-                R.id.ads_on_btn -> false
-                R.id.ads_off_btn -> true
+                R.id.ads_on_btn -> true
+                R.id.ads_off_btn -> false
                 else -> return@addOnButtonCheckedListener
             }
             requests.trySend(Request.PatchAdsBlock(enabled))
