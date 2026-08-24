@@ -1,5 +1,6 @@
 package com.github.kr328.clash.design.util
 
+import android.animation.ValueAnimator
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.recyclerview.widget.RecyclerView
 import com.github.kr328.clash.design.R
@@ -9,6 +10,8 @@ import com.github.kr328.clash.design.view.ObservableScrollView
 private class AppBarElevationController(
     private val activityBar: ActivityBarLayout
 ) {
+    private var animator: ValueAnimator? = null
+
     var elevated: Boolean = false
         set(value) {
             if (field == value)
@@ -22,12 +25,15 @@ private class AppBarElevationController(
                 0f
             }
 
-            activityBar.animate().cancel()
-            activityBar.animate()
-                .elevation(target)
+            animator?.cancel()
+            animator = ValueAnimator.ofFloat(activityBar.elevation, target).apply {
+                addUpdateListener {
+                    activityBar.elevation = it.animatedValue as Float
+                }
                 .setDuration(ELEVATION_ANIMATION_DURATION_MS)
                 .setInterpolator(ELEVATION_INTERPOLATOR)
                 .start()
+            }
         }
 
     private companion object {
