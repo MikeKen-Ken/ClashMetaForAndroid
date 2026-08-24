@@ -22,12 +22,13 @@ private class AppBarElevationController(
                 0f
             }
 
-            activityBar.animate().cancel()
-            activityBar.animate()
-                .elevation(target)
-                .setDuration(ELEVATION_ANIMATION_DURATION_MS)
-                .setInterpolator(ELEVATION_INTERPOLATOR)
-                .start()
+            activityBar.animate().apply {
+                cancel()
+                elevation(target)
+                duration = ELEVATION_ANIMATION_DURATION_MS
+                interpolator = ELEVATION_INTERPOLATOR
+                start()
+            }
         }
 
     private companion object {
