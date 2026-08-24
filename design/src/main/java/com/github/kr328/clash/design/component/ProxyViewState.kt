@@ -65,7 +65,7 @@ class ProxyViewState(
 
         if (delay != proxy.delay) {
             delay = proxy.delay
-            if (proxy.delay in 0..Short.MAX_VALUE) {
+            if (isUsableProxyDelay(proxy.delay)) {
                 delayText = proxy.delay.toString()
                 delayTimeout = false
             } else {
@@ -140,3 +140,6 @@ class ProxyViewState(
         return invalidate
     }
 }
+
+/** 0 = 未测速；1..Short.MAX_VALUE = 成功延迟。超时/失败为负值或 0xffff（显示为 T）。 */
+fun isUsableProxyDelay(delay: Int): Boolean = delay in 0..Short.MAX_VALUE

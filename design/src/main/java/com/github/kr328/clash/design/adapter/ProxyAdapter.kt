@@ -5,6 +5,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.github.kr328.clash.design.component.ProxyView
 import com.github.kr328.clash.design.component.ProxyViewConfig
 import com.github.kr328.clash.design.component.ProxyViewState
+import com.github.kr328.clash.design.component.isUsableProxyDelay
 
 class ProxyAdapter(
     private val config: ProxyViewConfig,
@@ -31,7 +32,7 @@ class ProxyAdapter(
 
     private fun updateVisibleStates() {
         val visibleStates = if (hideUnavailable) {
-            allStates.filter { it.proxy.delay >= 0 }
+            allStates.filter { isUsableProxyDelay(it.proxy.delay) }
         } else {
             allStates
         }
