@@ -29,7 +29,6 @@ interface IClashManager {
 
     fun clearOverride(slot: Clash.OverrideSlot)
 
-    fun queryTemporaryRules(): List<TemporaryRule>
     fun addTemporaryRule(rule: TemporaryRule)
     fun removeTemporaryRule(id: String): Boolean
     fun clearTemporaryRules()

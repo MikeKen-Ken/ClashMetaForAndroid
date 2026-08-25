@@ -176,10 +176,6 @@ class ClashManager(private val context: Context) : IClashManager,
         Clash.clearOverride(slot)
     }
 
-    override fun queryTemporaryRules(): List<TemporaryRule> {
-        return Clash.queryOverride(Clash.OverrideSlot.Persist).app.temporaryRules.orEmpty()
-    }
-
     override fun addTemporaryRule(rule: TemporaryRule) {
         updateTemporaryRules { rules ->
             listOf(rule) + rules.filterNot {

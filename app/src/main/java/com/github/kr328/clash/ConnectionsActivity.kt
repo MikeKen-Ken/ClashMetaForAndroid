@@ -100,7 +100,14 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
                             requestRefresh()
                         }
                         ConnectionsDesign.Request.ShowTemporaryRules -> {
-                            design.showTemporaryRules(withClash { queryTemporaryRules() })
+                            design.showTemporaryRules(
+                                withClash {
+                                    queryOverride(com.github.kr328.clash.core.Clash.OverrideSlot.Persist)
+                                        .app
+                                        .temporaryRules
+                                        .orEmpty()
+                                }
+                            )
                         }
                         is ConnectionsDesign.Request.AddTemporaryRule -> {
                             withClash { addTemporaryRule(it.rule) }
