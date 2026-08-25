@@ -55,8 +55,9 @@ func Load(path string) error {
 	return loadRawConfig(rawCfg, path)
 }
 
-// LoadWithManualConnectivityOrder reloads a profile after a user-requested delay test.
-// It applies the freshly calculated score order to every group's runtime proxy list.
+// LoadWithManualConnectivityOrder reloads a profile and applies connectivity score order.
+// Do not call this after an in-session delay test while the VPN is up: ApplyConfig
+// suspends the tunnel, recreates adapters (wiping delay results), and resets DNS.
 func LoadWithManualConnectivityOrder(path string) error {
 	rawCfg, err := UnmarshalAndPatch(path)
 	if err != nil {
@@ -98,6 +99,9 @@ func applyProxySelectionsFromOverride() {
 		return
 	}
 	for group, name := range o.ProxySelections {
+		if name == "" {
+			continue
+		}
 		tunnel.PatchSelector(group, name)
 	}
 }

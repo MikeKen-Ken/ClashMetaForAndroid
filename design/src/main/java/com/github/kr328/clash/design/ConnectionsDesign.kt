@@ -7,6 +7,7 @@ import android.view.View
 import androidx.core.content.getSystemService
 import com.github.kr328.clash.core.model.Connection
 import com.github.kr328.clash.core.model.ConnectionsSnapshot
+import com.github.kr328.clash.core.model.TemporaryRule
 import com.github.kr328.clash.design.adapter.ClosedEntry
 import com.github.kr328.clash.design.adapter.ConnectionAdapter
 import com.github.kr328.clash.design.adapter.ConnectionDisplayItem
@@ -50,6 +51,10 @@ class ConnectionsDesign(
         data class DisconnectDevice(val sourceIp: String) : Request()
         data class DisableDevice(val sourceIp: String) : Request()
         data class EnableDevice(val sourceIp: String) : Request()
+        object ShowTemporaryRules : Request()
+        data class AddTemporaryRule(val rule: TemporaryRule) : Request()
+        data class RemoveTemporaryRule(val id: String) : Request()
+        object ClearTemporaryRules : Request()
         object ClearClosedConnections : Request()
         object CloseAllConnections : Request()
         object CloseConnectionsExcludingDirect : Request()
@@ -94,8 +99,11 @@ class ConnectionsDesign(
                 )
                 showToast(R.string.copied, ToastDuration.Short)
             }
-        }
+        },
+        onAddTemporaryRule = { connection -> showTemporaryRuleTypeDialog(connection) },
     )
+
+    private var temporaryRuleTargets: List<String> = listOf("DIRECT", "REJECT")
 
     /** When true, newest connections first (descending by start time). */
     private var sortNewestFirst = true
@@ -407,6 +415,94 @@ class ConnectionsDesign(
     fun onCloseConnectionsExcludingDirectClick() {
         requests.trySend(Request.CloseConnectionsExcludingDirect)
     }
+
+    fun onTemporaryRulesClick() {
+        requests.trySend(Request.ShowTemporaryRules)
+    }
+
+    fun setTemporaryRuleTargets(groupNames: List<String>) {
+        temporaryRuleTargets = (listOf("DIRECT", "REJECT") + groupNames)
+            .map(String::trim)
+            .filter(String::isNotEmpty)
+            .distinct()
+    }
+
+    fun showTemporaryRules(rules: List<TemporaryRule>) {
+        if (rules.isEmpty()) {
+            MaterialAlertDialogBuilder(context)
+                .setTitle(R.string.temporary_rules)
+                .setMessage(R.string.temporary_rules_empty)
+                .setPositiveButton(R.string.ok, null)
+                .show()
+            return
+        }
+        val labels = rules.map { "${it.ruleType}, ${it.payload} → ${it.target}" }.toTypedArray()
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.temporary_rules)
+            .setItems(labels) { _, index -> requests.trySend(Request.RemoveTemporaryRule(rules[index].id)) }
+            .setNeutralButton(R.string.temporary_rules_clear) { _, _ ->
+                requests.trySend(Request.ClearTemporaryRules)
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun showTemporaryRuleTypeDialog(connection: Connection) {
+        val metadata = connection.metadata ?: return
+        val candidates = buildList {
+            metadata.process.trim().takeIf(String::isNotEmpty)?.let {
+                add(TemporaryRuleCandidate("PROCESS-NAME", it, it))
+            }
+            metadata.host.trim().takeIf(String::isNotEmpty)?.let {
+                add(TemporaryRuleCandidate("DOMAIN-SUFFIX", it, it))
+            }
+            metadata.sourceIP.trim().takeIf(::isPrivateIpv4)?.let {
+                add(TemporaryRuleCandidate("SRC-IP-CIDR", "$it/32", it))
+            }
+        }
+        if (candidates.isEmpty()) return
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.temporary_rules_rule_type)
+            .setItems(candidates.map { "${it.ruleType}: ${it.label}" }.toTypedArray()) { _, index ->
+                showTemporaryRuleTargetDialog(candidates[index])
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun showTemporaryRuleTargetDialog(candidate: TemporaryRuleCandidate) {
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.temporary_rules_target)
+            .setItems(temporaryRuleTargets.toTypedArray()) { _, index ->
+                val target = temporaryRuleTargets[index]
+                requests.trySend(
+                    Request.AddTemporaryRule(
+                        TemporaryRule(
+                            id = java.util.UUID.randomUUID().toString(),
+                            ruleType = candidate.ruleType,
+                            payload = candidate.payload,
+                            target = target,
+                            label = candidate.label,
+                            createdAt = System.currentTimeMillis(),
+                        )
+                    )
+                )
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun isPrivateIpv4(value: String): Boolean {
+        val parts = value.split('.')
+        if (parts.size != 4) return false
+        val octets = parts.map { it.toIntOrNull() ?: return false }
+        if (octets.any { it !in 0..255 }) return false
+        return octets[0] == 10 || octets[0] == 127 ||
+            (octets[0] == 172 && octets[1] in 16..31) ||
+            (octets[0] == 192 && octets[1] == 168)
+    }
+
+    private data class TemporaryRuleCandidate(val ruleType: String, val payload: String, val label: String)
 
     /** 离开连接页时持久化活跃快照与已关闭列表（与桌面端 setConnectionSnapshot 一致） */
     suspend fun persistState() {

@@ -30,6 +30,12 @@
     <string name="connections_enable_device">Remove from blocked list</string>
     <string name="connections_device_conn_count">%1$d connections</string>
     <string name="connections_device_blocked">Blocked</string>
+    <string name="temporary_rules">Temporary rules</string>
+    <string name="temporary_rules_add">Add temporary rule</string>
+    <string name="temporary_rules_empty">No temporary rules. Use the plus button on an active connection to add one.</string>
+    <string name="temporary_rules_clear">Clear all</string>
+    <string name="temporary_rules_rule_type">Choose a rule to add</string>
+    <string name="temporary_rules_target">Choose a target</string>
     <string name="proxy">Proxy</string>
     <string name="proxy_rule">Rule</string>
     <string name="proxy_global">Global</string>

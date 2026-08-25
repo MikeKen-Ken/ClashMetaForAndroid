@@ -33,9 +33,6 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
         /** 与 config/custom-clash-script.js 中 DIRECT / FALLBACK 输出名一致；整组测速时跳过 */
         private val SKIP_DELAY_CHECK_GROUPS = setOf("Direct", "Final")
 
-        /** 代理页工具栏延迟测速（节点级 URLTest）与 UI 测速数量步长解耦时的并发上限（与桌面端全量测速一致） */
-        private const val PROXY_GROUP_DELAY_TEST_MAX_CONCURRENCY = 175
-
         private const val LOG_FLUSH_FAKE_IP = "FakeIpFlush"
     }
 
@@ -255,7 +252,7 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                             healthCheckWithTimeout(
                                                 groupName,
                                                 timeoutMs,
-                                                PROXY_GROUP_DELAY_TEST_MAX_CONCURRENCY,
+                                                uiStore.proxyDelayTestConcurrency.coerceIn(1, 200),
                                             )
 
                                             // 测速后按当前排序结果选择最靠前的成功节点；测速期间用户已手动选择则跳过
@@ -270,8 +267,13 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                                     patchSelector(groupName, firstSuccess.name)
                                                     closeConnectionsUsingProxyGroup(groupName)
                                                 }
+                                                // 清掉 DAO / core 固定，避免下次整包 load 把测速前的手动选择写回去
+                                                clearManualSelectionForGroup(groupName)
                                             }
 
+                                            // 只把 DAO 选择同步进 persist，不要整包 Load/ApplyConfig：
+                                            // 测速后重载会 OnSuspend、重建出站（延迟全变成超时）并重置 DNS/Fake-IP，
+                                            // VPN 仍在运行时流量会一直失败，直到杀进程重启。
                                             applyManualConnectivityOrder()
 
                                             closeConnectionsExcludingDirect()

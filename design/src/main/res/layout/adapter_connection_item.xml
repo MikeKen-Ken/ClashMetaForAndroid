@@ -128,6 +128,17 @@
         </LinearLayout>
 
         <ImageView
+            android:id="@+id/temporary_rule_view"
+            android:layout_width="@dimen/item_tailing_component_size"
+            android:layout_height="@dimen/item_tailing_component_size"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="@dimen/item_text_margin"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/temporary_rules_add"
+            android:padding="@dimen/toolbar_image_action_padding"
+            android:src="@drawable/ic_baseline_add" />
+
+        <ImageView
             android:id="@+id/close_view"
             android:layout_width="@dimen/item_tailing_component_size"
             android:layout_height="@dimen/item_tailing_component_size"

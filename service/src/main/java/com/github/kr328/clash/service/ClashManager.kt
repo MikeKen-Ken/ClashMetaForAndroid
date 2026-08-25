@@ -176,6 +176,37 @@ class ClashManager(private val context: Context) : IClashManager,
         Clash.clearOverride(slot)
     }
 
+    override fun addTemporaryRule(rule: TemporaryRule) {
+        updateTemporaryRules { rules ->
+            listOf(rule) + rules.filterNot {
+                it.ruleType == rule.ruleType && it.payload == rule.payload && it.target == rule.target
+            }
+        }
+    }
+
+    override fun removeTemporaryRule(id: String): Boolean {
+        var removed = false
+        updateTemporaryRules { rules ->
+            val next = rules.filterNot { it.id == id }
+            removed = next.size != rules.size
+            next
+        }
+        return removed
+    }
+
+    override fun clearTemporaryRules() {
+        updateTemporaryRules { emptyList() }
+    }
+
+    private fun updateTemporaryRules(transform: (List<TemporaryRule>) -> List<TemporaryRule>) {
+        Clash.withPersistOverrideSync {
+            val persist = Clash.queryOverride(Clash.OverrideSlot.Persist)
+            persist.app.temporaryRules = transform(persist.app.temporaryRules.orEmpty())
+            Clash.patchOverride(Clash.OverrideSlot.Persist, persist)
+        }
+        context.sendOverrideChanged()
+    }
+
     override fun queryConnections(): ConnectionsSnapshot {
         return Clash.queryConnections()
     }
@@ -245,8 +276,8 @@ class ClashManager(private val context: Context) : IClashManager,
         Clash.mutatePersistOverride { config ->
             config.proxySelections = selections.associate { it.proxy to it.selected }
         }
-        Clash.loadWithManualConnectivityOrder(context.importedDir.resolve(profile.toString())).await()
-        context.sendRuntimeConfigUpdated()
+        // 不在测速后 Load/ApplyConfig。整包重载会挂起隧道、丢掉刚测到的延迟，
+        // 并在 VPN 仍运行时重置 DNS/Fake-IP，表现为所有节点报错直到重启应用。
     }
 
     override suspend fun updateProvider(type: Provider.Type, name: String) {

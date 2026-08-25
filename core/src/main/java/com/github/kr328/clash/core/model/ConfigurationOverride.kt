@@ -177,6 +177,10 @@ data class ConfigurationOverride(
 
         @SerialName("lan-silent-threshold-seconds")
         var lanSilentThresholdSeconds: Int? = null,
+
+        /** Stored separately from subscription profiles and prepended in rule mode. */
+        @SerialName("temporary-rules")
+        var temporaryRules: List<TemporaryRule>? = null,
     )
 
     @Serializable
