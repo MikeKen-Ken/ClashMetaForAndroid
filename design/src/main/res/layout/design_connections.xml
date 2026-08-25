@@ -50,6 +50,21 @@
                         android:focusable="true"
                         android:padding="@dimen/toolbar_image_action_padding"
                         android:src="@drawable/ic_baseline_swap_vert" />
+
+                    <ImageView
+                        android:id="@+id/temporary_rules_view"
+                        android:layout_width="@dimen/item_tailing_component_size"
+                        android:layout_height="@dimen/item_tailing_component_size"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:layout_marginEnd="@dimen/item_tailing_component_size"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:contentDescription="@string/temporary_rules"
+                        android:focusable="true"
+                        android:onClick="@{() -> self.onTemporaryRulesClick()}"
+                        android:padding="@dimen/toolbar_image_action_padding"
+                        android:src="@drawable/ic_baseline_view_list" />
                 </RelativeLayout>
             </com.github.kr328.clash.design.view.ActivityBarLayout>
 

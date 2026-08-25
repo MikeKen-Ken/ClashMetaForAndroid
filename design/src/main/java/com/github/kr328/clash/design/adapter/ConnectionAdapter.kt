@@ -12,6 +12,7 @@ class ConnectionAdapter(
     private val context: Context,
     private val onClose: (Connection) -> Unit,
     private val onCopy: ((String) -> Unit)? = null,
+    private val onAddTemporaryRule: ((Connection) -> Unit)? = null,
 ) : RecyclerView.Adapter<ConnectionAdapter.Holder>() {
     class Holder(val binding: AdapterConnectionItemBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -57,6 +58,8 @@ class ConnectionAdapter(
         }
         holder.binding.closeView.visibility = if (item.isClosed) View.GONE else View.VISIBLE
         holder.binding.closeView.setOnClickListener { onClose(conn) }
+        holder.binding.temporaryRuleView.visibility = if (item.isClosed) View.GONE else View.VISIBLE
+        holder.binding.temporaryRuleView.setOnClickListener { onAddTemporaryRule?.invoke(conn) }
         holder.binding.root.setOnLongClickListener {
             onCopy?.invoke(formatCopyText(item))
             true

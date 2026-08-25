@@ -176,6 +176,41 @@ class ClashManager(private val context: Context) : IClashManager,
         Clash.clearOverride(slot)
     }
 
+    override fun queryTemporaryRules(): List<TemporaryRule> {
+        return Clash.queryOverride(Clash.OverrideSlot.Persist).app.temporaryRules.orEmpty()
+    }
+
+    override fun addTemporaryRule(rule: TemporaryRule) {
+        updateTemporaryRules { rules ->
+            listOf(rule) + rules.filterNot {
+                it.ruleType == rule.ruleType && it.payload == rule.payload && it.target == rule.target
+            }
+        }
+    }
+
+    override fun removeTemporaryRule(id: String): Boolean {
+        var removed = false
+        updateTemporaryRules { rules ->
+            val next = rules.filterNot { it.id == id }
+            removed = next.size != rules.size
+            next
+        }
+        return removed
+    }
+
+    override fun clearTemporaryRules() {
+        updateTemporaryRules { emptyList() }
+    }
+
+    private fun updateTemporaryRules(transform: (List<TemporaryRule>) -> List<TemporaryRule>) {
+        Clash.withPersistOverrideSync {
+            val persist = Clash.queryOverride(Clash.OverrideSlot.Persist)
+            persist.app.temporaryRules = transform(persist.app.temporaryRules.orEmpty())
+            Clash.patchOverride(Clash.OverrideSlot.Persist, persist)
+        }
+        context.sendOverrideChanged()
+    }
+
     override fun queryConnections(): ConnectionsSnapshot {
         return Clash.queryConnections()
     }

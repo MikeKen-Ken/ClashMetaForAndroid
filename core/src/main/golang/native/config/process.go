@@ -22,6 +22,7 @@ import (
 var processors = []processor{
 	patchExternalController, // must before patchOverride, so we only apply ExternalController in Override settings
 	patchOverride,
+	patchTemporaryRules, // must run before direct/global mode replaces the rule list
 	patchDirectGlobalMode, // after patchOverride: force rule mode + override rules when session mode is direct/global/offline
 	patchProxyAdsBlock,
 	patchProxyGroupTimeout,
@@ -177,6 +178,31 @@ func patchDirectGlobalMode(cfg *config.RawConfig, _ string) error {
 	default:
 		// rule or other: no override
 	}
+	return nil
+}
+
+// patchTemporaryRules prepends user-created rules only when the effective mode is Rule.
+// Keeping them under clash-for-android makes them persistent without modifying a subscription.
+func patchTemporaryRules(cfg *config.RawConfig, _ string) error {
+	if cfg.Mode != T.Rule || len(cfg.ClashForAndroid.TemporaryRules) == 0 {
+		return nil
+	}
+
+	rules := make([]string, 0, len(cfg.ClashForAndroid.TemporaryRules)+len(cfg.Rule))
+	for _, rule := range cfg.ClashForAndroid.TemporaryRules {
+		ruleType := strings.TrimSpace(rule.RuleType)
+		payload := strings.TrimSpace(rule.Payload)
+		target := strings.TrimSpace(rule.Target)
+		if ruleType == "" || payload == "" || target == "" {
+			continue
+		}
+		rules = append(rules, strings.Join([]string{ruleType, payload, target}, ","))
+	}
+	if len(rules) == 0 {
+		return nil
+	}
+	cfg.Rule = append(rules, cfg.Rule...)
+	log.Infoln("Applied %d temporary rules", len(rules))
 	return nil
 }
 

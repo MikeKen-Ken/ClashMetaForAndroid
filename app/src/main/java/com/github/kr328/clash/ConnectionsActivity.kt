@@ -24,6 +24,9 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
         val design = ConnectionsDesign(this, uiStore)
         setContentDesign(design)
         design.loadPersistedClosedEntries()
+        design.setTemporaryRuleTargets(
+            withClash { queryProxyGroupNames(excludeNotSelectable = false) }
+        )
         blockedIps.clear()
         blockedIps.addAll(
             withClash {
@@ -94,6 +97,21 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
                                 persist.app.lanBlockedDevices = blockedIps.toList()
                                 patchOverride(com.github.kr328.clash.core.Clash.OverrideSlot.Persist, persist)
                             }
+                            requestRefresh()
+                        }
+                        ConnectionsDesign.Request.ShowTemporaryRules -> {
+                            design.showTemporaryRules(withClash { queryTemporaryRules() })
+                        }
+                        is ConnectionsDesign.Request.AddTemporaryRule -> {
+                            withClash { addTemporaryRule(it.rule) }
+                            requestRefresh()
+                        }
+                        is ConnectionsDesign.Request.RemoveTemporaryRule -> {
+                            withClash { removeTemporaryRule(it.id) }
+                            requestRefresh()
+                        }
+                        ConnectionsDesign.Request.ClearTemporaryRules -> {
+                            withClash { clearTemporaryRules() }
                             requestRefresh()
                         }
                         ConnectionsDesign.Request.ClearClosedConnections -> {
