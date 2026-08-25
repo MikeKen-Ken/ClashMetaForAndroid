@@ -127,7 +127,7 @@
                     android:layout_marginVertical="@dimen/main_card_margin_vertical"
                     android:onClick="@{() -> self.request(Request.OpenConnections)}"
                     android:visibility="@{clashRunning ? View.VISIBLE : View.GONE}"
-                    app:icon="@drawable/ic_baseline_domain"
+                    app:icon="@drawable/ic_baseline_public"
                     app:subtext="@string/connections"
                     app:text="@string/connections" />
 
@@ -137,7 +137,7 @@
                     android:layout_marginVertical="@dimen/main_card_margin_vertical"
                     android:onClick="@{() -> self.request(Request.OpenProxy)}"
                     android:visibility="@{clashRunning ? View.VISIBLE : View.GONE}"
-                    app:icon="@drawable/ic_baseline_apps"
+                    app:icon="@drawable/ic_baseline_wifi"
                     app:subtext="@{mode}"
                     app:text="@string/proxy" />
 
@@ -146,7 +146,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginVertical="@dimen/main_card_margin_vertical"
                     android:onClick="@{() -> self.request(Request.OpenProfiles)}"
-                    app:icon="@drawable/ic_baseline_view_list"
+                    app:icon="@drawable/ic_baseline_layers"
                     app:subtext="@{profileName != null ? @string/format_profile_activated(profileName) : @string/not_selected}"
                     app:text="@string/profile" />
 
@@ -156,7 +156,7 @@
                     android:layout_marginVertical="@dimen/main_label_margin_vertical"
                     android:onClick="@{() -> self.request(Request.OpenProviders)}"
                     android:visibility="@{clashRunning &amp;&amp; hasProviders ? View.VISIBLE : View.GONE}"
-                    app:icon="@drawable/ic_baseline_swap_vertical_circle"
+                    app:icon="@drawable/ic_baseline_sync"
                     app:text="@string/providers" />
 
                 <com.github.kr328.clash.design.view.LargeActionLabel
@@ -164,7 +164,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginVertical="@dimen/main_label_margin_vertical"
                     android:onClick="@{() -> self.request(Request.OpenLogs)}"
-                    app:icon="@drawable/ic_baseline_assignment"
+                    app:icon="@drawable/ic_outline_article"
                     app:text="@string/logs" />
 
                 <com.github.kr328.clash.design.view.LargeActionLabel
@@ -172,7 +172,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginVertical="@dimen/main_label_margin_vertical"
                     android:onClick="@{() -> self.request(Request.OpenDebug)}"
-                    app:icon="@drawable/ic_baseline_adb"
+                    app:icon="@drawable/ic_baseline_bug_report"
                     app:text="@string/debug" />
 
                 <com.github.kr328.clash.design.view.LargeActionLabel
@@ -180,7 +180,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginVertical="@dimen/main_label_margin_vertical"
                     android:onClick="@{() -> self.request(Request.OpenNetwork)}"
-                    app:icon="@drawable/ic_baseline_dns"
+                    app:icon="@drawable/ic_baseline_tune"
                     app:text="@string/network" />
 
                 <com.github.kr328.clash.design.view.LargeActionLabel
