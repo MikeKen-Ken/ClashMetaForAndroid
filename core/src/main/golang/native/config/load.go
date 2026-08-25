@@ -98,6 +98,9 @@ func applyProxySelectionsFromOverride() {
 		return
 	}
 	for group, name := range o.ProxySelections {
+		if name == "" {
+			continue
+		}
 		tunnel.PatchSelector(group, name)
 	}
 }

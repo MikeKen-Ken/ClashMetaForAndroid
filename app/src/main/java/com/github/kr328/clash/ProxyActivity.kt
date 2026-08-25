@@ -267,12 +267,19 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                                         proxy.delay in 1..timeoutMs
                                                 }
                                                 if (firstSuccess != null && firstSuccess.name != refreshed.now) {
+                                                    // Temporary pin so traffic uses this node; released below.
                                                     patchSelector(groupName, firstSuccess.name)
                                                     closeConnectionsUsingProxyGroup(groupName)
                                                 }
+                                                // Drop DAO + core pin before reload, or persist override will restore it.
+                                                clearManualSelectionForGroup(groupName)
                                             }
 
                                             applyManualConnectivityOrder()
+
+                                            if (groupName !in urlTestManualOverrides) {
+                                                clearManualSelectionForGroup(groupName)
+                                            }
 
                                             closeConnectionsExcludingDirect()
                                         }
