@@ -31,6 +31,18 @@ class UiStore(context: Context) {
         defaultValue = false
     )
 
+    /** 背景图遮罩强度（0–70），默认 40，与看板 Board background overlay 一致 */
+    var backgroundOverlayPercent: Int by store.int(
+        key = "background_overlay_percent",
+        defaultValue = 40
+    )
+
+    /** 有背景图时卡片表面不透明度（35–100），默认 100 */
+    var cardSurfaceOpacityPercent: Int by store.int(
+        key = "card_surface_opacity_percent",
+        defaultValue = 100
+    )
+
     var proxyExcludeNotSelectable by store.boolean(
         key = "proxy_exclude_not_selectable",
         defaultValue = false,

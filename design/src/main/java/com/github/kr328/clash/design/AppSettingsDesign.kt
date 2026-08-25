@@ -7,6 +7,7 @@ import com.github.kr328.clash.design.model.Behavior
 import com.github.kr328.clash.design.model.DarkMode
 import com.github.kr328.clash.design.preference.*
 import com.github.kr328.clash.design.store.UiStore
+import com.github.kr328.clash.design.util.UiBackground
 import com.github.kr328.clash.design.util.applyFrom
 import com.github.kr328.clash.design.util.bindAppBarElevation
 import com.github.kr328.clash.design.util.layoutInflater
@@ -22,7 +23,9 @@ class AppSettingsDesign(
     onHideIconChange: (hide: Boolean) -> Unit,
 ) : Design<AppSettingsDesign.Request>(context) {
     enum class Request {
-        ReCreateAllActivities
+        ReCreateAllActivities,
+        PickBackground,
+        ClearBackground,
     }
 
     private val binding = DesignSettingsCommonBinding
@@ -74,6 +77,68 @@ class AppSettingsDesign(
             ) {
                 listener = OnChangedListener {
                     onHideIconChange(uiStore::hideAppIcon.get())
+                }
+            }
+
+            val hasBackground = UiBackground.exists(context)
+
+            clickable(
+                title = R.string.background_image,
+                icon = R.drawable.ic_baseline_image,
+                summary = if (hasBackground) {
+                    R.string.background_image_set
+                } else {
+                    R.string.background_image_none
+                },
+            ) {
+                clicked {
+                    requests.trySend(Request.PickBackground)
+                }
+            }
+
+            clickable(
+                title = R.string.background_image_clear,
+                icon = R.drawable.ic_baseline_hide,
+                summary = R.string.background_image_clear_summary,
+            ) {
+                view.visibility = if (hasBackground) View.VISIBLE else View.GONE
+                clicked {
+                    requests.trySend(Request.ClearBackground)
+                }
+            }
+
+            selectableList(
+                value = uiStore::backgroundOverlayPercent,
+                values = UiBackground.overlayPercents,
+                valuesText = arrayOf(
+                    R.string.background_overlay_none,
+                    R.string.background_overlay_light,
+                    R.string.background_overlay_medium,
+                    R.string.background_overlay_strong,
+                ),
+                icon = R.drawable.ic_baseline_brightness_4,
+                title = R.string.background_overlay,
+            ) {
+                view.visibility = if (hasBackground) View.VISIBLE else View.GONE
+                listener = OnChangedListener {
+                    requests.trySend(Request.ReCreateAllActivities)
+                }
+            }
+
+            selectableList(
+                value = uiStore::cardSurfaceOpacityPercent,
+                values = UiBackground.cardOpacityPercents,
+                valuesText = arrayOf(
+                    R.string.card_surface_opacity_100,
+                    R.string.card_surface_opacity_85,
+                    R.string.card_surface_opacity_70,
+                    R.string.card_surface_opacity_50,
+                ),
+                title = R.string.card_surface_opacity,
+            ) {
+                view.visibility = if (hasBackground) View.VISIBLE else View.GONE
+                listener = OnChangedListener {
+                    requests.trySend(Request.ReCreateAllActivities)
                 }
             }
 

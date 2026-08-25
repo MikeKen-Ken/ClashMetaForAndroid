@@ -16,6 +16,7 @@ import com.github.kr328.clash.design.model.DarkMode
 import com.github.kr328.clash.design.store.UiStore
 import com.github.kr328.clash.design.ui.DayNight
 import com.github.kr328.clash.design.ui.ToastDuration
+import com.github.kr328.clash.design.util.UiBackground
 import com.github.kr328.clash.design.util.resolveThemedBoolean
 import com.github.kr328.clash.design.util.resolveThemedColor
 import com.github.kr328.clash.design.util.showExceptionToast
@@ -44,7 +45,9 @@ abstract class BaseActivity<D : Design<*>> : AppCompatActivity(),
         set(value) {
             field = value
             if (value != null) {
-                setContentView(value.root)
+                setContentView(
+                    UiBackground.wrap(this, value.root, uiStore.backgroundOverlayPercent)
+                )
             } else {
                 setContentView(View(this))
             }

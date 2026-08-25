@@ -2,13 +2,19 @@ package com.github.kr328.clash
 
 import android.content.ComponentName
 import android.content.pm.PackageManager
+import androidx.activity.result.contract.ActivityResultContracts
 import com.github.kr328.clash.common.util.componentName
 import com.github.kr328.clash.design.AppSettingsDesign
 import com.github.kr328.clash.design.model.Behavior
+import com.github.kr328.clash.design.ui.ToastDuration
+import com.github.kr328.clash.design.util.UiBackground
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.util.ApplicationObserver
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.selects.select
+import kotlinx.coroutines.withContext
+import com.github.kr328.clash.design.R
 
 class AppSettingsActivity : BaseActivity<AppSettingsDesign>(), Behavior {
     override suspend fun main() {
@@ -33,8 +39,33 @@ class AppSettingsActivity : BaseActivity<AppSettingsDesign>(), Behavior {
                     }
                 }
                 design.requests.onReceive {
-                    ApplicationObserver.createdActivities.forEach {
-                        it.recreate()
+                    when (it) {
+                        AppSettingsDesign.Request.ReCreateAllActivities -> {
+                            recreateActivities()
+                        }
+                        AppSettingsDesign.Request.PickBackground -> {
+                            val uri = startActivityForResult(
+                                ActivityResultContracts.GetContent(),
+                                "image/*",
+                            )
+                            if (uri != null) {
+                                val imported = withContext(Dispatchers.IO) {
+                                    UiBackground.import(this@AppSettingsActivity, uri)
+                                }
+                                if (imported) {
+                                    recreateActivities()
+                                } else {
+                                    design.showToast(
+                                        R.string.background_image_import_failed,
+                                        ToastDuration.Long,
+                                    )
+                                }
+                            }
+                        }
+                        AppSettingsDesign.Request.ClearBackground -> {
+                            UiBackground.clear(this@AppSettingsActivity)
+                            recreateActivities()
+                        }
                     }
                 }
             }
@@ -73,5 +104,11 @@ class AppSettingsActivity : BaseActivity<AppSettingsDesign>(), Behavior {
             newState,
             PackageManager.DONT_KILL_APP
         )
+    }
+
+    private fun recreateActivities() {
+        ApplicationObserver.createdActivities.forEach {
+            it.recreate()
+        }
     }
 }

@@ -291,6 +291,22 @@
     <string name="service">Service</string>
 
     <string name="dark_mode">Dark Mode</string>
+    <string name="background_image">Background Image</string>
+    <string name="background_image_none">No custom background; using the theme color</string>
+    <string name="background_image_set">Custom image; tap to replace</string>
+    <string name="background_image_clear">Clear Background</string>
+    <string name="background_image_clear_summary">Remove the custom background image</string>
+    <string name="background_image_import_failed">Unable to use this image as background</string>
+    <string name="background_overlay">Background Overlay</string>
+    <string name="background_overlay_none">None</string>
+    <string name="background_overlay_light">Light (20%)</string>
+    <string name="background_overlay_medium">Medium (40%)</string>
+    <string name="background_overlay_strong">Strong (60%)</string>
+    <string name="card_surface_opacity">Card Opacity</string>
+    <string name="card_surface_opacity_100">100% (solid)</string>
+    <string name="card_surface_opacity_85">85%</string>
+    <string name="card_surface_opacity_70">70%</string>
+    <string name="card_surface_opacity_50">50%</string>
 
     <string name="show_traffic">Show Traffic</string>
     <string name="show_traffic_summary">Auto refresh traffic in notification</string>

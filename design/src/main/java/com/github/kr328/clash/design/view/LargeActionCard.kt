@@ -4,8 +4,10 @@ import android.content.Context
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import androidx.annotation.AttrRes
+import androidx.core.graphics.ColorUtils
 import com.github.kr328.clash.design.R
 import com.github.kr328.clash.design.databinding.ComponentLargeActionLabelBinding
+import com.github.kr328.clash.design.store.UiStore
 import com.github.kr328.clash.design.util.*
 import com.google.android.material.card.MaterialCardView
 
@@ -60,6 +62,11 @@ class LargeActionCard @JvmOverloads constructor(
         minimumHeight = context.getPixels(R.dimen.large_action_card_min_height)
         radius = context.getPixels(R.dimen.large_action_card_radius).toFloat()
         elevation = context.getPixels(R.dimen.large_action_card_elevation).toFloat()
-        setCardBackgroundColor(context.resolveThemedColor(com.google.android.material.R.attr.colorSurface))
+        val surface = context.resolveThemedColor(com.google.android.material.R.attr.colorSurface)
+        val alpha = UiBackground.cardSurfaceAlpha(
+            context,
+            UiStore(context).cardSurfaceOpacityPercent,
+        )
+        setCardBackgroundColor(ColorUtils.setAlphaComponent(surface, alpha))
     }
 }

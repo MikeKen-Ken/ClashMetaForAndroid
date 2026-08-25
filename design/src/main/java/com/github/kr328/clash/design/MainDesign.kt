@@ -3,10 +3,13 @@ package com.github.kr328.clash.design
 import android.content.Context
 import android.view.View
 import androidx.appcompat.app.AlertDialog
+import androidx.core.graphics.ColorUtils
 import com.github.kr328.clash.core.model.TunnelState
 import com.github.kr328.clash.core.util.trafficTotal
 import com.github.kr328.clash.design.databinding.DesignAboutBinding
 import com.github.kr328.clash.design.databinding.DesignMainBinding
+import com.github.kr328.clash.design.store.UiStore
+import com.github.kr328.clash.design.util.UiBackground
 import com.github.kr328.clash.design.util.layoutInflater
 import com.github.kr328.clash.design.util.resolveThemedColor
 import com.github.kr328.clash.design.util.root
@@ -87,8 +90,14 @@ class MainDesign(context: Context) : Design<MainDesign.Request>(context) {
     init {
         binding.self = this
 
-        binding.colorClashStarted = context.resolveThemedColor(com.google.android.material.R.attr.colorPrimary)
-        binding.colorClashStopped = context.resolveThemedColor(R.attr.colorClashStopped)
+        binding.colorClashStarted = ColorUtils.setAlphaComponent(
+            context.resolveThemedColor(com.google.android.material.R.attr.colorPrimary),
+            UiBackground.cardSurfaceAlpha(context, UiStore(context).cardSurfaceOpacityPercent),
+        )
+        binding.colorClashStopped = ColorUtils.setAlphaComponent(
+            context.resolveThemedColor(R.attr.colorClashStopped),
+            UiBackground.cardSurfaceAlpha(context, UiStore(context).cardSurfaceOpacityPercent),
+        )
     }
 
     fun request(request: Request) {
