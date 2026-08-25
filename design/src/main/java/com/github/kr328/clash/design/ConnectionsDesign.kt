@@ -439,7 +439,6 @@ class ConnectionsDesign(
         val labels = rules.map { "${it.ruleType}, ${it.payload} → ${it.target}" }.toTypedArray()
         MaterialAlertDialogBuilder(context)
             .setTitle(R.string.temporary_rules)
-            .setMessage(R.string.temporary_rules_active_only_in_rule_mode)
             .setItems(labels) { _, index -> requests.trySend(Request.RemoveTemporaryRule(rules[index].id)) }
             .setNeutralButton(R.string.temporary_rules_clear) { _, _ ->
                 requests.trySend(Request.ClearTemporaryRules)

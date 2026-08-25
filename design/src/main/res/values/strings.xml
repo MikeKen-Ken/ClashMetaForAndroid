@@ -32,7 +32,6 @@
     <string name="connections_device_blocked">Blocked</string>
     <string name="temporary_rules">Temporary rules</string>
     <string name="temporary_rules_add">Add temporary rule</string>
-    <string name="temporary_rules_active_only_in_rule_mode">Persisted until removed; active only in Rule mode.</string>
     <string name="temporary_rules_empty">No temporary rules. Use the plus button on an active connection to add one.</string>
     <string name="temporary_rules_clear">Clear all</string>
     <string name="temporary_rules_rule_type">Choose a rule to add</string>
