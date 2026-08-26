@@ -32,6 +32,9 @@ func UnmarshalAndPatch(profilePath string) (*config.RawConfig, error) {
 		return nil, err
 	}
 
+	// 启动/重载即按历史积分排 url-test/fallback，无需先点测速。
+	connectivity.ApplyProxyOrderToRawConfig(rawConfig)
+
 	return rawConfig, nil
 }
 
@@ -80,6 +83,7 @@ func loadRawConfig(rawCfg *config.RawConfig, path string) error {
 	hub.ApplyConfig(cfg)
 
 	applyProxySelectionsFromOverride()
+	tunnel.ApplyStartupAutoGroupOrder()
 
 	app.ApplySubtitlePattern(rawCfg.ClashForAndroid.UiSubtitlePattern)
 
@@ -100,6 +104,9 @@ func applyProxySelectionsFromOverride() {
 	}
 	for group, name := range o.ProxySelections {
 		if name == "" {
+			continue
+		}
+		if tunnel.ShouldSkipPersistedAutoGroupSelection(group) {
 			continue
 		}
 		tunnel.PatchSelector(group, name)

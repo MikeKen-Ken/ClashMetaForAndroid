@@ -5,6 +5,8 @@ import android.content.Context
 import com.github.kr328.clash.common.constants.Intents
 import com.github.kr328.clash.common.log.Log
 import com.github.kr328.clash.core.Clash
+import com.github.kr328.clash.core.model.Proxy
+import com.github.kr328.clash.core.model.ProxySort
 import com.github.kr328.clash.core.model.TunnelState
 import com.github.kr328.clash.service.StatusProvider
 import com.github.kr328.clash.service.data.ImportedDao
@@ -95,9 +97,18 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
 
                 OverrideRuntimeApplier.applyPersistRuntimeLightFieldsAfterFullLoad()
 
-                val remove = SelectionDao().querySelections(active.uuid)
-                    .filterNot { Clash.patchSelector(it.proxy, it.selected) }
-                    .map { it.proxy }
+                val remove = mutableListOf<String>()
+                for (selection in SelectionDao().querySelections(active.uuid)) {
+                    val group = Clash.queryGroup(selection.proxy, ProxySort.Default)
+                    if (group.type == Proxy.Type.Fallback || group.type == Proxy.Type.URLTest) {
+                        Clash.clearManualSelectionForGroup(selection.proxy)
+                        remove.add(selection.proxy)
+                        continue
+                    }
+                    if (!Clash.patchSelector(selection.proxy, selection.selected)) {
+                        remove.add(selection.proxy)
+                    }
+                }
 
                 SelectionDao().removeSelections(active.uuid, remove)
 

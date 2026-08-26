@@ -50,6 +50,7 @@ func HealthCheck(name string) {
 	if clearable, ok := p.Adapter().(outboundgroup.ClearManualSelectionAble); ok {
 		clearable.ClearManualSelection()
 	}
+	ApplyRuntimeConnectivityOrderAll()
 
 	wg := &sync.WaitGroup{}
 
@@ -101,10 +102,11 @@ func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) {
 		return
 	}
 
-	// 测速时清空手动选择状态
+	// 测速时清空手动选择，并先按当前积分重排，使已通过节点能立刻按顺序被选中。
 	if clearable, ok := p.Adapter().(outboundgroup.ClearManualSelectionAble); ok {
 		clearable.ClearManualSelection()
 	}
+	ApplyRuntimeConnectivityOrderAll()
 
 	timeout := time.Duration(timeoutMs) * time.Millisecond
 
@@ -112,6 +114,11 @@ func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) {
 		concurrency = pvd.EffectiveHealthCheckWorkerLimit()
 	}
 	sem := make(chan struct{}, concurrency)
+
+	var picker *scoreEarlyPicker
+	if selectable, ok := p.Adapter().(outboundgroup.SelectAble); ok {
+		picker = newScoreEarlyPicker(name, g.Proxies(), selectable)
+	}
 
 	wg := &sync.WaitGroup{}
 
@@ -126,7 +133,7 @@ func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) {
 				testURL = "https://www.gstatic.com/generate_204"
 			}
 
-			proxies := prov.Proxies()
+			proxies := sortProxiesByConnectivityScore(prov.Proxies())
 			innerWg := &sync.WaitGroup{}
 
 			for _, px := range proxies {
@@ -142,7 +149,10 @@ func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) {
 					defer cancel()
 					ctx = C.WithHealthCheckSourceName(ctx, name)
 
-					_, _ = proxy.URLTest(ctx, testURL, nil)
+					delay, _ := proxy.URLTest(ctx, testURL, nil)
+					if picker != nil {
+						picker.onResult(proxy.Name(), int(delay), timeoutMs)
+					}
 				}(px)
 			}
 
@@ -153,12 +163,96 @@ func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) {
 	wg.Wait()
 	resetGroupConnectTimes(g)
 	ApplyRuntimeConnectivityOrderAll()
+	if clearable, ok := p.Adapter().(outboundgroup.ClearManualSelectionAble); ok {
+		clearable.ClearManualSelection()
+	}
 }
 
 func resetGroupConnectTimes(group outboundgroup.ProxyGroup) {
 	if connectable, ok := group.(outboundgroup.ConnectTimesAble); ok {
 		connectable.ResetConnectTimes()
 	}
+}
+
+func sortProxiesByConnectivityScore(proxies []C.Proxy) []C.Proxy {
+	if len(proxies) <= 1 {
+		return proxies
+	}
+	names := make([]string, len(proxies))
+	byName := make(map[string]C.Proxy, len(proxies))
+	for i, px := range proxies {
+		name := px.Name()
+		names[i] = name
+		byName[name] = px
+	}
+	out := make([]C.Proxy, 0, len(proxies))
+	seen := make(map[string]struct{}, len(proxies))
+	for _, name := range connectivity.SortNamesByConnectivity(names) {
+		px, ok := byName[name]
+		if !ok {
+			continue
+		}
+		if _, dup := seen[name]; dup {
+			continue
+		}
+		seen[name] = struct{}{}
+		out = append(out, px)
+	}
+	return out
+}
+
+type scoreEarlyPicker struct {
+	mu         sync.Mutex
+	group      string
+	order      []string
+	passed     map[string]struct{}
+	best       string
+	selectable outboundgroup.SelectAble
+}
+
+func newScoreEarlyPicker(group string, members []C.Proxy, selectable outboundgroup.SelectAble) *scoreEarlyPicker {
+	names := make([]string, 0, len(members))
+	for _, px := range members {
+		if px == nil {
+			continue
+		}
+		name := px.Name()
+		if name == "" || name == "DIRECT" || name == "REJECT" {
+			continue
+		}
+		names = append(names, name)
+	}
+	return &scoreEarlyPicker{
+		group:      group,
+		order:      connectivity.SortNamesByConnectivity(names),
+		passed:     make(map[string]struct{}),
+		selectable: selectable,
+	}
+}
+
+func (p *scoreEarlyPicker) onResult(name string, delay int, timeoutMs int) {
+	if p == nil || p.selectable == nil || name == "" || name == "DIRECT" || name == "REJECT" {
+		return
+	}
+	if delay <= 0 || timeoutMs <= 0 || delay > timeoutMs {
+		return
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.passed[name] = struct{}{}
+	best := ""
+	for _, candidate := range p.order {
+		if _, ok := p.passed[candidate]; ok {
+			best = candidate
+			break
+		}
+	}
+	if best == "" || best == p.best {
+		return
+	}
+	p.best = best
+	p.selectable.ForceSet(best)
+	log.Infoln("[score-early-pick] %s -> %s", p.group, best)
 }
 
 // ClearAllManualSelections clears manual selection on all groups (Selector/Fallback).
@@ -246,6 +340,43 @@ func ApplyRuntimeConnectivityOrderAll() {
 			continue
 		}
 		ApplyRuntimeConnectivityOrder(name)
+	}
+}
+
+func isAutoSelectAdapterType(t C.AdapterType) bool {
+	switch t {
+	case C.URLTest, C.Fallback:
+		return true
+	default:
+		return false
+	}
+}
+
+// ShouldSkipPersistedAutoGroupSelection 启动时不把上次固定写回 url-test/fallback。
+func ShouldSkipPersistedAutoGroupSelection(name string) bool {
+	if shouldSkipDelayCheckGroup(name) {
+		return true
+	}
+	p := tunnel.Proxies()[name]
+	if p == nil {
+		return false
+	}
+	return isAutoSelectAdapterType(p.Type())
+}
+
+// ApplyStartupAutoGroupOrder 启动/重载后按积分重排自动选组并清钉，无需先测速。
+func ApplyStartupAutoGroupOrder() {
+	ApplyRuntimeConnectivityOrderAll()
+	for name, p := range tunnel.Proxies() {
+		if p == nil || shouldSkipDelayCheckGroup(name) {
+			continue
+		}
+		if !isAutoSelectAdapterType(p.Type()) {
+			continue
+		}
+		if clearable, ok := p.Adapter().(outboundgroup.ClearManualSelectionAble); ok {
+			clearable.ClearManualSelection()
+		}
 	}
 }
 
