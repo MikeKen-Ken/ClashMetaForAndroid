@@ -48,6 +48,7 @@ abstract class BaseActivity<D : Design<*>> : AppCompatActivity(),
                 setContentView(
                     UiBackground.wrap(this, value.root, uiStore.backgroundOverlayPercent)
                 )
+                UiBackground.scheduleRotation(this)
             } else {
                 setContentView(View(this))
             }

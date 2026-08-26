@@ -136,8 +136,6 @@
                 android:id="@+id/mode_scroll_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:alpha="0.96"
-                android:background="?android:windowBackground"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
                 android:paddingTop="4dp"
@@ -206,8 +204,6 @@
                 android:id="@+id/timeout_scroll_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:alpha="0.96"
-                android:background="?android:windowBackground"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
                 android:paddingTop="4dp"
@@ -289,8 +285,6 @@
                 android:id="@+id/ads_scroll_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:alpha="0.96"
-                android:background="?android:windowBackground"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
                 android:paddingTop="4dp"
@@ -336,8 +330,6 @@
                 android:id="@+id/concurrency_bar_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:alpha="0.96"
-                android:background="?android:windowBackground"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingStart="12dp"
@@ -436,8 +428,6 @@
                 android:id="@+id/tab_layout_view"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/tab_layout_height"
-                android:alpha="0.96"
-                android:background="?android:windowBackground"
                 app:tabBackground="@android:color/transparent"
                 app:tabMode="scrollable" />
 
@@ -445,8 +435,6 @@
                 android:id="@+id/elevation_view"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/divider_size"
-                android:alpha="0.96"
-                android:background="?android:windowBackground"
                 android:elevation="@dimen/tab_layout_elevation" />
         </LinearLayout>
 

@@ -16,6 +16,7 @@ import com.github.kr328.clash.design.model.ProxyState
 import com.github.kr328.clash.design.store.UiStore
 import com.github.kr328.clash.design.util.applyFrom
 import com.github.kr328.clash.design.util.layoutInflater
+import com.github.kr328.clash.design.util.LiquidGlass
 import com.github.kr328.clash.design.util.root
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.tabs.TabLayoutMediator
@@ -132,6 +133,12 @@ class ProxyDesign(
         }
 
         binding.activityBarLayout.applyFrom(context)
+        LiquidGlass.attach(binding.modeScrollView)
+        LiquidGlass.attach(binding.timeoutScrollView)
+        LiquidGlass.attach(binding.adsScrollView)
+        LiquidGlass.attach(binding.concurrencyBarLayout)
+        LiquidGlass.attach(binding.tabLayoutView)
+        LiquidGlass.attach(binding.elevationView)
 
         // 先设置初始选中状态，再添加监听器，避免初始化时触发 tips
         when (overrideMode) {

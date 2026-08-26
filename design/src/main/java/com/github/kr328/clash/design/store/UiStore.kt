@@ -43,6 +43,22 @@ class UiStore(context: Context) {
         defaultValue = 100
     )
 
+    /** WebDAV 连接仅存本机，用于同步壁纸库。 */
+    var webdavUrl: String by store.string(
+        key = "webdav_url",
+        defaultValue = ""
+    )
+
+    var webdavUsername: String by store.string(
+        key = "webdav_username",
+        defaultValue = ""
+    )
+
+    var webdavPassword: String by store.string(
+        key = "webdav_password",
+        defaultValue = ""
+    )
+
     var proxyExcludeNotSelectable by store.boolean(
         key = "proxy_exclude_not_selectable",
         defaultValue = false,

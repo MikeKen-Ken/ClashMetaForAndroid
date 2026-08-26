@@ -44,15 +44,17 @@ class AppSettingsActivity : BaseActivity<AppSettingsDesign>(), Behavior {
                             recreateActivities()
                         }
                         AppSettingsDesign.Request.PickBackground -> {
-                            val uri = startActivityForResult(
-                                ActivityResultContracts.GetContent(),
+                            val uris = startActivityForResult(
+                                ActivityResultContracts.GetMultipleContents(),
                                 "image/*",
                             )
-                            if (uri != null) {
+                            if (uris.isNotEmpty()) {
                                 val imported = withContext(Dispatchers.IO) {
-                                    UiBackground.import(this@AppSettingsActivity, uri)
+                                    uris.count { uri ->
+                                        UiBackground.import(this@AppSettingsActivity, uri)
+                                    }
                                 }
-                                if (imported) {
+                                if (imported > 0) {
                                     recreateActivities()
                                 } else {
                                     design.showToast(
@@ -65,6 +67,12 @@ class AppSettingsActivity : BaseActivity<AppSettingsDesign>(), Behavior {
                         AppSettingsDesign.Request.ClearBackground -> {
                             UiBackground.clear(this@AppSettingsActivity)
                             recreateActivities()
+                        }
+                        AppSettingsDesign.Request.UploadWallpapers -> {
+                            syncWallpapers(design, upload = true)
+                        }
+                        AppSettingsDesign.Request.DownloadWallpapers -> {
+                            syncWallpapers(design, upload = false)
                         }
                     }
                 }
@@ -109,6 +117,41 @@ class AppSettingsActivity : BaseActivity<AppSettingsDesign>(), Behavior {
     private fun recreateActivities() {
         ApplicationObserver.createdActivities.forEach {
             it.recreate()
+        }
+    }
+
+    private suspend fun syncWallpapers(
+        design: AppSettingsDesign,
+        upload: Boolean,
+    ) {
+        if (!WallpaperWebDav.isConfigured(uiStore)) {
+            design.showToast(R.string.webdav_not_configured, ToastDuration.Long)
+            return
+        }
+        try {
+            if (upload) {
+                val bytes = withContext(Dispatchers.IO) {
+                    UiBackground.encodePack(this@AppSettingsActivity)
+                } ?: run {
+                    design.showToast(R.string.webdav_pack_empty, ToastDuration.Long)
+                    return
+                }
+                WallpaperWebDav.upload(uiStore, bytes)
+                design.showToast(R.string.webdav_upload_ok, ToastDuration.Long)
+            } else {
+                val bytes = WallpaperWebDav.download(uiStore)
+                val applied = withContext(Dispatchers.IO) {
+                    UiBackground.applyPack(this@AppSettingsActivity, bytes)
+                }
+                if (applied) {
+                    recreateActivities()
+                    design.showToast(R.string.webdav_download_ok, ToastDuration.Long)
+                } else {
+                    design.showToast(R.string.webdav_sync_failed, ToastDuration.Long)
+                }
+            }
+        } catch (_: Exception) {
+            design.showToast(R.string.webdav_sync_failed, ToastDuration.Long)
         }
     }
 }

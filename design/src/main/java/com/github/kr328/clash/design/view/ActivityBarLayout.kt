@@ -6,7 +6,7 @@ import android.view.MotionEvent
 import android.widget.FrameLayout
 import androidx.annotation.AttrRes
 import androidx.annotation.StyleRes
-import com.github.kr328.clash.design.util.resolveThemedColor
+import com.github.kr328.clash.design.util.LiquidGlass
 
 class ActivityBarLayout @JvmOverloads constructor(
     context: Context,
@@ -15,9 +15,7 @@ class ActivityBarLayout @JvmOverloads constructor(
     @StyleRes defStyleRes: Int = 0
 ) : FrameLayout(context, attributeSet, defStyleAttr, defStyleRes) {
     init {
-        alpha = 0.96f
-
-        setBackgroundColor(context.resolveThemedColor(android.R.attr.windowBackground))
+        LiquidGlass.attach(this)
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
