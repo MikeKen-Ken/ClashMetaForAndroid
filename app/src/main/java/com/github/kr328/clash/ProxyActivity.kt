@@ -14,6 +14,7 @@ import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.core.model.TunnelState
 import com.github.kr328.clash.core.model.Proxy
+import com.github.kr328.clash.core.model.ProxySort
 import com.github.kr328.clash.design.ProxyDesign
 import com.github.kr328.clash.design.R
 import com.github.kr328.clash.design.model.ProxyState
@@ -255,9 +256,9 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                                 uiStore.proxyDelayTestConcurrency.coerceIn(1, 200),
                                             )
 
-                                            // 测速后按当前排序结果选择最靠前的成功节点；测速期间用户已手动选择则跳过
+                                            // 测速后按联通评分选择最靠前的成功节点；测速期间用户已手动选择则跳过
                                             if (groupName !in urlTestManualOverrides) {
-                                                val refreshed = queryProxyGroup(groupName, uiStore.proxySort)
+                                                val refreshed = queryProxyGroup(groupName, ProxySort.Score)
                                                 val firstSuccess = refreshed.proxies.firstOrNull { proxy ->
                                                     proxy.type != Proxy.Type.Direct &&
                                                         proxy.type != Proxy.Type.Reject &&
@@ -267,7 +268,8 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                                     patchSelector(groupName, firstSuccess.name)
                                                     closeConnectionsUsingProxyGroup(groupName)
                                                 }
-                                                // 清掉 DAO / core 固定，避免下次整包 load 把测速前的手动选择写回去
+                                                // 清掉 DAO / core 固定，避免下次整包 load 把测速前的手动选择写回去。
+                                                // fallback / url-test 已在测速结束时按评分重排运行时列表，清固定后会走评分第一且可用的节点。
                                                 clearManualSelectionForGroup(groupName)
                                             }
 

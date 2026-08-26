@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"cfa/native/connectivity"
+
 	"github.com/metacubex/mihomo/adapter/outboundgroup"
 	pvd "github.com/metacubex/mihomo/adapter/provider"
 	C "github.com/metacubex/mihomo/constant"
@@ -63,6 +65,7 @@ func HealthCheck(name string) {
 
 	wg.Wait()
 	resetGroupConnectTimes(g)
+	ApplyRuntimeConnectivityOrder(name)
 }
 
 func HealthCheckAll() {
@@ -147,6 +150,7 @@ func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) {
 
 	wg.Wait()
 	resetGroupConnectTimes(g)
+	ApplyRuntimeConnectivityOrder(name)
 }
 
 func resetGroupConnectTimes(group outboundgroup.ProxyGroup) {
@@ -180,6 +184,50 @@ func ClearManualSelectionForGroup(name string) bool {
 		return true
 	}
 	return false
+}
+
+type cachedProxyReorderAble interface {
+	ReorderCachedProxies([]string)
+}
+
+func shouldApplyRuntimeConnectivityOrder(adapterType C.AdapterType) bool {
+	switch adapterType {
+	case C.URLTest, C.Fallback:
+		return true
+	default:
+		return false
+	}
+}
+
+// ApplyRuntimeConnectivityOrder 按最新联通评分重排 url-test / fallback 组的运行时节点列表，
+// 不清整包 ApplyConfig。测速后 Fallback 会自动使用评分第一且当前可用的节点。
+func ApplyRuntimeConnectivityOrder(name string) {
+	if shouldSkipDelayCheckGroup(name) {
+		return
+	}
+	p := tunnel.Proxies()[name]
+	if p == nil {
+		return
+	}
+	g, ok := p.Adapter().(outboundgroup.ProxyGroup)
+	if !ok {
+		return
+	}
+	if !shouldApplyRuntimeConnectivityOrder(g.Type()) {
+		return
+	}
+	proxies := g.Proxies()
+	if len(proxies) <= 1 {
+		return
+	}
+	names := make([]string, len(proxies))
+	for i, px := range proxies {
+		names[i] = px.Name()
+	}
+	sorted := connectivity.SortNamesByConnectivity(names)
+	if r, ok := p.Adapter().(cachedProxyReorderAble); ok {
+		r.ReorderCachedProxies(sorted)
+	}
 }
 
 // SetHealthCheckWorkerLimit 同步延迟测速并发上限（订阅健康检查 / 默认组测速回退值）。

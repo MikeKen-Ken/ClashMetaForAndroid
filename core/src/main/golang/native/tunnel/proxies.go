@@ -19,6 +19,7 @@ const (
 	Default SortMode = iota
 	Title
 	Delay
+	Score
 )
 
 type Proxy struct {
@@ -122,6 +123,8 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 		}
 
 		sort.Sort(wrapper)
+	case Score:
+		sortProxiesByConnectivity(proxies)
 	case Default:
 		// 仅 url-test / fallback 按联通评分重排；select 等手动组保持配置顺序
 		if g.Type() == C.URLTest || g.Type() == C.Fallback {
