@@ -9,6 +9,7 @@ import androidx.core.graphics.drawable.DrawableCompat
 import com.github.kr328.clash.common.compat.getDrawableCompat
 import com.github.kr328.clash.design.R
 import com.github.kr328.clash.design.store.UiStore
+import com.github.kr328.clash.design.util.WallpaperReadability
 
 /**
  * Ensures [breakCount] does not cut in the middle of a UTF-16 surrogate pair (e.g. emoji).
@@ -191,6 +192,7 @@ class ProxyView(
 
         paint.textSize = state.config.textSize
         paint.isAntiAlias = true
+        WallpaperReadability.applyCanvasTextContrast(context, paint, state.controls)
 
         // draw delay (red "T" when timeout, otherwise normal color)
         canvas.apply {

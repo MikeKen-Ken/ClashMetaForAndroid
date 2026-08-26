@@ -14,12 +14,12 @@ import android.view.View
  * 对齐看板 [KanbanGlassSurface] 与桌面 glass.scss。
  */
 object LiquidGlass {
-    private const val BLUR_FILL_LIGHT_TOP = 0.42f
-    private const val BLUR_FILL_LIGHT_MID = 0.32f
-    private const val BLUR_FILL_LIGHT_BOT = 0.26f
-    private const val BLUR_FILL_DARK_TOP = 0.36f
-    private const val BLUR_FILL_DARK_MID = 0.26f
-    private const val BLUR_FILL_DARK_BOT = 0.20f
+    private const val BLUR_FILL_LIGHT_TOP = 0.62f
+    private const val BLUR_FILL_LIGHT_MID = 0.52f
+    private const val BLUR_FILL_LIGHT_BOT = 0.46f
+    private const val BLUR_FILL_DARK_TOP = 0.56f
+    private const val BLUR_FILL_DARK_MID = 0.46f
+    private const val BLUR_FILL_DARK_BOT = 0.40f
     private const val EDGE_LIGHT = 0.62f
     private const val EDGE_DARK = 0.22f
 

@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.TextView
 import com.github.kr328.clash.design.R
+import com.github.kr328.clash.design.util.WallpaperReadability
 import com.github.kr328.clash.design.util.layoutInflater
 import com.github.kr328.clash.design.util.resolveThemedColor
 
@@ -53,6 +54,7 @@ class PopupListAdapter(
             text.setBackgroundColor(Color.TRANSPARENT)
             text.setTextColor(colorControlNormal)
         }
+        WallpaperReadability.applyTo(text)
 
         return view
     }

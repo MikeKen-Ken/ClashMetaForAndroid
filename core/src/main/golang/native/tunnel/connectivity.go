@@ -65,7 +65,9 @@ func HealthCheck(name string) {
 
 	wg.Wait()
 	resetGroupConnectTimes(g)
-	ApplyRuntimeConnectivityOrder(name)
+	// 测速后按最新积分重排所有 url-test/fallback 组。NoHK / Download 与 Auto
+	// 共用节点，只重排当前组时第二、第三组清钉后仍会回到配置原序。
+	ApplyRuntimeConnectivityOrderAll()
 }
 
 func HealthCheckAll() {
@@ -150,7 +152,7 @@ func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) {
 
 	wg.Wait()
 	resetGroupConnectTimes(g)
-	ApplyRuntimeConnectivityOrder(name)
+	ApplyRuntimeConnectivityOrderAll()
 }
 
 func resetGroupConnectTimes(group outboundgroup.ProxyGroup) {
@@ -201,32 +203,49 @@ func shouldApplyRuntimeConnectivityOrder(adapterType C.AdapterType) bool {
 
 // ApplyRuntimeConnectivityOrder 按最新联通评分重排 url-test / fallback 组的运行时节点列表，
 // 不清整包 ApplyConfig。测速后 Fallback 会自动使用评分第一且当前可用的节点。
-func ApplyRuntimeConnectivityOrder(name string) {
+func ApplyRuntimeConnectivityOrder(name string) bool {
 	if shouldSkipDelayCheckGroup(name) {
-		return
+		return false
 	}
 	p := tunnel.Proxies()[name]
 	if p == nil {
-		return
+		return false
 	}
 	g, ok := p.Adapter().(outboundgroup.ProxyGroup)
 	if !ok {
-		return
+		return false
 	}
 	if !shouldApplyRuntimeConnectivityOrder(g.Type()) {
-		return
+		return false
 	}
 	proxies := g.Proxies()
 	if len(proxies) <= 1 {
-		return
+		return false
 	}
 	names := make([]string, len(proxies))
 	for i, px := range proxies {
 		names[i] = px.Name()
 	}
 	sorted := connectivity.SortNamesByConnectivity(names)
-	if r, ok := p.Adapter().(cachedProxyReorderAble); ok {
-		r.ReorderCachedProxies(sorted)
+	r, ok := p.Adapter().(cachedProxyReorderAble)
+	if !ok {
+		log.Warnln("ApplyRuntimeConnectivityOrder `%s`: ReorderCachedProxies not available", name)
+		return false
+	}
+	r.ReorderCachedProxies(sorted)
+	return true
+}
+
+// ApplyRuntimeConnectivityOrderAll 按最新积分重排全部 url-test / fallback 组。
+func ApplyRuntimeConnectivityOrderAll() {
+	for name, p := range tunnel.Proxies() {
+		if p == nil {
+			continue
+		}
+		if _, ok := p.Adapter().(outboundgroup.ProxyGroup); !ok {
+			continue
+		}
+		ApplyRuntimeConnectivityOrder(name)
 	}
 }
 

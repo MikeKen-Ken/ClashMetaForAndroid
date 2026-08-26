@@ -17,3 +17,12 @@ func TestShouldApplyRuntimeConnectivityOrder(t *testing.T) {
 		t.Fatal("fallback should apply runtime connectivity order")
 	}
 }
+
+func TestApplyRuntimeConnectivityOrderSkipsDelayCheckGroups(t *testing.T) {
+	if ApplyRuntimeConnectivityOrder("Direct") {
+		t.Fatal("Direct should not apply runtime connectivity order")
+	}
+	if ApplyRuntimeConnectivityOrder("Final") {
+		t.Fatal("Final should not apply runtime connectivity order")
+	}
+}

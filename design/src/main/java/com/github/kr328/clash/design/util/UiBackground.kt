@@ -78,9 +78,11 @@ object UiBackground {
 
     fun count(context: Context): Int = loadManifest(context).items.size
 
-    fun overlayColor(percent: Int): Int {
+    fun overlayColor(context: Context, percent: Int): Int {
         val clamped = percent.coerceIn(0, MAX_OVERLAY_PERCENT)
-        return Color.argb((clamped * 255 / 100f).toInt().coerceIn(0, 255), 0, 0, 0)
+        val alpha = (clamped * 255 / 100f).toInt().coerceIn(0, 255)
+        val base = context.resolveThemedColor(android.R.attr.windowBackground)
+        return Color.argb(alpha, Color.red(base), Color.green(base), Color.blue(base))
     }
 
     fun cardSurfaceAlpha(context: Context, opacityPercent: Int): Int {
@@ -143,7 +145,7 @@ object UiBackground {
                     FrameLayout.LayoutParams.MATCH_PARENT,
                 )
                 importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-                setBackgroundColor(overlayColor(overlayPercent))
+                setBackgroundColor(overlayColor(context, overlayPercent))
             })
         }
         content.layoutParams = FrameLayout.LayoutParams(
@@ -152,6 +154,7 @@ object UiBackground {
         )
         (content.parent as? ViewGroup)?.removeView(content)
         frame.addView(content)
+        WallpaperReadability.install(content)
         scheduleRotation(context)
         return frame
     }
