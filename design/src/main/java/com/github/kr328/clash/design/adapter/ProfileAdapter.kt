@@ -5,8 +5,9 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.github.kr328.clash.design.databinding.AdapterProfileBinding
 import com.github.kr328.clash.design.model.ProfilePageState
-import com.github.kr328.clash.design.model.ProxyPageState
 import com.github.kr328.clash.design.ui.ObservableCurrentTime
+import com.github.kr328.clash.design.util.LiquidGlass
+import com.github.kr328.clash.design.util.UiBackground
 import com.github.kr328.clash.design.util.layoutInflater
 import com.github.kr328.clash.service.model.Profile
 
@@ -30,7 +31,15 @@ class ProfileAdapter(
         return Holder(
             AdapterProfileBinding
                 .inflate(context.layoutInflater, parent, false)
-                .also { it.currentTime = currentTime }
+                .also { binding ->
+                    binding.currentTime = currentTime
+                    if (UiBackground.exists(context)) {
+                        LiquidGlass.attach(
+                            binding.rootView,
+                            8f * context.resources.displayMetrics.density,
+                        )
+                    }
+                }
         )
     }
 

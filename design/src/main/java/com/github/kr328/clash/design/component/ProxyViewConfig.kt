@@ -3,6 +3,7 @@ package com.github.kr328.clash.design.component
 import android.content.Context
 import android.graphics.Color
 import com.github.kr328.clash.design.R
+import com.github.kr328.clash.design.util.LiquidGlass
 import com.github.kr328.clash.design.util.UiBackground
 import com.github.kr328.clash.design.util.getPixels
 import com.github.kr328.clash.design.util.resolveThemedColor
@@ -10,6 +11,7 @@ import com.github.kr328.clash.design.util.resolveThemedResourceId
 
 class ProxyViewConfig(val context: Context, var proxyLine: Int) {
     private val colorSurface = context.resolveThemedColor(com.google.android.material.R.attr.colorSurface)
+    private val glass = UiBackground.exists(context)
 
     val clickableBackground =
         context.resolveThemedResourceId(android.R.attr.selectableItemBackground)
@@ -17,20 +19,15 @@ class ProxyViewConfig(val context: Context, var proxyLine: Int) {
     val selectedControl = context.resolveThemedColor(com.google.android.material.R.attr.colorOnPrimary)
     val selectedBackground = context.resolveThemedColor(com.google.android.material.R.attr.colorPrimary)
 
-    val unselectedControl = context.resolveThemedColor(com.google.android.material.R.attr.colorOnSurface)
+    val unselectedControl = if (glass) {
+        LiquidGlass.CONTENT_TEXT
+    } else {
+        context.resolveThemedColor(com.google.android.material.R.attr.colorOnSurface)
+    }
     val delayTimeoutColor = Color.RED
     val unselectedBackground: Int
-        get() = if (proxyLine == 1) {
-            if (UiBackground.exists(context)) {
-                Color.argb(
-                    180,
-                    Color.red(colorSurface),
-                    Color.green(colorSurface),
-                    Color.blue(colorSurface),
-                )
-            } else {
-                Color.TRANSPARENT
-            }
+        get() = if (UiBackground.exists(context) || proxyLine == 1) {
+            Color.TRANSPARENT
         } else colorSurface
 
     val layoutPadding = context.getPixels(R.dimen.proxy_layout_padding).toFloat()

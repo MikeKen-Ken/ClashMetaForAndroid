@@ -6,6 +6,8 @@ import android.widget.LinearLayout
 import android.widget.LinearLayout.LayoutParams
 import android.widget.LinearLayout.LayoutParams.MATCH_PARENT
 import android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+import com.github.kr328.clash.design.util.LiquidGlass
+import com.github.kr328.clash.design.util.UiBackground
 import kotlinx.coroutines.CoroutineScope
 
 interface PreferenceScreen : CoroutineScope {
@@ -19,6 +21,10 @@ fun CoroutineScope.preferenceScreen(
 ): PreferenceScreen {
     val root = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
+        if (UiBackground.exists(context)) {
+            val radius = 8f * context.resources.displayMetrics.density
+            LiquidGlass.attach(this, radius)
+        }
     }
 
     val impl = object : PreferenceScreen, CoroutineScope by this {

@@ -19,14 +19,16 @@
             android:id="@+id/scroll_root"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:paddingTop="@{(float) self.surface.insets.top + @dimen/toolbar_height}"
+            android:paddingBottom="@{self.surface.insets.bottom}"
             android:scrollbars="none">
 
             <LinearLayout
+                android:id="@+id/content_panel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingTop="@{(float) self.surface.insets.top + @dimen/toolbar_height}"
-                android:paddingBottom="@{self.surface.insets.bottom}">
+                android:layout_marginHorizontal="@dimen/item_header_margin"
+                android:orientation="vertical">
 
                 <com.github.kr328.clash.design.view.ActionLabel
                     android:layout_width="match_parent"

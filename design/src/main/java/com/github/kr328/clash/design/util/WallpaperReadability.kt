@@ -23,7 +23,7 @@ internal object WallpaperReadability {
 
     fun applyTo(text: TextView) {
         if (!UiBackground.exists(text.context)) return
-        applyShadow(text)
+        applyInk(text)
     }
 
     fun applyCanvasTextContrast(context: Context, paint: Paint, textColor: Int) {
@@ -42,7 +42,7 @@ internal object WallpaperReadability {
 
     private fun decorate(view: View) {
         when (view) {
-            is TextView -> applyShadow(view)
+            is TextView -> applyInk(view)
             is RecyclerView -> {
                 watchRecycler(view)
                 for (index in 0 until view.childCount) {
@@ -71,7 +71,10 @@ internal object WallpaperReadability {
         )
     }
 
-    private fun applyShadow(text: TextView) {
+    private fun applyInk(text: TextView) {
+        if (isLightColor(text.currentTextColor)) {
+            text.setTextColor(LiquidGlass.CONTENT_TEXT)
+        }
         val density = text.resources.displayMetrics.density
         text.setShadowLayer(
             3.5f * density,
@@ -80,6 +83,15 @@ internal object WallpaperReadability {
             contrastShadowColor(text.currentTextColor),
         )
         text.setTag(R.id.tag_wallpaper_text_shadow, true)
+    }
+
+    private fun isLightColor(color: Int): Boolean {
+        val luminance = (
+            0.299f * Color.red(color) +
+                0.587f * Color.green(color) +
+                0.114f * Color.blue(color)
+            ) / 255f
+        return luminance > 0.62f
     }
 
     private fun contrastShadowColor(textColor: Int): Int {

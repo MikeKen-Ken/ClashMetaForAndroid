@@ -8,7 +8,8 @@ import android.view.View
 import androidx.core.graphics.drawable.DrawableCompat
 import com.github.kr328.clash.common.compat.getDrawableCompat
 import com.github.kr328.clash.design.R
-import com.github.kr328.clash.design.store.UiStore
+import com.github.kr328.clash.design.util.LiquidGlass
+import com.github.kr328.clash.design.util.UiBackground
 import com.github.kr328.clash.design.util.WallpaperReadability
 
 /**
@@ -85,13 +86,18 @@ class ProxyView(
 
         paint.reset()
 
+        val glass = UiBackground.exists(context) && !state.isSelected
         paint.color = state.background
         paint.style = Paint.Style.FILL
 
         // draw background
         canvas.apply {
             if (state.config.proxyLine==1) {
-                drawRect(0f, 0f, width, height, paint)
+                if (glass) {
+                    LiquidGlass.draw(this@ProxyView, this)
+                } else {
+                    drawRect(0f, 0f, width, height, paint)
+                }
             } else {
                 val path = state.path
 
@@ -107,16 +113,21 @@ class ProxyView(
                     Path.Direction.CW,
                 )
 
-                paint.setShadowLayer(
-                    state.config.cardRadius,
-                    state.config.cardOffset,
-                    state.config.cardOffset,
-                    state.config.shadow
-                )
+                if (glass) {
+                    clipPath(path)
+                    LiquidGlass.draw(this@ProxyView, this)
+                } else {
+                    paint.setShadowLayer(
+                        state.config.cardRadius,
+                        state.config.cardOffset,
+                        state.config.cardOffset,
+                        state.config.shadow
+                    )
 
-                drawPath(path, paint)
+                    drawPath(path, paint)
 
-                clipPath(path)
+                    clipPath(path)
+                }
             }
         }
 
