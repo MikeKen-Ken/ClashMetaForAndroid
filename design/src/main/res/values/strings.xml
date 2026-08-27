@@ -51,7 +51,8 @@
     <string name="feedback_proxy_started">Proxy started</string>
     <string name="feedback_proxy_stopped">Proxy stopped</string>
     <string name="url_test_started">Delay test started: %1$s</string>
-    <string name="url_test_finished">Delay test completed: %1$s</string>
+    <string name="url_test_finished">Delay test completed: %1$s (%2$d/%3$d succeeded, %4$d ms total)</string>
+    <string name="url_test_failed">Delay test failed: %1$s (0/%2$d succeeded, %3$d ms total)</string>
     <string name="provider_update_started">Updating subscription: %1$s</string>
     <string name="provider_update_done">Subscription updated: %1$s</string>
 

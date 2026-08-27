@@ -249,36 +249,54 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                             getString(R.string.url_test_started, groupName),
                                         )
                                         try {
-                                            withClash {
+                                            val result = withClash {
                                                 val timeoutMs = uiStore.proxyDelayTestTimeoutMs
-                                                healthCheckWithTimeout(
+                                                val delayTestResult = healthCheckWithTimeout(
                                                     groupName,
                                                     timeoutMs,
                                                     uiStore.proxyDelayTestConcurrency.coerceIn(1, 200),
                                                 )
 
-                                                val override = urlTestManualOverrides[groupName]
-                                                if (override != null) {
-                                                    if (override.isEmpty()) {
-                                                        clearManualSelectionForGroup(groupName)
-                                                    } else {
-                                                        patchSelector(groupName, override)
+                                                if (delayTestResult.hasSuccess) {
+                                                    val override = urlTestManualOverrides[groupName]
+                                                    if (override != null) {
+                                                        if (override.isEmpty()) {
+                                                            clearManualSelectionForGroup(groupName)
+                                                        } else {
+                                                            patchSelector(groupName, override)
+                                                        }
                                                     }
+
+                                                    // 只把 DAO 选择同步进 persist，不要整包 Load/ApplyConfig。
+                                                    applyManualConnectivityOrder()
                                                 }
-
-                                                // 只把 DAO 选择同步进 persist，不要整包 Load/ApplyConfig：
-                                                // 测速后重载会 OnSuspend、重建出站（延迟全变成超时）并重置 DNS/Fake-IP，
-                                                // VPN 仍在运行时流量会一直失败，直到杀进程重启。
-                                                applyManualConnectivityOrder()
-
-                                                closeConnectionsExcludingDirect()
+                                                delayTestResult
                                             }
+                                            if (result.hasSuccess) {
+                                                design.showNativeToast(
+                                                    getString(
+                                                        R.string.url_test_finished,
+                                                        groupName,
+                                                        result.succeeded,
+                                                        result.tested,
+                                                        result.elapsedMs,
+                                                    ),
+                                                )
+                                            } else {
+                                                design.showNativeToast(
+                                                    getString(
+                                                        R.string.url_test_failed,
+                                                        groupName,
+                                                        result.tested,
+                                                        result.elapsedMs,
+                                                    ),
+                                                )
+                                            }
+                                        } catch (e: Exception) {
+                                            design.showExceptionToast(e)
                                         } finally {
                                             urlTestingGroups.remove(groupName)
                                             urlTestManualOverrides.remove(groupName)
-                                            design.showNativeToast(
-                                                getString(R.string.url_test_finished, groupName),
-                                            )
                                         }
 
                                         design.requests.send(ProxyDesign.Request.ReloadAll)

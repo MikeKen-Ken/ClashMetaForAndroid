@@ -4,8 +4,8 @@ package main
 import "C"
 
 import (
-	"unsafe"
 	"strings"
+	"unsafe"
 
 	"cfa/native/app"
 	"cfa/native/tunnel"
@@ -88,9 +88,9 @@ func healthCheckWithTimeout(completable unsafe.Pointer, name C.c_string, timeout
 	go func(name string, timeout int, conc int) {
 		defer C.release_object(completable)
 
-		tunnel.HealthCheckWithTimeout(name, timeout, conc)
+		result := tunnel.HealthCheckWithTimeout(name, timeout, conc)
 
-		C.complete(completable, nil)
+		C.complete_string(completable, marshalJson(result), nil)
 	}(C.GoString(name), int(timeoutMs), int(concurrency))
 }
 
@@ -113,13 +113,11 @@ func patchRuntimeLogLevel(level C.c_string) C.int {
 	return 0
 }
 
-
-
 //export patchConnectivityJson
 func patchConnectivityJson(p *C.char) C.int {
 	if ncfg.ApplyConnectivityPatchFromJSON(C.GoString(p)) {
 		return 1
-}
+	}
 
 	return 0
 }

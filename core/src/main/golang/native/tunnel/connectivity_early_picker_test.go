@@ -1,55 +1,45 @@
 package tunnel
 
-import "testing"
+import (
+	"testing"
 
-type mockSelectable struct {
-	name string
+	C "github.com/metacubex/mihomo/constant"
+)
+
+type namedDelayTestProxy struct {
+	C.Proxy
+	name  string
+	alive map[string]bool
 }
 
-func (m *mockSelectable) Set(name string) error {
-	m.name = name
-	return nil
+func (p namedDelayTestProxy) Name() string {
+	return p.name
 }
 
-func (m *mockSelectable) ForceSet(name string) {
-	m.name = name
+func (p namedDelayTestProxy) AliveForTestUrl(url string) bool {
+	return p.alive[url]
 }
 
-func TestScoreEarlyPickerStopsPinningAfterStop(t *testing.T) {
-	sel := &mockSelectable{}
-	picker := &scoreEarlyPicker{
-		group:      "Auto",
-		order:      []string{"a", "b"},
-		passed:     make(map[string]struct{}),
-		selectable: sel,
-	}
+func TestEffectiveDelayTestMembersFiltersSpecialAndDuplicateNames(t *testing.T) {
+	members := effectiveDelayTestMembers([]C.Proxy{
+		namedDelayTestProxy{name: "DIRECT"},
+		namedDelayTestProxy{name: "node-a"},
+		namedDelayTestProxy{name: "node-a"},
+		namedDelayTestProxy{name: "node-b"},
+	})
 
-	picker.onResult("b", 80, 5000)
-	if sel.name != "b" {
-		t.Fatalf("expected early pick to pin b, got %q", sel.name)
-	}
-
-	picker.stop()
-	picker.onResult("a", 20, 5000)
-	if sel.name != "b" {
-		t.Fatalf("stopped picker must not pin again, got %q", sel.name)
+	if len(members) != 2 || members[0].Name() != "node-a" || members[1].Name() != "node-b" {
+		t.Fatalf("effectiveDelayTestMembers() = %v; want node-a, node-b", members)
 	}
 }
 
-func TestScoreEarlyPickerRejectsTimeoutBoundary(t *testing.T) {
-	sel := &mockSelectable{}
-	picker := &scoreEarlyPicker{
-		group:      "Auto",
-		order:      []string{"a"},
-		passed:     make(map[string]struct{}),
-		selectable: sel,
+func TestFirstAliveProxyUsesCurrentGroupURL(t *testing.T) {
+	proxies := []C.Proxy{
+		namedDelayTestProxy{name: "node-a", alive: map[string]bool{"https://old.example/204": true}},
+		namedDelayTestProxy{name: "node-b", alive: map[string]bool{"https://current.example/204": true}},
 	}
-	picker.onResult("a", 5000, 5000)
-	if sel.name != "" {
-		t.Fatalf("delay == timeoutMs must not count as success, got %q", sel.name)
-	}
-	picker.onResult("a", 4999, 5000)
-	if sel.name != "a" {
-		t.Fatalf("delay just under timeout should pin, got %q", sel.name)
+
+	if got := firstAliveProxyName(proxies, "https://current.example/204"); got != "node-b" {
+		t.Fatalf("firstAliveProxyName() = %q; want node-b", got)
 	}
 }

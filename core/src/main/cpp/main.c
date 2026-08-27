@@ -564,6 +564,32 @@ static void call_completable_complete_impl(void *completable, const char *except
     }
 }
 
+static void call_completable_complete_string_impl(void *completable, const char *result,
+                                                  const char *exception) {
+    TRACE_METHOD();
+
+    ATTACH_JNI();
+
+    if (exception == NULL) {
+        (*env)->CallBooleanMethod(env,
+                                  (jobject) completable,
+                                  (jmethodID) m_completable_complete,
+                                  (jobject) new_string(result));
+    } else {
+        jthrowable _exception = (jthrowable)
+                (*env)->NewObject(env,
+                                  (jclass) c_clash_exception,
+                                  (jmethodID) m_clash_exception,
+                                  (jstring) new_string(exception)
+                );
+
+        (*env)->CallBooleanMethod(env,
+                                  (jobject) completable,
+                                  (jmethodID) m_completable_complete_exceptionally,
+                                  (jobject) _exception);
+    }
+}
+
 static void call_fetch_callback_report_impl(void *fetch_callback, const char *status_json) {
     TRACE_METHOD();
 
@@ -718,6 +744,7 @@ JNI_OnLoad(JavaVM *vm, void *reserved) {
     mark_socket_func = &call_tun_interface_mark_socket_impl;
     query_socket_uid_func = &call_tun_interface_query_socket_uid_impl;
     complete_func = &call_completable_complete_impl;
+    complete_string_func = &call_completable_complete_string_impl;
     fetch_report_func = &call_fetch_callback_report_impl;
     fetch_complete_func = &call_fetch_callback_complete_impl;
     logcat_received_func = &call_logcat_interface_received_impl;

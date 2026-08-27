@@ -16,22 +16,22 @@ func (p delayHistoryProxy) ExtraDelayHistories() map[string]C.ProxyState {
 	return p.histories
 }
 
-func TestLatestProxyDelayUsesNewestTestURLResult(t *testing.T) {
-	older := time.Unix(100, 0)
-	newer := time.Unix(200, 0)
+func TestLatestProxyDelayUsesOnlyCurrentTestURL(t *testing.T) {
+	currentFailure := time.Unix(100, 0)
+	unrelatedNewerSuccess := time.Unix(200, 0)
 	proxy := delayHistoryProxy{histories: map[string]C.ProxyState{
 		"https://old.example/204": {
 			Alive:   true,
-			History: []C.DelayHistory{{Time: older, Delay: 120}},
+			History: []C.DelayHistory{{Time: unrelatedNewerSuccess, Delay: 120}},
 		},
 		"https://current.example/204": {
 			Alive:   false,
-			History: []C.DelayHistory{{Time: newer, Delay: 0}},
+			History: []C.DelayHistory{{Time: currentFailure, Delay: 0}},
 		},
 	}}
 
-	if got := latestProxyDelay(proxy); got != 0xffff {
-		t.Fatalf("latestProxyDelay() = %d; want unavailable", got)
+	if got := latestProxyDelayForURL(proxy, "https://current.example/204"); got != 0xffff {
+		t.Fatalf("latestProxyDelayForURL() = %d; want unavailable", got)
 	}
 }
 
@@ -47,17 +47,7 @@ func TestLatestProxyDelayReturnsNewestSuccessfulResult(t *testing.T) {
 		},
 	}}
 
-	if got := latestProxyDelay(proxy); got != 135 {
-		t.Fatalf("latestProxyDelay() = %d; want 135", got)
-	}
-}
-
-func TestDelayTestOperationTimeoutAllowsUnifiedDelayWarmup(t *testing.T) {
-	timeout := 300 * time.Millisecond
-	if got := delayTestOperationTimeout(timeout, false); got != timeout {
-		t.Fatalf("delayTestOperationTimeout(normal) = %s; want %s", got, timeout)
-	}
-	if got := delayTestOperationTimeout(timeout, true); got != 900*time.Millisecond {
-		t.Fatalf("delayTestOperationTimeout(unified) = %s; want 900ms", got)
+	if got := latestProxyDelayForURL(proxy, "https://second.example/204"); got != 135 {
+		t.Fatalf("latestProxyDelayForURL() = %d; want 135", got)
 	}
 }

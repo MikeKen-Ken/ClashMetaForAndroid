@@ -175,10 +175,10 @@ object Clash {
         Bridge.nativeSetHealthCheckWorkerLimit(limit)
     }
 
-    fun healthCheckWithTimeout(name: String, timeoutMs: Int, concurrency: Int): CompletableDeferred<Unit> {
-        return CompletableDeferred<Unit>().apply {
-            Bridge.nativeHealthCheckWithTimeout(this, name, timeoutMs, concurrency)
-        }
+    suspend fun healthCheckWithTimeout(name: String, timeoutMs: Int, concurrency: Int): DelayTestResult {
+        val bridgeResult = CompletableDeferred<String>()
+        Bridge.nativeHealthCheckWithTimeout(bridgeResult, name, timeoutMs, concurrency)
+        return BridgeJson.decodeFromString(DelayTestResult.serializer(), bridgeResult.await())
     }
 
     fun healthCheckAll() {

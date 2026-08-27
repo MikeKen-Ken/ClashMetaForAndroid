@@ -101,7 +101,8 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 		return nil
 	}
 
-	proxies := convertProxies(g.Proxies(), uiSubtitlePattern)
+	testURL, _ := delayTestSpec(g)
+	proxies := convertProxies(g.Proxies(), testURL, uiSubtitlePattern)
 	// 	proxies := collectProviders(g.Providers(), uiSubtitlePattern)
 
 	switch sortMode {
@@ -189,7 +190,7 @@ func PatchSelector(selector, name string) bool {
 	return true
 }
 
-func convertProxies(proxies []C.Proxy, uiSubtitlePattern *regexp2.Regexp) []*Proxy {
+func convertProxies(proxies []C.Proxy, testURL string, uiSubtitlePattern *regexp2.Regexp) []*Proxy {
 	result := make([]*Proxy, 0, 128)
 
 	for _, p := range proxies {
@@ -212,7 +213,7 @@ func convertProxies(proxies []C.Proxy, uiSubtitlePattern *regexp2.Regexp) []*Pro
 			Title:    strings.TrimSpace(title),
 			Subtitle: strings.TrimSpace(subtitle),
 			Type:     p.Type().String(),
-			Delay:    int(latestProxyDelay(p)),
+			Delay:    int(latestProxyDelayForURL(p, testURL)),
 		})
 	}
 	return result
@@ -222,6 +223,10 @@ func collectProviders(providers []provider.ProxyProvider, uiSubtitlePattern *reg
 	result := make([]*Proxy, 0, 128)
 
 	for _, p := range providers {
+		testURL := p.HealthCheckURL()
+		if testURL == "" {
+			testURL = C.DefaultTestURL
+		}
 		for _, px := range p.Proxies() {
 			name := px.Name()
 			title := name
@@ -243,7 +248,7 @@ func collectProviders(providers []provider.ProxyProvider, uiSubtitlePattern *reg
 				Title:    strings.TrimSpace(title),
 				Subtitle: strings.TrimSpace(subtitle),
 				Type:     px.Type().String(),
-				Delay:    int(latestProxyDelay(px)),
+				Delay:    int(latestProxyDelayForURL(px, testURL)),
 			})
 		}
 	}
@@ -251,13 +256,13 @@ func collectProviders(providers []provider.ProxyProvider, uiSubtitlePattern *reg
 	return result
 }
 
-func latestProxyDelay(proxy C.Proxy) uint16 {
+func latestProxyDelayForURL(proxy C.Proxy, testURL string) uint16 {
 	const unavailableDelay = uint16(0xffff)
 
 	var latest C.DelayHistory
 	latestAlive := false
 	found := false
-	for _, state := range proxy.ExtraDelayHistories() {
+	if state, ok := proxy.ExtraDelayHistories()[testURL]; ok {
 		for _, history := range state.History {
 			if !found || history.Time.After(latest.Time) {
 				latest = history

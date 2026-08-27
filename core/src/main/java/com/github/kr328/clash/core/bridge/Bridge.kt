@@ -28,7 +28,7 @@ object Bridge {
     external fun nativeHealthCheck(completable: CompletableDeferred<Unit>, name: String)
     external fun nativeHealthCheckAll()
     external fun nativeSetHealthCheckWorkerLimit(limit: Int)
-    external fun nativeHealthCheckWithTimeout(completable: CompletableDeferred<Unit>, name: String, timeoutMs: Int, concurrency: Int)
+    external fun nativeHealthCheckWithTimeout(completable: CompletableDeferred<String>, name: String, timeoutMs: Int, concurrency: Int)
     external fun nativePatchSelector(selector: String, name: String): Boolean
     /** 仅更新运行时日志级别，不落整库 reload */
     external fun nativePatchRuntimeLogLevel(levelKeyLowercaseOrYamlName: String): Boolean

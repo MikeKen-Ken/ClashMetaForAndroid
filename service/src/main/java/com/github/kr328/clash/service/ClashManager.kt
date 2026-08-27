@@ -262,16 +262,16 @@ class ClashManager(private val context: Context) : IClashManager,
 
     override suspend fun healthCheck(group: String) {
         Clash.healthCheck(group).await()
-        store.activeProfile?.let { uuid ->
-            SelectionDao().removeSelected(uuid, group)
-        }
     }
 
-    override suspend fun healthCheckWithTimeout(group: String, timeoutMs: Int, concurrency: Int) {
-        Clash.healthCheckWithTimeout(group, timeoutMs, concurrency).await()
-        store.activeProfile?.let { uuid ->
-            SelectionDao().removeSelected(uuid, group)
+    override suspend fun healthCheckWithTimeout(group: String, timeoutMs: Int, concurrency: Int): DelayTestResult {
+        val result = Clash.healthCheckWithTimeout(group, timeoutMs, concurrency)
+        if (result.hasSuccess) {
+            store.activeProfile?.let { uuid ->
+                SelectionDao().removeSelected(uuid, group)
+            }
         }
+        return result
     }
 
     override suspend fun applyManualConnectivityOrder() {

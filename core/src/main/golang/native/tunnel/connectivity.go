@@ -3,13 +3,14 @@ package tunnel
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"cfa/native/connectivity"
 
-	A "github.com/metacubex/mihomo/adapter"
 	"github.com/metacubex/mihomo/adapter/outboundgroup"
 	pvd "github.com/metacubex/mihomo/adapter/provider"
+	"github.com/metacubex/mihomo/common/utils"
 	C "github.com/metacubex/mihomo/constant"
 	"github.com/metacubex/mihomo/constant/provider"
 	"github.com/metacubex/mihomo/log"
@@ -47,10 +48,6 @@ func HealthCheck(name string) {
 		return
 	}
 
-	// 测速时清空手动选择状态，使所有节点都不再是“手动选择”
-	if clearable, ok := p.Adapter().(outboundgroup.ClearManualSelectionAble); ok {
-		clearable.ClearManualSelection()
-	}
 	ApplyRuntimeConnectivityOrderAll()
 
 	wg := &sync.WaitGroup{}
@@ -83,105 +80,135 @@ func HealthCheckAll() {
 	}
 }
 
-// HealthCheckWithTimeout 使用自定义超时时间（毫秒）和并发节点数对指定代理组执行健康检查。
-// concurrency 控制同时测速的节点数上限，与原始 errgroup.SetLimit(N) 等价。
-func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) {
+type DelayTestResult struct {
+	Group     string `json:"group"`
+	Tested    int    `json:"tested"`
+	Succeeded int    `json:"succeeded"`
+	Failed    int    `json:"failed"`
+	ElapsedMs int64  `json:"elapsedMs"`
+	Error     string `json:"error,omitempty"`
+}
+
+// HealthCheckWithTimeout tests only the effective members of the requested
+// group using the URL owned by that group. The timeout is applied independently
+// to each network phase; ElapsedMs is the whole group operation duration.
+func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) (result DelayTestResult) {
+	startedAt := time.Now()
+	result = DelayTestResult{Group: name}
+	defer func() {
+		result.ElapsedMs = time.Since(startedAt).Milliseconds()
+	}()
+
 	if shouldSkipDelayCheckGroup(name) {
-		return
+		result.Error = "group is excluded from delay testing"
+		return result
+	}
+	if timeoutMs <= 0 {
+		result.Error = "timeout must be greater than zero"
+		return result
 	}
 
 	p := tunnel.Proxies()[name]
 
 	if p == nil {
 		log.Warnln("Request health check for `%s`: not found", name)
-		return
+		result.Error = "proxy group not found"
+		return result
 	}
 
 	g, ok := p.Adapter().(outboundgroup.ProxyGroup)
 	if !ok {
 		log.Warnln("Request health check for `%s`: invalid type %s", name, p.Type().String())
-		return
+		result.Error = "proxy is not a testable group"
+		return result
 	}
 
-	// 测速时清空手动选择，并先按当前积分重排，使已通过节点能立刻按顺序被选中。
-	if clearable, ok := p.Adapter().(outboundgroup.ClearManualSelectionAble); ok {
-		clearable.ClearManualSelection()
+	testURL, expectedStatusText := delayTestSpec(g)
+	expectedStatus, err := utils.NewUnsignedRanges[uint16](expectedStatusText)
+	if err != nil {
+		log.Debugln("[delay-test] group=%s invalid expected status %q: %v", name, expectedStatusText, err)
+		expectedStatus = nil
 	}
-	ApplyRuntimeConnectivityOrderAll()
-
-	timeout := time.Duration(timeoutMs) * time.Millisecond
-	operationTimeout := delayTestOperationTimeout(timeout, A.UnifiedDelay.Load())
+	members := effectiveDelayTestMembers(g.Proxies())
+	result.Tested = len(members)
+	if result.Tested == 0 {
+		result.Error = "proxy group has no testable members"
+		return result
+	}
 
 	if concurrency <= 0 {
 		concurrency = pvd.EffectiveHealthCheckWorkerLimit()
 	}
-	sem := make(chan struct{}, concurrency)
-
-	var picker *scoreEarlyPicker
-	if selectable, ok := p.Adapter().(outboundgroup.SelectAble); ok {
-		picker = newScoreEarlyPicker(name, g.Proxies(), selectable)
+	if concurrency <= 0 {
+		concurrency = 1
 	}
+	if concurrency > result.Tested {
+		concurrency = result.Tested
+	}
+	sem := make(chan struct{}, concurrency)
+	var succeeded atomic.Int64
+	var wg sync.WaitGroup
 
-	wg := &sync.WaitGroup{}
-
-	for _, pr := range g.Providers() {
+	for _, px := range sortProxiesByConnectivityScore(members) {
 		wg.Add(1)
-
-		go func(prov provider.ProxyProvider) {
+		sem <- struct{}{}
+		go func(proxy C.Proxy) {
 			defer wg.Done()
+			defer func() { <-sem }()
 
-			testURL := prov.HealthCheckURL()
-			if testURL == "" {
-				testURL = "https://www.gstatic.com/generate_204"
+			ctx := C.WithHealthCheckSourceName(context.Background(), name)
+			ctx = C.WithDelayTestTimeoutMs(ctx, timeoutMs)
+			delay, testErr := proxy.URLTest(ctx, testURL, expectedStatus)
+			if testErr != nil || delay == 0 || int(delay) >= timeoutMs {
+				log.Debugln("[delay-test] group=%s proxy=%s url=%s timeoutMs=%d failed: %v", name, proxy.Name(), testURL, timeoutMs, testErr)
+				return
 			}
-
-			proxies := sortProxiesByConnectivityScore(prov.Proxies())
-			innerWg := &sync.WaitGroup{}
-
-			for _, px := range proxies {
-				innerWg.Add(1)
-
-				sem <- struct{}{} // 获取令牌，限流并发
-
-				go func(proxy C.Proxy) {
-					defer innerWg.Done()
-					defer func() { <-sem }() // 释放令牌
-
-					ctx, cancel := context.WithTimeout(context.Background(), operationTimeout)
-					defer cancel()
-					ctx = C.WithHealthCheckSourceName(ctx, name)
-					ctx = C.WithDelayTestTimeoutMs(ctx, timeoutMs)
-
-					delay, err := proxy.URLTest(ctx, testURL, nil)
-					if err != nil {
-						log.Debugln("[delay-test] group=%s proxy=%s url=%s timeoutMs=%d failed: %v", name, proxy.Name(), testURL, timeoutMs, err)
-					}
-					if picker != nil {
-						picker.onResult(proxy.Name(), int(delay), timeoutMs)
-					}
-				}(px)
-			}
-
-			innerWg.Wait()
-		}(pr)
+			succeeded.Add(1)
+		}(px)
 	}
 
 	wg.Wait()
-	if picker != nil {
-		picker.stop()
-	}
+	result.Succeeded = int(succeeded.Load())
+	result.Failed = result.Tested - result.Succeeded
 	resetGroupConnectTimes(g)
+	if result.Succeeded == 0 {
+		result.Error = "all proxies timed out or failed"
+		return result
+	}
+
+	// Routing state is changed only after at least one effective member passed.
+	if clearable, ok := p.Adapter().(outboundgroup.ClearManualSelectionAble); ok {
+		clearable.ClearManualSelection()
+	}
 	ApplyRuntimeConnectivityOrderAll()
 	applyPostReorderAutoGroupSelection(p)
+	return result
 }
 
-func delayTestOperationTimeout(timeout time.Duration, unifiedDelay bool) time.Duration {
-	if unifiedDelay {
-		// Unified delay measures the second HTTP request. Keep the selected timeout
-		// as that result's threshold, while bounding dial + warm-up + measurement.
-		return timeout * 3
+func delayTestSpec(group outboundgroup.ProxyGroup) (string, string) {
+	if spec, ok := group.(outboundgroup.DelayTestSpecAble); ok {
+		url, expectedStatus := spec.DelayTestSpec()
+		if url != "" {
+			return url, expectedStatus
+		}
 	}
-	return timeout
+	return C.DefaultTestURL, ""
+}
+
+func effectiveDelayTestMembers(proxies []C.Proxy) []C.Proxy {
+	result := make([]C.Proxy, 0, len(proxies))
+	seen := make(map[string]struct{}, len(proxies))
+	for _, proxy := range proxies {
+		if proxy == nil || isSkipLeafProxyName(proxy.Name()) {
+			continue
+		}
+		if _, exists := seen[proxy.Name()]; exists {
+			continue
+		}
+		seen[proxy.Name()] = struct{}{}
+		result = append(result, proxy)
+	}
+	return result
 }
 
 func isSkipLeafProxyName(name string) bool {
@@ -193,7 +220,7 @@ func isSkipLeafProxyName(name string) bool {
 	}
 }
 
-func firstAliveProxyName(proxies []C.Proxy) string {
+func firstAliveProxyName(proxies []C.Proxy, testURL string) string {
 	for _, px := range proxies {
 		if px == nil {
 			continue
@@ -202,7 +229,7 @@ func firstAliveProxyName(proxies []C.Proxy) string {
 		if isSkipLeafProxyName(name) {
 			continue
 		}
-		if px.AliveForTestUrl("") {
+		if px.AliveForTestUrl(testURL) {
 			return name
 		}
 	}
@@ -224,7 +251,8 @@ func applyPostReorderAutoGroupSelection(p C.Proxy) {
 		if !ok || !okGroup {
 			return
 		}
-		if name := firstAliveProxyName(group.Proxies()); name != "" {
+		testURL, _ := delayTestSpec(group)
+		if name := firstAliveProxyName(group.Proxies(), testURL); name != "" {
 			selectable.ForceSet(name)
 			log.Infoln("[delay-test] %s pin first-score alive %s", p.Name(), name)
 		}
@@ -266,73 +294,6 @@ func sortProxiesByConnectivityScore(proxies []C.Proxy) []C.Proxy {
 		out = append(out, px)
 	}
 	return out
-}
-
-type scoreEarlyPicker struct {
-	mu         sync.Mutex
-	stopped    bool
-	group      string
-	order      []string
-	passed     map[string]struct{}
-	best       string
-	selectable outboundgroup.SelectAble
-}
-
-func newScoreEarlyPicker(group string, members []C.Proxy, selectable outboundgroup.SelectAble) *scoreEarlyPicker {
-	names := make([]string, 0, len(members))
-	for _, px := range members {
-		if px == nil {
-			continue
-		}
-		name := px.Name()
-		if name == "" || name == "DIRECT" || name == "REJECT" || name == "REJECT-DROP" || name == "PASS" {
-			continue
-		}
-		names = append(names, name)
-	}
-	return &scoreEarlyPicker{
-		group:      group,
-		order:      connectivity.SortNamesByConnectivity(names),
-		passed:     make(map[string]struct{}),
-		selectable: selectable,
-	}
-}
-
-func (p *scoreEarlyPicker) stop() {
-	if p == nil {
-		return
-	}
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.stopped = true
-}
-
-func (p *scoreEarlyPicker) onResult(name string, delay int, timeoutMs int) {
-	if p == nil || p.selectable == nil || name == "" || name == "DIRECT" || name == "REJECT" || name == "REJECT-DROP" || name == "PASS" {
-		return
-	}
-	if delay <= 0 || timeoutMs <= 0 || delay >= timeoutMs {
-		return
-	}
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.stopped {
-		return
-	}
-	p.passed[name] = struct{}{}
-	best := ""
-	for _, candidate := range p.order {
-		if _, ok := p.passed[candidate]; ok {
-			best = candidate
-			break
-		}
-	}
-	if best == "" || best == p.best {
-		return
-	}
-	p.best = best
-	p.selectable.ForceSet(best)
-	log.Infoln("[score-early-pick] %s -> %s", p.group, best)
 }
 
 // ClearAllManualSelections clears manual selection on all groups (Selector/Fallback).
