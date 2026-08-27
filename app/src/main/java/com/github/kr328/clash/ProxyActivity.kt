@@ -73,8 +73,8 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
         var refreshScheduled = false
         /** 当前正在执行组级测速的代理组名 */
         val urlTestingGroups = mutableSetOf<String>()
-        /** 测速期间用户已手动切换的组，跳过测速结束后的自动切节点 */
-        val urlTestManualOverrides = mutableSetOf<String>()
+        /** 测速期间用户已手动切换的组 → 节点名；空字符串表示用户清钉 */
+        val urlTestManualOverrides = mutableMapOf<String, String>()
         fun scheduleGroupReload(groupName: String) {
             if (names.indexOf(groupName) < 0) return
 
@@ -184,7 +184,8 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                             is ProxyDesign.Request.Select -> {
                                 val groupName = names[it.index]
                                 if (groupName in urlTestingGroups) {
-                                    urlTestManualOverrides.add(groupName)
+                                    urlTestManualOverrides[groupName] =
+                                        if (it.clearManualSelection) "" else it.name
                                 }
                                 withClash {
                                     if (it.clearManualSelection) {
@@ -235,48 +236,53 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                 }
                             }
                             is ProxyDesign.Request.UrlTest -> {
-                                launch {
-                                    val groupName = names[it.index]
-                                    if (groupName in SKIP_DELAY_CHECK_GROUPS) {
+                                val groupName = names[it.index]
+                                if (groupName in SKIP_DELAY_CHECK_GROUPS) {
+                                    launch {
                                         design.requests.send(ProxyDesign.Request.Reload(it.index))
-                                        return@launch
                                     }
+                                } else {
                                     urlTestingGroups.add(groupName)
                                     urlTestManualOverrides.remove(groupName)
-                                    design.showNativeToast(
-                                        getString(R.string.url_test_started, groupName),
-                                    )
-                                    try {
-                                        withClash {
-                                            val timeoutMs = uiStore.proxyDelayTestTimeoutMs
-                                            healthCheckWithTimeout(
-                                                groupName,
-                                                timeoutMs,
-                                                uiStore.proxyDelayTestConcurrency.coerceIn(1, 200),
-                                            )
-
-                                            // 测速结束必须清钉。提前切节点只用于测速过程中走可用节点，
-                                            // 结束后由运行时积分顺序自动选，不能再 PUT 固定。
-                                            if (groupName !in urlTestManualOverrides) {
-                                                clearManualSelectionForGroup(groupName)
-                                            }
-
-                                            // 只把 DAO 选择同步进 persist，不要整包 Load/ApplyConfig：
-                                            // 测速后重载会 OnSuspend、重建出站（延迟全变成超时）并重置 DNS/Fake-IP，
-                                            // VPN 仍在运行时流量会一直失败，直到杀进程重启。
-                                            applyManualConnectivityOrder()
-
-                                            closeConnectionsExcludingDirect()
-                                        }
-                                    } finally {
-                                        urlTestingGroups.remove(groupName)
-                                        urlTestManualOverrides.remove(groupName)
+                                    launch {
                                         design.showNativeToast(
-                                            getString(R.string.url_test_finished, groupName),
+                                            getString(R.string.url_test_started, groupName),
                                         )
-                                    }
+                                        try {
+                                            withClash {
+                                                val timeoutMs = uiStore.proxyDelayTestTimeoutMs
+                                                healthCheckWithTimeout(
+                                                    groupName,
+                                                    timeoutMs,
+                                                    uiStore.proxyDelayTestConcurrency.coerceIn(1, 200),
+                                                )
 
-                                    design.requests.send(ProxyDesign.Request.ReloadAll)
+                                                val override = urlTestManualOverrides[groupName]
+                                                if (override != null) {
+                                                    if (override.isEmpty()) {
+                                                        clearManualSelectionForGroup(groupName)
+                                                    } else {
+                                                        patchSelector(groupName, override)
+                                                    }
+                                                }
+
+                                                // 只把 DAO 选择同步进 persist，不要整包 Load/ApplyConfig：
+                                                // 测速后重载会 OnSuspend、重建出站（延迟全变成超时）并重置 DNS/Fake-IP，
+                                                // VPN 仍在运行时流量会一直失败，直到杀进程重启。
+                                                applyManualConnectivityOrder()
+
+                                                closeConnectionsExcludingDirect()
+                                            }
+                                        } finally {
+                                            urlTestingGroups.remove(groupName)
+                                            urlTestManualOverrides.remove(groupName)
+                                            design.showNativeToast(
+                                                getString(R.string.url_test_finished, groupName),
+                                            )
+                                        }
+
+                                        design.requests.send(ProxyDesign.Request.ReloadAll)
+                                    }
                                 }
                             }
                             is ProxyDesign.Request.PatchMode -> {
@@ -294,9 +300,12 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                             }
                             is ProxyDesign.Request.PatchAdsBlock -> {
                                 scheduleClashMutation("代理广告拦截") {
-                                    val o = queryOverride(Clash.OverrideSlot.Session)
-                                    o.proxyAdsBlock = it.enabled
-                                    patchOverride(Clash.OverrideSlot.Session, o)
+                                    val persist = queryOverride(Clash.OverrideSlot.Persist)
+                                    persist.proxyAdsBlock = it.enabled
+                                    patchOverride(Clash.OverrideSlot.Persist, persist)
+                                    val session = queryOverride(Clash.OverrideSlot.Session)
+                                    session.proxyAdsBlock = it.enabled
+                                    patchOverride(Clash.OverrideSlot.Session, session)
                                 }
                             }
                             is ProxyDesign.Request.PatchTimeout -> {

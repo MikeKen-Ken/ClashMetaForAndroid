@@ -207,20 +207,12 @@ func convertProxies(proxies []C.Proxy, uiSubtitlePattern *regexp2.Regexp) []*Pro
 				}
 			}
 		}
-		testURL := "https://www.gstatic.com/generate_204"
-		for k := range p.ExtraDelayHistories() {
-			if len(k) > 0 {
-				testURL = k
-				break
-			}
-		}
-
 		result = append(result, &Proxy{
 			Name:     name,
 			Title:    strings.TrimSpace(title),
 			Subtitle: strings.TrimSpace(subtitle),
 			Type:     p.Type().String(),
-			Delay:    int(p.LastDelayForTestUrl(testURL)),
+			Delay:    int(latestProxyDelay(p)),
 		})
 	}
 	return result
@@ -246,25 +238,38 @@ func collectProviders(providers []provider.ProxyProvider, uiSubtitlePattern *reg
 				}
 			}
 
-			testURL := "https://www.gstatic.com/generate_204"
-			for k := range px.ExtraDelayHistories() {
-				if len(k) > 0 {
-					testURL = k
-					break
-				}
-			}
-
 			result = append(result, &Proxy{
 				Name:     name,
 				Title:    strings.TrimSpace(title),
 				Subtitle: strings.TrimSpace(subtitle),
 				Type:     px.Type().String(),
-				Delay:    int(px.LastDelayForTestUrl(testURL)),
+				Delay:    int(latestProxyDelay(px)),
 			})
 		}
 	}
 
 	return result
+}
+
+func latestProxyDelay(proxy C.Proxy) uint16 {
+	const unavailableDelay = uint16(0xffff)
+
+	var latest C.DelayHistory
+	latestAlive := false
+	found := false
+	for _, state := range proxy.ExtraDelayHistories() {
+		for _, history := range state.History {
+			if !found || history.Time.After(latest.Time) {
+				latest = history
+				latestAlive = state.Alive
+				found = true
+			}
+		}
+	}
+	if !found || !latestAlive || latest.Delay == 0 {
+		return unavailableDelay
+	}
+	return latest.Delay
 }
 
 // QueryLeafProxyNames 返回全部叶子出站名（排除策略组与内置 DIRECT/REJECT 等）。

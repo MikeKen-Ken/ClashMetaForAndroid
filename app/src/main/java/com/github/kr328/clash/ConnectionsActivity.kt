@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit
 
 class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
     private val blockedIps = linkedSetOf<String>()
+    private val pendingCloseAfterRule = linkedSetOf<String>()
 
     override fun onStop() {
         (design as? ConnectionsDesign)?.let { d ->
@@ -62,6 +63,16 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
                 events.onReceive {
                     when (it) {
                         Event.ActivityStart -> requestRefresh()
+                        Event.ProfileLoaded -> {
+                            val ids = pendingCloseAfterRule.toList()
+                            pendingCloseAfterRule.clear()
+                            if (ids.isNotEmpty()) {
+                                withClash {
+                                    ids.forEach { id -> closeConnection(id) }
+                                }
+                            }
+                            requestRefresh()
+                        }
                         else -> Unit
                     }
                 }
@@ -110,6 +121,9 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
                             )
                         }
                         is ConnectionsDesign.Request.AddTemporaryRule -> {
+                            if (it.connectionId.isNotBlank()) {
+                                pendingCloseAfterRule.add(it.connectionId)
+                            }
                             withClash { addTemporaryRule(it.rule) }
                             requestRefresh()
                         }

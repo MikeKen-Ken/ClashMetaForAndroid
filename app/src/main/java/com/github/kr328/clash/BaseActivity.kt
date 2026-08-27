@@ -169,11 +169,7 @@ abstract class BaseActivity<D : Design<*>> : AppCompatActivity(),
     }
 
     override fun onRuntimeConfigUpdated() {
-        if (activityStarted) {
-            launch {
-                design?.showToast(R.string.runtime_config_updated, ToastDuration.Long)
-            }
-        }
+        events.trySend(Event.RuntimeConfigUpdated)
     }
 
     override fun onServiceRecreated() {
@@ -236,5 +232,6 @@ abstract class BaseActivity<D : Design<*>> : AppCompatActivity(),
         ProfileChanged,
         ProfileUpdateCompleted,
         ProfileUpdateFailed,
+        RuntimeConfigUpdated,
     }
 }

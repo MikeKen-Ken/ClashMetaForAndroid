@@ -52,7 +52,7 @@ class ConnectionsDesign(
         data class DisableDevice(val sourceIp: String) : Request()
         data class EnableDevice(val sourceIp: String) : Request()
         object ShowTemporaryRules : Request()
-        data class AddTemporaryRule(val rule: TemporaryRule) : Request()
+        data class AddTemporaryRule(val rule: TemporaryRule, val connectionId: String) : Request()
         data class RemoveTemporaryRule(val id: String) : Request()
         object ClearTemporaryRules : Request()
         object ClearClosedConnections : Request()
@@ -450,13 +450,13 @@ class ConnectionsDesign(
     private fun showTemporaryRuleTypeDialog(connection: Connection) {
         val metadata = connection.metadata ?: return
         val candidates = buildList {
-            metadata.process.trim().takeIf(String::isNotEmpty)?.let {
+            metadata.process.trim().takeIf(::isSafeTemporaryRulePayload)?.let {
                 add(TemporaryRuleCandidate("PROCESS-NAME", it, it))
             }
-            metadata.host.trim().takeIf(String::isNotEmpty)?.let {
+            metadata.host.trim().takeIf(::isSafeTemporaryRulePayload)?.let {
                 add(TemporaryRuleCandidate("DOMAIN-SUFFIX", it, it))
             }
-            metadata.sourceIP.trim().takeIf(::isPrivateIpv4)?.let {
+            metadata.sourceIP.trim().takeIf { isPrivateIpv4(it) && isSafeTemporaryRulePayload("$it/32") }?.let {
                 add(TemporaryRuleCandidate("SRC-IP-CIDR", "$it/32", it))
             }
         }
@@ -464,17 +464,20 @@ class ConnectionsDesign(
         MaterialAlertDialogBuilder(context)
             .setTitle(R.string.temporary_rules_rule_type)
             .setItems(candidates.map { "${it.ruleType}: ${it.label}" }.toTypedArray()) { _, index ->
-                showTemporaryRuleTargetDialog(candidates[index])
+                showTemporaryRuleTargetDialog(candidates[index], connection.id)
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
-    private fun showTemporaryRuleTargetDialog(candidate: TemporaryRuleCandidate) {
+    private fun showTemporaryRuleTargetDialog(candidate: TemporaryRuleCandidate, connectionId: String) {
         MaterialAlertDialogBuilder(context)
             .setTitle(R.string.temporary_rules_target)
             .setItems(temporaryRuleTargets.toTypedArray()) { _, index ->
                 val target = temporaryRuleTargets[index]
+                if (target.any { it == ',' || it == '\n' || it == '\r' }) {
+                    return@setItems
+                }
                 requests.trySend(
                     Request.AddTemporaryRule(
                         TemporaryRule(
@@ -484,12 +487,17 @@ class ConnectionsDesign(
                             target = target,
                             label = candidate.label,
                             createdAt = System.currentTimeMillis(),
-                        )
+                        ),
+                        connectionId,
                     )
                 )
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    private fun isSafeTemporaryRulePayload(value: String): Boolean {
+        return value.isNotEmpty() && value.none { it == ',' || it == '\n' || it == '\r' }
     }
 
     private fun isPrivateIpv4(value: String): Boolean {

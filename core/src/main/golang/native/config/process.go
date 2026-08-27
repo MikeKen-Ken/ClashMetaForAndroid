@@ -182,21 +182,27 @@ func patchDirectGlobalMode(cfg *config.RawConfig, _ string) error {
 }
 
 // patchTemporaryRules prepends user-created rules only when the effective mode is Rule.
-// Keeping them under clash-for-android makes them persistent without modifying a subscription.
+// Invalid entries are skipped so a bad persist rule cannot fail the whole config load.
 func patchTemporaryRules(cfg *config.RawConfig, _ string) error {
 	if cfg.Mode != T.Rule || len(cfg.ClashForAndroid.TemporaryRules) == 0 {
 		return nil
 	}
 
+	targets := knownTemporaryRuleTargets(cfg)
 	rules := make([]string, 0, len(cfg.ClashForAndroid.TemporaryRules)+len(cfg.Rule))
+	skipped := 0
 	for _, rule := range cfg.ClashForAndroid.TemporaryRules {
 		ruleType := strings.TrimSpace(rule.RuleType)
 		payload := strings.TrimSpace(rule.Payload)
 		target := strings.TrimSpace(rule.Target)
-		if ruleType == "" || payload == "" || target == "" {
+		if !isAllowedTemporaryRule(ruleType, payload, target, targets) {
+			skipped++
 			continue
 		}
 		rules = append(rules, strings.Join([]string{ruleType, payload, target}, ","))
+	}
+	if skipped > 0 {
+		log.Warnln("Skipped %d invalid temporary rules", skipped)
 	}
 	if len(rules) == 0 {
 		return nil
@@ -204,6 +210,61 @@ func patchTemporaryRules(cfg *config.RawConfig, _ string) error {
 	cfg.Rule = append(rules, cfg.Rule...)
 	log.Infoln("Applied %d temporary rules", len(rules))
 	return nil
+}
+
+func isAllowedTemporaryRuleType(ruleType string) bool {
+	switch strings.ToUpper(ruleType) {
+	case "PROCESS-NAME", "DOMAIN-SUFFIX", "SRC-IP-CIDR":
+		return true
+	default:
+		return false
+	}
+}
+
+func hasReservedTemporaryRuleChars(s string) bool {
+	return strings.ContainsAny(s, ",\n\r")
+}
+
+func knownTemporaryRuleTargets(cfg *config.RawConfig) map[string]struct{} {
+	out := map[string]struct{}{
+		"DIRECT":      {},
+		"REJECT":      {},
+		"REJECT-DROP": {},
+		"PASS":        {},
+	}
+	for _, p := range cfg.Proxy {
+		if name, ok := p["name"].(string); ok {
+			name = strings.TrimSpace(name)
+			if name != "" {
+				out[name] = struct{}{}
+			}
+		}
+	}
+	for _, g := range cfg.ProxyGroup {
+		if name, ok := g["name"].(string); ok {
+			name = strings.TrimSpace(name)
+			if name != "" {
+				out[name] = struct{}{}
+			}
+		}
+	}
+	return out
+}
+
+func isAllowedTemporaryRule(ruleType, payload, target string, targets map[string]struct{}) bool {
+	if ruleType == "" || payload == "" || target == "" {
+		return false
+	}
+	if !isAllowedTemporaryRuleType(ruleType) {
+		return false
+	}
+	if hasReservedTemporaryRuleChars(payload) || hasReservedTemporaryRuleChars(target) {
+		return false
+	}
+	if _, ok := targets[target]; !ok {
+		return false
+	}
+	return true
 }
 
 func patchProxyAdsBlock(cfg *config.RawConfig, _ string) error {

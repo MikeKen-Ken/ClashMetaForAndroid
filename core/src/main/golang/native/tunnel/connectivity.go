@@ -7,6 +7,7 @@ import (
 
 	"cfa/native/connectivity"
 
+	A "github.com/metacubex/mihomo/adapter"
 	"github.com/metacubex/mihomo/adapter/outboundgroup"
 	pvd "github.com/metacubex/mihomo/adapter/provider"
 	C "github.com/metacubex/mihomo/constant"
@@ -109,6 +110,7 @@ func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) {
 	ApplyRuntimeConnectivityOrderAll()
 
 	timeout := time.Duration(timeoutMs) * time.Millisecond
+	operationTimeout := delayTestOperationTimeout(timeout, A.UnifiedDelay.Load())
 
 	if concurrency <= 0 {
 		concurrency = pvd.EffectiveHealthCheckWorkerLimit()
@@ -145,11 +147,15 @@ func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) {
 					defer innerWg.Done()
 					defer func() { <-sem }() // 释放令牌
 
-					ctx, cancel := context.WithTimeout(context.Background(), timeout)
+					ctx, cancel := context.WithTimeout(context.Background(), operationTimeout)
 					defer cancel()
 					ctx = C.WithHealthCheckSourceName(ctx, name)
+					ctx = C.WithDelayTestTimeoutMs(ctx, timeoutMs)
 
-					delay, _ := proxy.URLTest(ctx, testURL, nil)
+					delay, err := proxy.URLTest(ctx, testURL, nil)
+					if err != nil {
+						log.Debugln("[delay-test] group=%s proxy=%s url=%s timeoutMs=%d failed: %v", name, proxy.Name(), testURL, timeoutMs, err)
+					}
 					if picker != nil {
 						picker.onResult(proxy.Name(), int(delay), timeoutMs)
 					}
@@ -166,8 +172,66 @@ func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) {
 	}
 	resetGroupConnectTimes(g)
 	ApplyRuntimeConnectivityOrderAll()
-	if clearable, ok := p.Adapter().(outboundgroup.ClearManualSelectionAble); ok {
-		clearable.ClearManualSelection()
+	applyPostReorderAutoGroupSelection(p)
+}
+
+func delayTestOperationTimeout(timeout time.Duration, unifiedDelay bool) time.Duration {
+	if unifiedDelay {
+		// Unified delay measures the second HTTP request. Keep the selected timeout
+		// as that result's threshold, while bounding dial + warm-up + measurement.
+		return timeout * 3
+	}
+	return timeout
+}
+
+func isSkipLeafProxyName(name string) bool {
+	switch name {
+	case "", "DIRECT", "REJECT", "REJECT-DROP", "PASS", "COMPATIBLE":
+		return true
+	default:
+		return false
+	}
+}
+
+func firstAliveProxyName(proxies []C.Proxy) string {
+	for _, px := range proxies {
+		if px == nil {
+			continue
+		}
+		name := px.Name()
+		if isSkipLeafProxyName(name) {
+			continue
+		}
+		if px.AliveForTestUrl("") {
+			return name
+		}
+	}
+	return ""
+}
+
+// applyPostReorderAutoGroupSelection keeps url-test on the first currently
+// alive score-ordered node (a real pin). Fallback walks the reordered list,
+// so it only needs the pin cleared.
+func applyPostReorderAutoGroupSelection(p C.Proxy) {
+	if p == nil {
+		return
+	}
+	adapter := p.Adapter()
+	switch adapter.Type() {
+	case C.URLTest:
+		selectable, ok := adapter.(outboundgroup.SelectAble)
+		group, okGroup := adapter.(outboundgroup.ProxyGroup)
+		if !ok || !okGroup {
+			return
+		}
+		if name := firstAliveProxyName(group.Proxies()); name != "" {
+			selectable.ForceSet(name)
+			log.Infoln("[delay-test] %s pin first-score alive %s", p.Name(), name)
+		}
+	case C.Fallback:
+		if clearable, ok := adapter.(outboundgroup.ClearManualSelectionAble); ok {
+			clearable.ClearManualSelection()
+		}
 	}
 }
 
@@ -221,7 +285,7 @@ func newScoreEarlyPicker(group string, members []C.Proxy, selectable outboundgro
 			continue
 		}
 		name := px.Name()
-		if name == "" || name == "DIRECT" || name == "REJECT" {
+		if name == "" || name == "DIRECT" || name == "REJECT" || name == "REJECT-DROP" || name == "PASS" {
 			continue
 		}
 		names = append(names, name)
@@ -244,10 +308,10 @@ func (p *scoreEarlyPicker) stop() {
 }
 
 func (p *scoreEarlyPicker) onResult(name string, delay int, timeoutMs int) {
-	if p == nil || p.selectable == nil || name == "" || name == "DIRECT" || name == "REJECT" {
+	if p == nil || p.selectable == nil || name == "" || name == "DIRECT" || name == "REJECT" || name == "REJECT-DROP" || name == "PASS" {
 		return
 	}
-	if delay <= 0 || timeoutMs <= 0 || delay > timeoutMs {
+	if delay <= 0 || timeoutMs <= 0 || delay >= timeoutMs {
 		return
 	}
 	p.mu.Lock()
@@ -380,7 +444,8 @@ func ShouldSkipPersistedAutoGroupSelection(name string) bool {
 	return isAutoSelectAdapterType(p.Type())
 }
 
-// ApplyStartupAutoGroupOrder 启动/重载后按积分重排自动选组并清钉，无需先测速。
+// ApplyStartupAutoGroupOrder 启动/重载后按积分重排自动选组。
+// url-test 钉在当前第一个可用节点；fallback 清钉后走重排列表。
 func ApplyStartupAutoGroupOrder() {
 	ApplyRuntimeConnectivityOrderAll()
 	for name, p := range tunnel.Proxies() {
@@ -390,9 +455,7 @@ func ApplyStartupAutoGroupOrder() {
 		if !isAutoSelectAdapterType(p.Type()) {
 			continue
 		}
-		if clearable, ok := p.Adapter().(outboundgroup.ClearManualSelectionAble); ok {
-			clearable.ClearManualSelection()
-		}
+		applyPostReorderAutoGroupSelection(p)
 	}
 }
 

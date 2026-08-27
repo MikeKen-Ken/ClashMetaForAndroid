@@ -50,6 +50,9 @@ object UiBackground {
     const val DEFAULT_CARD_OPACITY_PERCENT = 100
     const val MIN_CARD_OPACITY_PERCENT = 35
     const val DEFAULT_INTERVAL_SECONDS = 300
+    private const val MAX_PACK_BYTES = 20 * 1024 * 1024
+    private const val MAX_ENTRY_BYTES = 8 * 1024 * 1024
+    private const val MAX_PACK_FILES = 40
 
     val overlayPercents = arrayOf(0, 20, DEFAULT_OVERLAY_PERCENT, 60)
     val cardOpacityPercents = arrayOf(DEFAULT_CARD_OPACITY_PERCENT, 85, 70, 50)
@@ -229,21 +232,48 @@ object UiBackground {
             destDir.mkdirs()
             var manifest: WallpaperManifest? = null
             ZipInputStream(bytes.inputStream()).use { zip ->
+                var total = 0
+                var files = 0
                 while (true) {
                     val entry = zip.nextEntry ?: break
                     val name = entry.name.replace('\\', '/').trimStart('/')
                     if (name.contains("..")) continue
                     when {
                         name == MANIFEST_NAME -> {
+                            val payload = zip.readBytes()
+                            total += payload.size
+                            if (total > MAX_PACK_BYTES || payload.size > MAX_ENTRY_BYTES) {
+                                destDir.deleteRecursively()
+                                return false
+                            }
                             manifest = json.decodeFromString(
                                 WallpaperManifest.serializer(),
-                                zip.readBytes().decodeToString(),
+                                payload.decodeToString(),
                             )
                         }
                         name.startsWith("images/") && !entry.isDirectory -> {
-                            val fileName = name.substringAfterLast('/')
-                            if (fileName.isNotBlank()) {
-                                File(destDir, fileName).outputStream().use { zip.copyTo(it) }
+                            val fileName = safeWallpaperFileName(name.substringAfterLast('/'))
+                                ?: continue
+                            files += 1
+                            if (files > MAX_PACK_FILES) {
+                                destDir.deleteRecursively()
+                                return false
+                            }
+                            val dest = File(destDir, fileName)
+                            dest.outputStream().use { output ->
+                                val buf = ByteArray(8192)
+                                var written = 0
+                                while (true) {
+                                    val n = zip.read(buf)
+                                    if (n < 0) break
+                                    written += n
+                                    total += n
+                                    if (written > MAX_ENTRY_BYTES || total > MAX_PACK_BYTES) {
+                                        destDir.deleteRecursively()
+                                        return false
+                                    }
+                                    output.write(buf, 0, n)
+                                }
                             }
                         }
                     }
@@ -251,7 +281,14 @@ object UiBackground {
                 }
             }
             val resolved = manifest?.let { loaded ->
-                loaded.copy(items = loaded.items.filter { File(destDir, it.fileName).isFile })
+                loaded.copy(
+                    items = loaded.items.mapNotNull { item ->
+                        val fileName = safeWallpaperFileName(item.fileName) ?: return@mapNotNull null
+                        val file = File(destDir, fileName)
+                        if (!file.isFile) return@mapNotNull null
+                        item.copy(fileName = fileName)
+                    },
+                )
             }
             if (resolved == null || resolved.items.isEmpty()) {
                 destDir.deleteRecursively()
@@ -334,8 +371,11 @@ object UiBackground {
         val manifest = loadManifest(context)
         val active = resolveActive(manifest)
         if (active.id.isEmpty()) return null
+        val fileName = safeWallpaperFileName(active.fileName) ?: return null
         if (cachedCover != null && cachedCoverId == active.id) return cachedCover
-        val target = File(dir(context), active.fileName)
+        val destDir = dir(context)
+        val target = File(destDir, fileName)
+        if (target.canonicalFile.parentFile?.canonicalFile != destDir.canonicalFile) return null
         if (!target.isFile || target.length() <= 0L) return null
         val metrics = context.resources.displayMetrics
         val reqW = metrics.widthPixels.coerceAtLeast(1)
@@ -366,6 +406,13 @@ object UiBackground {
         cachedCover = null
         cachedFrost = null
         cachedCoverId = ""
+    }
+
+    private fun safeWallpaperFileName(name: String): String? {
+        val base = name.substringAfterLast('/').substringAfterLast('\\')
+        if (base.isBlank() || base.contains("..")) return null
+        if (!base.matches(Regex("[A-Za-z0-9._-]+"))) return null
+        return base
     }
 
     private fun loadManifest(context: Context): WallpaperManifest {

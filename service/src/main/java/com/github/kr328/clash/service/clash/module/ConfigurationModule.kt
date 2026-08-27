@@ -17,7 +17,6 @@ import com.github.kr328.clash.service.util.persistSummaryForDebug
 import com.github.kr328.clash.service.config.OverrideRuntimeApplier
 import com.github.kr328.clash.service.util.sendDebugUiLog
 import com.github.kr328.clash.service.util.sendProfileLoaded
-import com.github.kr328.clash.service.util.sendRuntimeConfigUpdated
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.selects.select
 import java.util.*
@@ -35,6 +34,7 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
         }
 
         var loaded: UUID? = null
+        var hasLoadedSuccessfully = false
 
         reload.trySend(Unit)
 
@@ -87,13 +87,12 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                 override.allowLan?.let { session.allowLan = it }
                 override.bindAddress?.trim()?.takeIf { it.isNotEmpty() }?.let { session.bindAddress = it }
                 override.tun.strictRoute?.let { session.tun.strictRoute = it }
+                override.proxyAdsBlock?.let { session.proxyAdsBlock = it }
                 Clash.patchOverride(Clash.OverrideSlot.Session, session)
 
                 Clash.setHealthCheckWorkerLimit(session.proxyDelayTestConcurrency ?: 30)
 
                 Clash.load(service.importedDir.resolve(active.uuid.toString())).await()
-
-                service.sendRuntimeConfigUpdated()
 
                 OverrideRuntimeApplier.applyPersistRuntimeLightFieldsAfterFullLoad()
 
@@ -115,9 +114,14 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                 StatusProvider.currentProfile = active.name
 
                 service.sendProfileLoaded(current)
+                hasLoadedSuccessfully = true
 
                 Log.d("Profile ${active.name} loaded")
             } catch (e: Exception) {
+                if (hasLoadedSuccessfully) {
+                    Log.w("Config reload failed; keeping previous config: ${e.message}", e)
+                    continue
+                }
                 return enqueueEvent(LoadException(e.message ?: "Unknown"))
             }
         }

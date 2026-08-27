@@ -35,3 +35,21 @@ func TestScoreEarlyPickerStopsPinningAfterStop(t *testing.T) {
 		t.Fatalf("stopped picker must not pin again, got %q", sel.name)
 	}
 }
+
+func TestScoreEarlyPickerRejectsTimeoutBoundary(t *testing.T) {
+	sel := &mockSelectable{}
+	picker := &scoreEarlyPicker{
+		group:      "Auto",
+		order:      []string{"a"},
+		passed:     make(map[string]struct{}),
+		selectable: sel,
+	}
+	picker.onResult("a", 5000, 5000)
+	if sel.name != "" {
+		t.Fatalf("delay == timeoutMs must not count as success, got %q", sel.name)
+	}
+	picker.onResult("a", 4999, 5000)
+	if sel.name != "a" {
+		t.Fatalf("delay just under timeout should pin, got %q", sel.name)
+	}
+}

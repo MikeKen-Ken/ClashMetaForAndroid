@@ -37,13 +37,12 @@ class ProxyAdapter(
             allStates
         }
 
-        if (states.size == visibleStates.size) {
-            states = visibleStates
+        val old = states
+        states = visibleStates
+        if (old.size != visibleStates.size || old.zip(visibleStates).any { it.first !== it.second }) {
+            notifyDataSetChanged()
+        } else if (visibleStates.isNotEmpty()) {
             notifyItemRangeChanged(0, visibleStates.size)
-        } else {
-            notifyItemRangeRemoved(0, states.size)
-            states = visibleStates
-            notifyItemRangeInserted(0, visibleStates.size)
         }
     }
 

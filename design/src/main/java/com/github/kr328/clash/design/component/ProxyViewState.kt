@@ -142,5 +142,5 @@ class ProxyViewState(
     }
 }
 
-/** 0 = 未测速；1..Short.MAX_VALUE = 成功延迟。超时/失败为负值或 0xffff（显示为 T）。 */
-fun isUsableProxyDelay(delay: Int): Boolean = delay in 0..Short.MAX_VALUE
+/** 1 until 0xffff = 成功延迟。未测速与超时均为 0xffff（显示为 T），hide-unavailable 会一并隐藏。 */
+fun isUsableProxyDelay(delay: Int): Boolean = delay in 1 until 0xffff

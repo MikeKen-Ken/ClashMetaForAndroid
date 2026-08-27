@@ -177,6 +177,10 @@ class ClashManager(private val context: Context) : IClashManager,
     }
 
     override fun addTemporaryRule(rule: TemporaryRule) {
+        if (!TemporaryRule.isSafeToApply(rule)) {
+            Log.w("Rejected invalid temporary rule type=${rule.ruleType} payload=${rule.payload}")
+            return
+        }
         updateTemporaryRules { rules ->
             listOf(rule) + rules.filterNot {
                 it.ruleType == rule.ruleType && it.payload == rule.payload && it.target == rule.target

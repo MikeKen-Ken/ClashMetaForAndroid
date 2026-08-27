@@ -9,14 +9,18 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
 
 internal object WallpaperWebDav {
+    private const val MAX_PACK_BYTES = 20 * 1024 * 1024
+
     private val http = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(5, TimeUnit.MINUTES)
         .writeTimeout(5, TimeUnit.MINUTES)
-        .followRedirects(true)
+        .followRedirects(false)
+        .followSslRedirects(false)
         .build()
 
     fun isConfigured(store: UiStore): Boolean {
@@ -49,7 +53,26 @@ internal object WallpaperWebDav {
             if (!response.isSuccessful) {
                 throw IllegalStateException("HTTP ${response.code}")
             }
-            response.body?.bytes() ?: throw IllegalStateException("empty body")
+            val body = response.body ?: throw IllegalStateException("empty body")
+            val declared = body.contentLength()
+            if (declared > MAX_PACK_BYTES) {
+                throw IllegalStateException("wallpaper pack too large")
+            }
+            body.byteStream().use { input ->
+                val out = ByteArrayOutputStream()
+                val buf = ByteArray(8192)
+                var total = 0
+                while (true) {
+                    val n = input.read(buf)
+                    if (n < 0) break
+                    total += n
+                    if (total > MAX_PACK_BYTES) {
+                        throw IllegalStateException("wallpaper pack too large")
+                    }
+                    out.write(buf, 0, n)
+                }
+                out.toByteArray()
+            }
         }
     }
 
@@ -73,8 +96,16 @@ internal object WallpaperWebDav {
     }
 
     private fun collectionUrl(store: UiStore): String {
-        val base = store.webdavUrl.trim().trimEnd('/')
+        val base = requireHttpsWebDavUrl(store.webdavUrl)
         return "$base/${UiBackground.REMOTE_DIR}"
+    }
+
+    private fun requireHttpsWebDavUrl(raw: String): String {
+        val base = raw.trim().trimEnd('/')
+        if (!base.startsWith("https://", ignoreCase = true)) {
+            throw IllegalArgumentException("WebDAV URL must be https")
+        }
+        return base
     }
 
     private fun authorization(store: UiStore): String {

@@ -25,6 +25,23 @@ data class TemporaryRule(
     override fun describeContents(): Int = 0
 
     companion object CREATOR : Parcelable.Creator<TemporaryRule> {
+        private val ALLOWED_TYPES = setOf("PROCESS-NAME", "DOMAIN-SUFFIX", "SRC-IP-CIDR")
+
+        fun isSafeToApply(rule: TemporaryRule): Boolean {
+            val type = rule.ruleType.trim().uppercase()
+            val payload = rule.payload.trim()
+            val target = rule.target.trim()
+            if (type !in ALLOWED_TYPES || payload.isEmpty() || target.isEmpty()) {
+                return false
+            }
+            if (payload.any { it == ',' || it == '\n' || it == '\r' }) {
+                return false
+            }
+            if (target.any { it == ',' || it == '\n' || it == '\r' }) {
+                return false
+            }
+            return true
+        }
         override fun createFromParcel(parcel: Parcel): TemporaryRule =
             Parcelizer.decodeFromParcel(serializer(), parcel)
 

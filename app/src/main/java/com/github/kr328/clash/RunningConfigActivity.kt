@@ -33,7 +33,7 @@ class RunningConfigActivity : BaseActivity<RunningConfigDesign>() {
             select<Unit> {
                 events.onReceive {
                     when (it) {
-                        Event.ClashStart, Event.ClashStop, Event.ServiceRecreated, Event.ProfileChanged, Event.ProfileLoaded -> {
+                        Event.ClashStart, Event.ClashStop, Event.ServiceRecreated, Event.ProfileChanged, Event.ProfileLoaded, Event.RuntimeConfigUpdated -> {
                             design.setConfigText(loadConfigText())
                         }
                         else -> Unit
