@@ -13,8 +13,6 @@ import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
 
 internal object WallpaperWebDav {
-    private const val MAX_PACK_BYTES = 20 * 1024 * 1024
-
     private val http = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(5, TimeUnit.MINUTES)
@@ -30,6 +28,9 @@ internal object WallpaperWebDav {
     }
 
     suspend fun upload(store: UiStore, bytes: ByteArray) = withContext(Dispatchers.IO) {
+        require(bytes.size <= UiBackground.MAX_PACK_BYTES) {
+            "Wallpaper pack exceeds the upload limit"
+        }
         ensureCollection(store)
         val request = Request.Builder()
             .url(packUrl(store))
@@ -55,7 +56,7 @@ internal object WallpaperWebDav {
             }
             val body = response.body ?: throw IllegalStateException("empty body")
             val declared = body.contentLength()
-            if (declared > MAX_PACK_BYTES) {
+            if (declared > UiBackground.MAX_PACK_BYTES) {
                 throw IllegalStateException("wallpaper pack too large")
             }
             body.byteStream().use { input ->
@@ -66,7 +67,7 @@ internal object WallpaperWebDav {
                     val n = input.read(buf)
                     if (n < 0) break
                     total += n
-                    if (total > MAX_PACK_BYTES) {
+                    if (total > UiBackground.MAX_PACK_BYTES) {
                         throw IllegalStateException("wallpaper pack too large")
                     }
                     out.write(buf, 0, n)

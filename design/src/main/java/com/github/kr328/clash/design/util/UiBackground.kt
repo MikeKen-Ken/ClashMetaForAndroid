@@ -12,47 +12,32 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
 import com.github.kr328.clash.design.model.WallpaperPlaybackMode
-import kotlinx.serialization.Serializable
+import com.github.kr328.clash.design.util.wallpaper.WALLPAPER_DEFAULT_INTERVAL_SECONDS
+import com.github.kr328.clash.design.util.wallpaper.WALLPAPER_MANIFEST_NAME
+import com.github.kr328.clash.design.util.wallpaper.WALLPAPER_MAX_PACK_BYTES
+import com.github.kr328.clash.design.util.wallpaper.WallpaperItem
+import com.github.kr328.clash.design.util.wallpaper.WallpaperManifest
+import com.github.kr328.clash.design.util.wallpaper.WallpaperPackCodec
+import com.github.kr328.clash.design.util.wallpaper.safeWallpaperFileName
 import kotlinx.serialization.json.Json
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.UUID
-import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
-import java.util.zip.ZipOutputStream
 import kotlin.random.Random
-
-@Serializable
-private data class WallpaperItem(
-    val id: String,
-    val fileName: String,
-)
-
-@Serializable
-private data class WallpaperManifest(
-    val version: Int = 1,
-    val playback: String = "fixed",
-    val intervalSeconds: Int = UiBackground.DEFAULT_INTERVAL_SECONDS,
-    val activeId: String = "",
-    val items: List<WallpaperItem> = emptyList(),
-)
 
 /** 应用自定义背景图库：多图、随机轮换、WebDAV 包，行为对齐看板 Wallpaper library。 */
 object UiBackground {
     const val FILE_NAME = "ui_background"
     const val DIR_NAME = "ui_backgrounds"
-    const val MANIFEST_NAME = "manifest.json"
+    const val MANIFEST_NAME = WALLPAPER_MANIFEST_NAME
     const val PACK_FILE_NAME = "clash-ui-wallpapers.zip"
     const val REMOTE_DIR = "clash-verge-rev-backup"
     const val DEFAULT_OVERLAY_PERCENT = 40
     const val MAX_OVERLAY_PERCENT = 70
     const val DEFAULT_CARD_OPACITY_PERCENT = 100
     const val MIN_CARD_OPACITY_PERCENT = 35
-    const val DEFAULT_INTERVAL_SECONDS = 300
-    private const val MAX_PACK_BYTES = 20 * 1024 * 1024
-    private const val MAX_ENTRY_BYTES = 8 * 1024 * 1024
-    private const val MAX_PACK_FILES = 40
+    const val DEFAULT_INTERVAL_SECONDS = WALLPAPER_DEFAULT_INTERVAL_SECONDS
+    const val MAX_PACK_BYTES = WALLPAPER_MAX_PACK_BYTES
 
     val overlayPercents = arrayOf(0, 20, DEFAULT_OVERLAY_PERCENT, 60)
     val cardOpacityPercents = arrayOf(DEFAULT_CARD_OPACITY_PERCENT, 85, 70, 50)
@@ -170,12 +155,12 @@ object UiBackground {
             context.contentResolver.openInputStream(uri)?.use { input ->
                 tmp.outputStream().use { output -> input.copyTo(output) }
             } ?: return false
-            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            BitmapFactory.decodeFile(tmp.absolutePath, bounds)
-            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
+            if (!isValidWallpaperImage(tmp)) {
                 tmp.delete()
                 return false
             }
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(tmp.absolutePath, bounds)
             val ext = guessExt(bounds.outMimeType)
             val fileName = "$id.$ext"
             tmp.copyTo(File(destDir, fileName), overwrite = true)
@@ -206,97 +191,19 @@ object UiBackground {
     }
 
     fun encodePack(context: Context): ByteArray? {
-        val manifest = loadManifest(context)
-        if (manifest.items.isEmpty()) return null
-        val destDir = dir(context)
-        val out = ByteArrayOutputStream()
-        ZipOutputStream(out).use { zip ->
-            zip.putNextEntry(ZipEntry(MANIFEST_NAME))
-            zip.write(json.encodeToString(WallpaperManifest.serializer(), manifest).toByteArray())
-            zip.closeEntry()
-            for (item in manifest.items) {
-                val source = File(destDir, item.fileName)
-                if (!source.isFile) continue
-                zip.putNextEntry(ZipEntry("images/${item.fileName}"))
-                source.inputStream().use { it.copyTo(zip) }
-                zip.closeEntry()
-            }
-        }
-        return out.toByteArray()
+        return WallpaperPackCodec.encode(dir(context), loadManifest(context))
     }
 
     fun applyPack(context: Context, bytes: ByteArray): Boolean {
         return try {
-            val destDir = dir(context)
-            destDir.deleteRecursively()
-            destDir.mkdirs()
-            var manifest: WallpaperManifest? = null
-            ZipInputStream(bytes.inputStream()).use { zip ->
-                var total = 0
-                var files = 0
-                while (true) {
-                    val entry = zip.nextEntry ?: break
-                    val name = entry.name.replace('\\', '/').trimStart('/')
-                    if (name.contains("..")) continue
-                    when {
-                        name == MANIFEST_NAME -> {
-                            val payload = zip.readBytes()
-                            total += payload.size
-                            if (total > MAX_PACK_BYTES || payload.size > MAX_ENTRY_BYTES) {
-                                destDir.deleteRecursively()
-                                return false
-                            }
-                            manifest = json.decodeFromString(
-                                WallpaperManifest.serializer(),
-                                payload.decodeToString(),
-                            )
-                        }
-                        name.startsWith("images/") && !entry.isDirectory -> {
-                            val fileName = safeWallpaperFileName(name.substringAfterLast('/'))
-                                ?: continue
-                            files += 1
-                            if (files > MAX_PACK_FILES) {
-                                destDir.deleteRecursively()
-                                return false
-                            }
-                            val dest = File(destDir, fileName)
-                            dest.outputStream().use { output ->
-                                val buf = ByteArray(8192)
-                                var written = 0
-                                while (true) {
-                                    val n = zip.read(buf)
-                                    if (n < 0) break
-                                    written += n
-                                    total += n
-                                    if (written > MAX_ENTRY_BYTES || total > MAX_PACK_BYTES) {
-                                        destDir.deleteRecursively()
-                                        return false
-                                    }
-                                    output.write(buf, 0, n)
-                                }
-                            }
-                        }
-                    }
-                    zip.closeEntry()
-                }
+            WallpaperPackCodec.apply(
+                filesDir = context.filesDir,
+                liveDirectoryName = DIR_NAME,
+                bytes = bytes,
+                validateImage = ::isValidWallpaperImage,
+            ).also { applied ->
+                if (applied) invalidateCache()
             }
-            val resolved = manifest?.let { loaded ->
-                loaded.copy(
-                    items = loaded.items.mapNotNull { item ->
-                        val fileName = safeWallpaperFileName(item.fileName) ?: return@mapNotNull null
-                        val file = File(destDir, fileName)
-                        if (!file.isFile) return@mapNotNull null
-                        item.copy(fileName = fileName)
-                    },
-                )
-            }
-            if (resolved == null || resolved.items.isEmpty()) {
-                destDir.deleteRecursively()
-                return false
-            }
-            saveManifest(context, resolved)
-            invalidateCache()
-            true
         } catch (_: Exception) {
             false
         }
@@ -408,11 +315,10 @@ object UiBackground {
         cachedCoverId = ""
     }
 
-    private fun safeWallpaperFileName(name: String): String? {
-        val base = name.substringAfterLast('/').substringAfterLast('\\')
-        if (base.isBlank() || base.contains("..")) return null
-        if (!base.matches(Regex("[A-Za-z0-9._-]+"))) return null
-        return base
+    private fun isValidWallpaperImage(file: File): Boolean {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.absolutePath, bounds)
+        return bounds.outWidth > 0 && bounds.outHeight > 0
     }
 
     private fun loadManifest(context: Context): WallpaperManifest {

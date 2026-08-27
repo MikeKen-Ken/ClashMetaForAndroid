@@ -61,6 +61,11 @@
       "note": "2026-08-13 已在工作区摘入下列补丁，但 submodule HEAD 仍可能停在 localHeadAtReview，直到提交到自有 mihomo 并更新 gitlink。",
       "ported": [
         {
+          "sha": "8453e589df956192fbdd713ad1e1c239d3d805ac",
+          "subject": "feat: support AmneziaWG v3.0",
+          "how": "补齐 v3.1 所依赖的 version 选择、v1/v2 device_v1 兼容路径、v3 配置字段与 IPC 输出"
+        },
+        {
           "sha": "331545794414d9e04d3ef16795abd1decdfbf8ce",
           "subject": "fix: CVE-2026-56862 for crypto/tls",
           "how": "升级 github.com/metacubex/tls 至 v0.1.8"
