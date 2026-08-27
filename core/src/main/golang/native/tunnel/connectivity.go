@@ -161,6 +161,9 @@ func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) {
 	}
 
 	wg.Wait()
+	if picker != nil {
+		picker.stop()
+	}
 	resetGroupConnectTimes(g)
 	ApplyRuntimeConnectivityOrderAll()
 	if clearable, ok := p.Adapter().(outboundgroup.ClearManualSelectionAble); ok {
@@ -203,6 +206,7 @@ func sortProxiesByConnectivityScore(proxies []C.Proxy) []C.Proxy {
 
 type scoreEarlyPicker struct {
 	mu         sync.Mutex
+	stopped    bool
 	group      string
 	order      []string
 	passed     map[string]struct{}
@@ -230,6 +234,15 @@ func newScoreEarlyPicker(group string, members []C.Proxy, selectable outboundgro
 	}
 }
 
+func (p *scoreEarlyPicker) stop() {
+	if p == nil {
+		return
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.stopped = true
+}
+
 func (p *scoreEarlyPicker) onResult(name string, delay int, timeoutMs int) {
 	if p == nil || p.selectable == nil || name == "" || name == "DIRECT" || name == "REJECT" {
 		return
@@ -239,6 +252,9 @@ func (p *scoreEarlyPicker) onResult(name string, delay int, timeoutMs int) {
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	if p.stopped {
+		return
+	}
 	p.passed[name] = struct{}{}
 	best := ""
 	for _, candidate := range p.order {
