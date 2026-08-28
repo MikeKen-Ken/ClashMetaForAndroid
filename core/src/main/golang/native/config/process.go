@@ -10,10 +10,10 @@ import (
 
 	"cfa/native/common"
 
+	"github.com/metacubex/mihomo/adapter/provider"
 	"github.com/metacubex/mihomo/common/orderedmap"
 	"github.com/metacubex/mihomo/common/utils"
 	"github.com/metacubex/mihomo/config"
-	"github.com/metacubex/mihomo/adapter/provider"
 	C "github.com/metacubex/mihomo/constant"
 	"github.com/metacubex/mihomo/log"
 	T "github.com/metacubex/mihomo/tunnel"
@@ -22,7 +22,7 @@ import (
 var processors = []processor{
 	patchExternalController, // must before patchOverride, so we only apply ExternalController in Override settings
 	patchOverride,
-	patchTemporaryRules, // must run before direct/global mode replaces the rule list
+	patchTemporaryRules,   // must run before direct/global mode replaces the rule list
 	patchDirectGlobalMode, // after patchOverride: force rule mode + override rules when session mode is direct/global/offline
 	patchProxyAdsBlock,
 	patchProxyGroupTimeout,
@@ -51,11 +51,11 @@ type overrideProxyAdsBlock struct {
 
 var legacyHiddenOverrideKeys = map[string]struct{}{
 	// 旧“覆写设置”页面已隐藏的监听端口相关项，避免历史 override 继续污染运行配置。
-	"port":       {},
-	"socks-port": {},
-	"redir-port": {},
+	"port":        {},
+	"socks-port":  {},
+	"redir-port":  {},
 	"tproxy-port": {},
-	"mixed-port": {},
+	"mixed-port":  {},
 
 	// 旧页面已隐藏的通用网络覆写项。
 	"authentication":           {},
@@ -70,12 +70,12 @@ var legacyHiddenOverrideKeys = map[string]struct{}{
 	"dns": {},
 
 	// 旧页面已隐藏的 Meta Features 覆写项。
-	"unified-delay":    {},
-	"geodata-mode":     {},
-	"tcp-concurrent":   {},
+	"unified-delay":     {},
+	"geodata-mode":      {},
+	"tcp-concurrent":    {},
 	"find-process-mode": {},
-	"sniffer":          {},
-	"geox-url":         {},
+	"sniffer":           {},
+	"geox-url":          {},
 }
 
 func decodeFilteredOverride(content string, cfg *config.RawConfig) error {
@@ -435,7 +435,7 @@ func patchProxyGroupTimeout(cfg *config.RawConfig, _ string) error {
 		limit = *session.ProxyDelayTestConcurrency
 	}
 	provider.SetHealthCheckWorkerLimit(limit)
-	log.Infoln("Applied proxy-delay-test-concurrency: %d", limit)
+	log.Infoln("Applied proxy-delay-test-concurrency: %d", provider.EffectiveHealthCheckWorkerLimit())
 	return nil
 }
 

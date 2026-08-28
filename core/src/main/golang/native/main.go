@@ -11,11 +11,13 @@ import (
 	"runtime"
 	"runtime/debug"
 
+	"cfa/native/app"
 	"cfa/native/config"
 	"cfa/native/connectivity"
 	"cfa/native/delegate"
 	"cfa/native/tunnel"
 
+	"github.com/metacubex/mihomo/dns"
 	"github.com/metacubex/mihomo/log"
 )
 
@@ -32,6 +34,9 @@ func coreInit(home, versionName, gitVersion C.c_string, sdkVersion C.int) {
 
 	delegate.Init(h, v, g, s)
 	delegate.SetRecordProxyConnectivityTestFunc(connectivity.RecordDelayTestResult)
+	dns.SetNetworkRecoveryFunc(func(reason string) {
+		go app.RecoverNetworkState(reason)
+	})
 
 	reset()
 }

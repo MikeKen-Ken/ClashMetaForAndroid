@@ -31,11 +31,11 @@ func openRemoteContent(url string) (int, error) {
 	return int(fd), nil
 }
 
-//export notifyDnsChanged
-func notifyDnsChanged(dnsList C.c_string) {
+//export notifyNetworkChanged
+func notifyNetworkChanged(dnsList C.c_string) {
 	d := C.GoString(dnsList)
 
-	app.NotifyDnsChanged(d)
+	app.NotifyNetworkChanged(d)
 }
 
 //export flushFakeIPCache
@@ -74,7 +74,6 @@ func notifyInstalledAppsChanged(uids C.c_string) {
 func notifyTimeZoneChanged(name C.c_string, offset C.int) {
 	app.NotifyTimeZoneChanged(C.GoString(name), int(offset))
 }
-
 
 //export queryConfiguration
 func queryConfiguration() *C.char {

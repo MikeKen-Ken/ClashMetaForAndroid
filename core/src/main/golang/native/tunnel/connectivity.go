@@ -139,9 +139,7 @@ func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) (result
 	if concurrency <= 0 {
 		concurrency = pvd.EffectiveHealthCheckWorkerLimit()
 	}
-	if concurrency <= 0 {
-		concurrency = 1
-	}
+	concurrency = pvd.ClampHealthCheckWorkerLimit(concurrency)
 	if concurrency > result.Tested {
 		concurrency = result.Tested
 	}
@@ -157,6 +155,10 @@ func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) (result
 			defer func() { <-sem }()
 
 			ctx := C.WithHealthCheckSourceName(context.Background(), name)
+			if !pvd.AcquireHealthCheckWorker(ctx) {
+				return
+			}
+			defer pvd.ReleaseHealthCheckWorker()
 			ctx = C.WithDelayTestTimeoutMs(ctx, timeoutMs)
 			delay, testErr := proxy.URLTest(ctx, testURL, expectedStatus)
 			if testErr != nil || delay == 0 || int(delay) >= timeoutMs {

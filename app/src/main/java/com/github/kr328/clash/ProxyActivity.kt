@@ -254,7 +254,7 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                                 val delayTestResult = healthCheckWithTimeout(
                                                     groupName,
                                                     timeoutMs,
-                                                    uiStore.proxyDelayTestConcurrency.coerceIn(1, 200),
+                                                    uiStore.proxyDelayTestConcurrency.coerceIn(1, 30),
                                                 )
 
                                                 if (delayTestResult.hasSuccess) {

@@ -388,11 +388,11 @@
     <string name="timeout_1000ms">1s</string>
     <string name="timeout_3000ms">3s</string>
     <string name="timeout_5000ms">5s</string>
+    <string name="concurrency_5">×5</string>
+    <string name="concurrency_10">×10</string>
+    <string name="concurrency_15">×15</string>
+    <string name="concurrency_20">×20</string>
     <string name="concurrency_30">×30</string>
-    <string name="concurrency_50">×50</string>
-    <string name="concurrency_100">×100</string>
-    <string name="concurrency_150">×150</string>
-    <string name="concurrency_200">×200</string>
     <string name="proxy_ads_on">Ad Blocking</string>
     <string name="proxy_ads_off">No Ad Blocking</string>
 

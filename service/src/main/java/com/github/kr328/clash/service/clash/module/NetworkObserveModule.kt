@@ -1,107 +1,117 @@
 package com.github.kr328.clash.service.clash.module
 
 import android.app.Service
-import android.net.*
+import android.net.ConnectivityManager
+import android.net.LinkProperties
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.os.Build
 import androidx.core.content.getSystemService
 import com.github.kr328.clash.common.log.Log
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.service.util.asSocketAddressText
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.selects.select
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
 import java.net.InetAddress
 import java.util.concurrent.ConcurrentHashMap
 
-class NetworkObserveModule(service: Service) : Module<Network>(service) {
+data class NetworkSnapshot(
+    val network: Network?,
+    val dnsList: List<String>,
+)
+
+class NetworkObserveModule(service: Service) : Module<NetworkSnapshot>(service) {
     private val connectivity = service.getSystemService<ConnectivityManager>()!!
-    private val networks: Channel<Network> = Channel(Channel.UNLIMITED)
+    private val changes = Channel<Unit>(Channel.CONFLATED)
     private val request = NetworkRequest.Builder().apply {
         addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
         addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            addCapability(NetworkCapabilities.NET_CAPABILITY_FOREGROUND)
-        }
         addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
     }.build()
 
     private data class NetworkInfo(
         @Volatile var losingMs: Long = 0,
-        @Volatile var dnsList: List<InetAddress> = emptyList()
+        @Volatile var dnsList: List<InetAddress> = emptyList(),
+        @Volatile var capabilities: NetworkCapabilities? = null,
+        @Volatile var blocked: Boolean = false,
     ) {
-        fun isAvailable(): Boolean = losingMs < System.currentTimeMillis()
+        fun isAvailable(): Boolean = losingMs < System.currentTimeMillis() && !blocked
     }
 
     private val networkInfos = ConcurrentHashMap<Network, NetworkInfo>()
 
-    @Volatile
-    private var curDnsList = emptyList<String>()
+    private fun infoFor(network: Network): NetworkInfo =
+        networkInfos[network] ?: NetworkInfo().also { newInfo ->
+            networkInfos.putIfAbsent(network, newInfo)
+        }.let { networkInfos[network] ?: it }
+
+    private fun signalChange() {
+        changes.trySend(Unit)
+    }
 
     private val callback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
             Log.i("NetworkObserve onAvailable network=$network")
-            networkInfos[network] = NetworkInfo()
+            infoFor(network)
+            signalChange()
+        }
+
+        override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
+            infoFor(network).capabilities = capabilities
+            signalChange()
+        }
+
+        override fun onBlockedStatusChanged(network: Network, blocked: Boolean) {
+            Log.i("NetworkObserve onBlockedStatusChanged network=$network blocked=$blocked")
+            infoFor(network).blocked = blocked
+            signalChange()
         }
 
         override fun onLosing(network: Network, maxMsToLive: Int) {
             Log.i("NetworkObserve onLosing network=$network")
-            networkInfos[network]?.losingMs = System.currentTimeMillis() + maxMsToLive
-            notifyDnsChange()
-
-            networks.trySend(network)
+            infoFor(network).losingMs = System.currentTimeMillis() + maxMsToLive
+            signalChange()
         }
 
         override fun onLost(network: Network) {
             Log.i("NetworkObserve onLost network=$network")
             networkInfos.remove(network)
-            notifyDnsChange()
-
-            networks.trySend(network)
+            signalChange()
         }
 
         override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
             Log.i("NetworkObserve onLinkPropertiesChanged network=$network $linkProperties")
-            networkInfos[network]?.dnsList = linkProperties.dnsServers
-            notifyDnsChange()
-
-            networks.trySend(network)
+            infoFor(network).dnsList = linkProperties.dnsServers
+            signalChange()
         }
 
         override fun onUnavailable() {
             Log.i("NetworkObserve onUnavailable")
+            signalChange()
         }
     }
 
-    private fun register(): Boolean {
+    private fun register() {
         Log.i("NetworkObserve start register")
-        return try {
+        try {
             connectivity.registerNetworkCallback(request, callback)
-
-            true
         } catch (e: Exception) {
             Log.w("NetworkObserve register failed", e)
-
-            false
         }
     }
 
-    private fun unregister(): Boolean {
+    private fun unregister() {
         Log.i("NetworkObserve start unregister")
         try {
             connectivity.unregisterNetworkCallback(callback)
         } catch (e: Exception) {
             Log.w("NetworkObserve unregister failed", e)
         }
-
-        return false
     }
 
-    private fun networkToInt(entry: Map.Entry<Network, NetworkInfo>): Int {
-        val capabilities = connectivity.getNetworkCapabilities(entry.key)
-        // calculate priority based on transport type, available state
-        // lower value means higher priority
-        // wifi > ethernet > usb tethering > bluetooth tethering > cellular > satellite > other
+    private fun networkPriority(entry: Map.Entry<Network, NetworkInfo>): Int {
+        val capabilities = entry.value.capabilities
         return when {
             capabilities == null -> 100
             capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN) -> 90
@@ -111,45 +121,46 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
             capabilities.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH) -> 3
             capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> 4
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM && capabilities.hasTransport(NetworkCapabilities.TRANSPORT_SATELLITE) -> 5
-            // TRANSPORT_LOWPAN / TRANSPORT_THREAD / TRANSPORT_WIFI_AWARE are not for general internet access, which will not set as default route.
             else -> 20
-        } + (if (entry.value.isAvailable()) 0 else 10)
+        }
     }
 
-    private fun notifyDnsChange() {
-        val dnsList = (networkInfos.asSequence().minByOrNull { networkToInt(it) }?.value?.dnsList
-            ?: emptyList()).map { x -> x.asSocketAddressText(53) }
-        val prevDnsList = curDnsList
-        if (dnsList.isNotEmpty() && prevDnsList != dnsList) {
-            Log.i("notifyDnsChange $prevDnsList -> $dnsList")
-            curDnsList = dnsList
-            Clash.notifyDnsChanged(dnsList)
-        }
+    private fun currentSnapshot(): NetworkSnapshot {
+        val selected = networkInfos.entries.asSequence()
+            .filter { it.value.isAvailable() }
+            .minByOrNull(::networkPriority)
+        val dnsList = selected?.value?.dnsList.orEmpty()
+            .map { it.asSocketAddressText(53) }
+        return NetworkSnapshot(selected?.key, dnsList)
     }
 
     override suspend fun run() {
         register()
 
+        var previous: NetworkSnapshot? = null
+        signalChange()
         try {
             while (true) {
-                val quit = select {
-                    networks.onReceive {
-                        enqueueEvent(it)
+                changes.receive()
+                delay(NETWORK_CHANGE_DEBOUNCE_MS)
+                while (changes.tryReceive().isSuccess) {
+                    // Coalesce callback bursts into one complete snapshot.
+                }
 
-                        false
-                    }
-                }
-                if (quit) {
-                    return
-                }
+                val snapshot = currentSnapshot()
+                if (snapshot == previous) continue
+
+                Log.i("NetworkObserve transition ${previous?.network} -> ${snapshot.network}, dns=${snapshot.dnsList}")
+                previous = snapshot
+                Clash.notifyNetworkChanged(snapshot.dnsList)
+                enqueueEvent(snapshot)
             }
         } finally {
-            withContext(NonCancellable) {
-                unregister()
-
-                Log.i("NetworkObserve dns = []")
-                Clash.notifyDnsChanged(emptyList())
-            }
+            unregister()
         }
+    }
+
+    companion object {
+        private const val NETWORK_CHANGE_DEBOUNCE_MS = 250L
     }
 }

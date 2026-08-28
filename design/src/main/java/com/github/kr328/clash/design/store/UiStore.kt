@@ -126,7 +126,7 @@ class UiStore(context: Context) {
         defaultValue = 5000,
     )
 
-    /** 延迟测速并发节点数，可选 30、50、100、150、200（与订阅健康检查共用），默认 30 */
+    /** 延迟测速并发节点数，可选 5、10、15、20、30（与订阅健康检查共用），默认 30 */
     var proxyDelayTestConcurrency: Int by store.int(
         key = "proxy_delay_test_concurrency",
         defaultValue = 30,
