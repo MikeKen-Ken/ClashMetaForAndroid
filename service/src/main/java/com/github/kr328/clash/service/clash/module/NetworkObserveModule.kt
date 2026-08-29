@@ -19,14 +19,29 @@ import java.util.concurrent.ConcurrentHashMap
 data class NetworkSnapshot(
     val network: Network?,
     val dnsList: List<String>,
+    val change: NetworkChange,
 )
+
+enum class NetworkChange {
+    Initial,
+    Route,
+    Dns,
+}
+
+fun NetworkSnapshot.notifyCore() {
+    if (change == NetworkChange.Route) {
+        Clash.notifyNetworkChanged(dnsList)
+    } else {
+        Clash.notifyDnsChanged(dnsList)
+    }
+}
 
 private data class ObservedNetworkState(
     val network: Network?,
     val dnsList: List<String>,
     val route: NetworkRouteFingerprint?,
 ) {
-    fun publicSnapshot() = NetworkSnapshot(network, dnsList)
+    fun publicSnapshot(change: NetworkChange) = NetworkSnapshot(network, dnsList, change)
 }
 
 private data class NetworkRouteFingerprint(
@@ -132,8 +147,16 @@ class NetworkObserveModule(service: Service) : Module<NetworkSnapshot>(service) 
 
     private fun networkPriority(entry: Map.Entry<Network, NetworkInfo>): Int {
         val capabilities = entry.value.capabilities
-        return when {
-            capabilities == null -> 100
+        if (capabilities == null) return PRIORITY_UNKNOWN
+
+        val readinessPenalty = when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+                !capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_SUSPENDED) -> PRIORITY_SUSPENDED_PENALTY
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                !capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) -> PRIORITY_UNVALIDATED_PENALTY
+            else -> 0
+        }
+        val transportPriority = when {
             capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN) -> 90
             capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> 0
             capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> 1
@@ -143,6 +166,7 @@ class NetworkObserveModule(service: Service) : Module<NetworkSnapshot>(service) 
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM && capabilities.hasTransport(NetworkCapabilities.TRANSPORT_SATELLITE) -> 5
             else -> 20
         }
+        return readinessPenalty + transportPriority
     }
 
     private fun currentSnapshot(): ObservedNetworkState {
@@ -157,7 +181,7 @@ class NetworkObserveModule(service: Service) : Module<NetworkSnapshot>(service) 
     override suspend fun run() {
         register()
 
-        var previous: NetworkSnapshot? = null
+        var previous: ObservedNetworkState? = null
         signalChange()
         try {
             while (true) {
@@ -170,18 +194,19 @@ class NetworkObserveModule(service: Service) : Module<NetworkSnapshot>(service) 
                 val snapshot = currentSnapshot()
                 if (snapshot == previous) continue
 
-                val routeChanged = previous?.network != snapshot.network ||
-                    previous?.route != snapshot.route
+                val previousState = previous
+                val routeChanged = previousState?.network != snapshot.network ||
+                    previousState?.route != snapshot.route
                 Log.i(
                     "NetworkObserve transition ${previous?.network} -> ${snapshot.network}, " +
                         "routeChanged=$routeChanged, dns=${snapshot.dnsList}",
                 )
                 previous = snapshot
                 if (routeChanged) {
-                    Clash.notifyNetworkChanged(snapshot.dnsList)
-                    enqueueEvent(snapshot.publicSnapshot())
+                    val change = if (previousState == null) NetworkChange.Initial else NetworkChange.Route
+                    enqueueEvent(snapshot.publicSnapshot(change))
                 } else {
-                    Clash.notifyDnsChanged(snapshot.dnsList)
+                    enqueueEvent(snapshot.publicSnapshot(NetworkChange.Dns))
                 }
             }
         } finally {
@@ -191,6 +216,9 @@ class NetworkObserveModule(service: Service) : Module<NetworkSnapshot>(service) 
 
     companion object {
         private const val NETWORK_CHANGE_DEBOUNCE_MS = 250L
+        private const val PRIORITY_UNVALIDATED_PENALTY = 1_000
+        private const val PRIORITY_SUSPENDED_PENALTY = 2_000
+        private const val PRIORITY_UNKNOWN = 10_000
     }
 }
 

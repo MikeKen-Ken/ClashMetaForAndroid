@@ -80,6 +80,7 @@ object Parcelizer {
             return parcel.readDouble()
         }
 
+        @OptIn(ExperimentalSerializationApi::class)
         override fun decodeEnum(enumDescriptor: SerialDescriptor): Int {
             val index = decodeInt()
             return if (index in 0 until enumDescriptor.elementsCount) {

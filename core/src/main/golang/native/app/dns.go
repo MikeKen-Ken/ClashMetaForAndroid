@@ -2,26 +2,28 @@ package app
 
 import (
 	"strings"
-	"sync"
 
 	"github.com/metacubex/mihomo/component/resolver"
 	"github.com/metacubex/mihomo/dns"
-	"github.com/metacubex/mihomo/log"
-	"github.com/metacubex/mihomo/tunnel"
+	"github.com/metacubex/mihomo/networkrecovery"
 )
-
-var networkRecoveryMu sync.Mutex
 
 func NotifyNetworkChanged(dnsList string) {
 	updateSystemDNS(dnsList)
-	RecoverNetworkState("Android network changed")
+	networkrecovery.Recover(networkrecovery.Request{
+		Kind:   networkrecovery.KindRouteChanged,
+		Reason: "Android network changed",
+	})
 }
 
 // NotifyDnsChanged refreshes resolver state without interrupting established
 // tunnel connections when only DNS metadata changes on the same network.
 func NotifyDnsChanged(dnsList string) {
 	updateSystemDNS(dnsList)
-	dns.FlushCacheWithDefaultResolver()
+	networkrecovery.Recover(networkrecovery.Request{
+		Kind:   networkrecovery.KindDNSChanged,
+		Reason: "Android system DNS changed",
+	})
 }
 
 func updateSystemDNS(dnsList string) {
@@ -30,21 +32,6 @@ func updateSystemDNS(dnsList string) {
 		addr = strings.Split(dnsList, ",")
 	}
 	dns.UpdateSystemDNS(addr)
-}
-
-// RecoverNetworkState closes connections tied to the old route, clears DNS
-// state, and discards reusable protocol sessions. Manual delay tests must not
-// call this path; it is reserved for real network transitions and escalated DNS
-// recovery.
-func RecoverNetworkState(reason string) {
-	networkRecoveryMu.Lock()
-	defer networkRecoveryMu.Unlock()
-
-	log.Warnln("[Network] recovering network state: %s", reason)
-	tunnel.CloseAllConnections()
-	_ = resolver.FlushFakeIP()
-	reset := tunnel.ResetNetworkState()
-	log.Infoln("[Network] recovery complete; reset %d reusable protocol clients", reset)
 }
 
 // FlushFakeIPCache 清空全部 Fake-IP 映射、DNS 应答缓存，并重置 DoH/DoT/DoQ 连接

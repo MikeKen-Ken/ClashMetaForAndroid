@@ -50,7 +50,8 @@ class ClashService : BaseService() {
 
                         true
                     }
-                    network.onEvent {
+                    network.onEvent { snapshot ->
+                        snapshot.notifyCore()
                         false
                     }
                 }

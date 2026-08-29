@@ -16,6 +16,7 @@ import com.github.kr328.clash.service.util.importedDir
 import com.github.kr328.clash.service.util.persistSummaryForDebug
 import com.github.kr328.clash.service.config.OverrideRuntimeApplier
 import com.github.kr328.clash.service.util.sendDebugUiLog
+import com.github.kr328.clash.service.util.sendProfileChanged
 import com.github.kr328.clash.service.util.sendProfileLoaded
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.selects.select
@@ -57,8 +58,6 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
 
                 if (current == loaded && changed != null && changed != loaded)
                     continue
-
-                loaded = current
 
                 val active = ImportedDao().queryByUUID(current)
                     ?: throw NullPointerException("No profile selected")
@@ -114,11 +113,17 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                 StatusProvider.currentProfile = active.name
 
                 service.sendProfileLoaded(current)
+                loaded = current
                 hasLoadedSuccessfully = true
 
                 Log.d("Profile ${active.name} loaded")
             } catch (e: Exception) {
                 if (hasLoadedSuccessfully) {
+                    val lastKnownGood = loaded
+                    if (lastKnownGood != null && store.activeProfile != lastKnownGood) {
+                        store.activeProfile = lastKnownGood
+                        service.sendProfileChanged(lastKnownGood)
+                    }
                     Log.w("Config reload failed; keeping previous config: ${e.message}", e)
                     continue
                 }

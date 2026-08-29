@@ -58,9 +58,10 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                         true
                     }
                     network.onEvent { snapshot ->
-                        if (Build.VERSION.SDK_INT in 22..28) @TargetApi(22) {
+                        if (snapshot.change != NetworkChange.Dns && Build.VERSION.SDK_INT in 22..28) @TargetApi(22) {
                             setUnderlyingNetworks(snapshot.network?.let { arrayOf(it) })
                         }
+                        snapshot.notifyCore()
 
                         false
                     }
