@@ -100,6 +100,10 @@ object Clash {
         Bridge.nativeNotifyNetworkChanged(dns.toSet().joinToString(separator = ","))
     }
 
+    fun notifyDnsChanged(dns: List<String>) {
+        Bridge.nativeNotifyDnsChanged(dns.toSet().joinToString(separator = ","))
+    }
+
     fun notifyTimeZoneChanged(name: String, offset: Int) {
         Bridge.nativeNotifyTimeZoneChanged(name, offset)
     }

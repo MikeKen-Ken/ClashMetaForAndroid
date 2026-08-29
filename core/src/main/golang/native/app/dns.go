@@ -13,12 +13,23 @@ import (
 var networkRecoveryMu sync.Mutex
 
 func NotifyNetworkChanged(dnsList string) {
+	updateSystemDNS(dnsList)
+	RecoverNetworkState("Android network changed")
+}
+
+// NotifyDnsChanged refreshes resolver state without interrupting established
+// tunnel connections when only DNS metadata changes on the same network.
+func NotifyDnsChanged(dnsList string) {
+	updateSystemDNS(dnsList)
+	dns.FlushCacheWithDefaultResolver()
+}
+
+func updateSystemDNS(dnsList string) {
 	var addr []string
 	if len(dnsList) > 0 {
 		addr = strings.Split(dnsList, ",")
 	}
 	dns.UpdateSystemDNS(addr)
-	RecoverNetworkState("Android network changed")
 }
 
 // RecoverNetworkState closes connections tied to the old route, clears DNS

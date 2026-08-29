@@ -1,13 +1,10 @@
 package com.github.kr328.clash.service
 
 import android.annotation.TargetApi
-import android.app.PendingIntent
 import android.content.Intent
 import android.net.ProxyInfo
 import android.net.VpnService
 import android.os.Build
-import com.github.kr328.clash.common.compat.pendingIntentFlags
-import com.github.kr328.clash.common.constants.Components
 import com.github.kr328.clash.common.log.Log
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.service.clash.clashRuntime
@@ -16,6 +13,7 @@ import com.github.kr328.clash.service.data.SelectionDao
 import com.github.kr328.clash.service.model.AccessControlMode
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.cancelAndJoinBlocking
+import com.github.kr328.clash.service.util.mainTaskPendingIntent
 import com.github.kr328.clash.service.util.parseCIDR
 import com.github.kr328.clash.service.util.sendClashStarted
 import com.github.kr328.clash.service.util.sendClashStopped
@@ -195,14 +193,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             }
 
             // Open MainActivity
-            setConfigureIntent(
-                PendingIntent.getActivity(
-                    self,
-                    R.id.nf_vpn_status,
-                    Intent().setComponent(Components.MAIN_ACTIVITY),
-                    pendingIntentFlags(PendingIntent.FLAG_UPDATE_CURRENT)
-                )
-            )
+            setConfigureIntent(self.mainTaskPendingIntent(R.id.nf_vpn_status))
 
             // Metered
             if (Build.VERSION.SDK_INT >= 29) {

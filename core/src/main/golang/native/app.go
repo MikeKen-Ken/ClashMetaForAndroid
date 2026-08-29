@@ -38,6 +38,13 @@ func notifyNetworkChanged(dnsList C.c_string) {
 	app.NotifyNetworkChanged(d)
 }
 
+//export notifyDnsChanged
+func notifyDnsChanged(dnsList C.c_string) {
+	d := C.GoString(dnsList)
+
+	app.NotifyDnsChanged(d)
+}
+
 //export flushFakeIPCache
 func flushFakeIPCache() *C.char {
 	if err := app.FlushFakeIPCache(); err != nil {

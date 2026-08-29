@@ -21,6 +21,22 @@ data class NetworkSnapshot(
     val dnsList: List<String>,
 )
 
+private data class ObservedNetworkState(
+    val network: Network?,
+    val dnsList: List<String>,
+    val route: NetworkRouteFingerprint?,
+) {
+    fun publicSnapshot() = NetworkSnapshot(network, dnsList)
+}
+
+private data class NetworkRouteFingerprint(
+    val interfaceName: String?,
+    val linkAddresses: Set<String>,
+    val routes: Set<String>,
+    val mtu: Int,
+    val nat64Prefix: String?,
+)
+
 class NetworkObserveModule(service: Service) : Module<NetworkSnapshot>(service) {
     private val connectivity = service.getSystemService<ConnectivityManager>()!!
     private val changes = Channel<Unit>(Channel.CONFLATED)
@@ -33,6 +49,7 @@ class NetworkObserveModule(service: Service) : Module<NetworkSnapshot>(service) 
     private data class NetworkInfo(
         @Volatile var losingMs: Long = 0,
         @Volatile var dnsList: List<InetAddress> = emptyList(),
+        @Volatile var route: NetworkRouteFingerprint? = null,
         @Volatile var capabilities: NetworkCapabilities? = null,
         @Volatile var blocked: Boolean = false,
     ) {
@@ -53,7 +70,7 @@ class NetworkObserveModule(service: Service) : Module<NetworkSnapshot>(service) 
     private val callback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
             Log.i("NetworkObserve onAvailable network=$network")
-            infoFor(network)
+            infoFor(network).losingMs = 0
             signalChange()
         }
 
@@ -82,7 +99,10 @@ class NetworkObserveModule(service: Service) : Module<NetworkSnapshot>(service) 
 
         override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
             Log.i("NetworkObserve onLinkPropertiesChanged network=$network $linkProperties")
-            infoFor(network).dnsList = linkProperties.dnsServers
+            infoFor(network).apply {
+                dnsList = linkProperties.dnsServers
+                route = linkProperties.routeSnapshot()
+            }
             signalChange()
         }
 
@@ -125,13 +145,13 @@ class NetworkObserveModule(service: Service) : Module<NetworkSnapshot>(service) 
         }
     }
 
-    private fun currentSnapshot(): NetworkSnapshot {
+    private fun currentSnapshot(): ObservedNetworkState {
         val selected = networkInfos.entries.asSequence()
             .filter { it.value.isAvailable() }
             .minByOrNull(::networkPriority)
         val dnsList = selected?.value?.dnsList.orEmpty()
             .map { it.asSocketAddressText(53) }
-        return NetworkSnapshot(selected?.key, dnsList)
+        return ObservedNetworkState(selected?.key, dnsList, selected?.value?.route)
     }
 
     override suspend fun run() {
@@ -150,10 +170,19 @@ class NetworkObserveModule(service: Service) : Module<NetworkSnapshot>(service) 
                 val snapshot = currentSnapshot()
                 if (snapshot == previous) continue
 
-                Log.i("NetworkObserve transition ${previous?.network} -> ${snapshot.network}, dns=${snapshot.dnsList}")
+                val routeChanged = previous?.network != snapshot.network ||
+                    previous?.route != snapshot.route
+                Log.i(
+                    "NetworkObserve transition ${previous?.network} -> ${snapshot.network}, " +
+                        "routeChanged=$routeChanged, dns=${snapshot.dnsList}",
+                )
                 previous = snapshot
-                Clash.notifyNetworkChanged(snapshot.dnsList)
-                enqueueEvent(snapshot)
+                if (routeChanged) {
+                    Clash.notifyNetworkChanged(snapshot.dnsList)
+                    enqueueEvent(snapshot.publicSnapshot())
+                } else {
+                    Clash.notifyDnsChanged(snapshot.dnsList)
+                }
             }
         } finally {
             unregister()
@@ -164,3 +193,15 @@ class NetworkObserveModule(service: Service) : Module<NetworkSnapshot>(service) 
         private const val NETWORK_CHANGE_DEBOUNCE_MS = 250L
     }
 }
+
+private fun LinkProperties.routeSnapshot() = NetworkRouteFingerprint(
+    interfaceName = interfaceName,
+    linkAddresses = linkAddresses.mapTo(mutableSetOf()) { it.toString() },
+    routes = routes.mapTo(mutableSetOf()) { it.toString() },
+    mtu = mtu,
+    nat64Prefix = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        nat64Prefix?.toString()
+    } else {
+        null
+    },
+)
