@@ -26,5 +26,5 @@ Profile activation remains transactional at the client layer: a failed candidate
 - Both clients share recovery semantics while retaining platform-specific network observation adapters.
 - Protocol adapters that own reusable sessions implement `NetworkStateResetter`; stateless adapters need no new interface.
 - New recovery kinds or escalation behavior must be added to the core interface and all affected adapters/tests together.
-- Until the desktop pin references a released build containing the controller routes, desktop falls back to the legacy authenticated connection-close and Fake-IP flush operations; full adapter-session reset requires the new route.
+- The desktop pin references a released build containing the controller routes; the legacy authenticated connection-close and Fake-IP flush path remains compatibility-only fallback behavior.
 - Device, sleep/resume, and cross-platform runtime acceptance remains necessary because static checks cannot reproduce real route handovers.
