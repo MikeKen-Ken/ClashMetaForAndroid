@@ -10,15 +10,20 @@ import com.github.kr328.clash.service.model.Profile
 import com.github.kr328.clash.service.remote.IFetchObserver
 import com.github.kr328.clash.service.remote.IProfileManager
 import com.github.kr328.clash.service.runtimeyaml.RuntimeYamlImporter
+import com.github.kr328.clash.service.runtimeyaml.RuntimeYamlPendingBackup
+import com.github.kr328.clash.service.runtimeyaml.RuntimeYamlProfileSlot
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.directoryLastModified
 import com.github.kr328.clash.service.util.generateProfileUUID
 import com.github.kr328.clash.service.util.importedDir
 import com.github.kr328.clash.service.util.pendingDir
 import com.github.kr328.clash.service.util.sendProfileChanged
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -29,6 +34,10 @@ import java.util.*
 
 class ProfileManager(private val context: Context) : IProfileManager,
     CoroutineScope by CoroutineScope(Dispatchers.IO) {
+    companion object {
+        private val runtimeYamlImportLock = Mutex()
+    }
+
     private val store = ServiceStore(context)
 
     init {
@@ -41,55 +50,75 @@ class ProfileManager(private val context: Context) : IProfileManager,
 
     override suspend fun create(type: Profile.Type, name: String, source: String): UUID {
         val uuid = generateProfileUUID()
-        val pending = Pending(
-            uuid = uuid,
-            name = name,
-            type = type,
-            source = source,
-            interval = 0,
-            upload = 0,
-            total = 0,
-            download = 0,
-            expire = 0,
-        )
-
-        PendingDao().insert(pending)
-
-        context.pendingDir.resolve(uuid.toString()).apply {
-            deleteRecursively()
-            mkdirs()
-
-            @Suppress("BlockingMethodInNonBlockingContext")
-            resolve("config.yaml").createNewFile()
-            resolve("providers").mkdir()
-        }
-
+        createPending(uuid, type, name, source)
         return uuid
     }
 
-    override suspend fun importRuntimeYaml(name: String, sourcePath: String): UUID {
-        val uuid = create(Profile.Type.File, name)
-
-        try {
-            val configFile = context.pendingDir
-                .resolve(uuid.toString())
-                .resolve("config.yaml")
-            withContext(Dispatchers.IO) {
-                val source = File(sourcePath).canonicalFile
-                val allowed = listOf(context.cacheDir, context.filesDir).any { root ->
-                    val rootPath = root.canonicalFile.path
-                    source.path == rootPath || source.path.startsWith(rootPath + File.separator)
+    override suspend fun importRuntimeYaml(name: String, sourcePath: String): UUID =
+        runtimeYamlImportLock.withLock {
+            val uuid = RuntimeYamlProfileSlot.resolve(
+                queryAll().map {
+                    RuntimeYamlProfileSlot.Candidate(
+                        it.uuid,
+                        it.type,
+                        it.source,
+                        it.active,
+                    )
                 }
-                require(allowed) { "Runtime YAML must be imported from app storage" }
-                RuntimeYamlImporter.writeCandidate(configFile, source)
+            ) ?: generateProfileUUID()
+            val existingPending = PendingDao().queryByUUID(uuid)
+            val pendingBackup = RuntimeYamlPendingBackup.capture(context, existingPending)
+            val importedExisted = ImportedDao().exists(uuid)
+            var committed = false
+
+            try {
+                if (existingPending == null && !importedExisted) {
+                    createPending(
+                        uuid,
+                        Profile.Type.File,
+                        name,
+                        RuntimeYamlProfileSlot.SOURCE,
+                    )
+                } else if (existingPending == null) {
+                    preparePendingFromImported(uuid)
+                }
+
+                val configFile = context.pendingDir
+                    .resolve(uuid.toString())
+                    .resolve("config.yaml")
+                withContext(Dispatchers.IO) {
+                    val source = File(sourcePath).canonicalFile
+                    val allowed = listOf(context.cacheDir, context.filesDir).any { root ->
+                        val rootPath = root.canonicalFile.path
+                        source.path == rootPath || source.path.startsWith(rootPath + File.separator)
+                    }
+                    require(allowed) { "Runtime YAML must be imported from app storage" }
+                    RuntimeYamlImporter.writeCandidate(configFile, source)
+                }
+                commit(uuid)
+                committed = true
+                try {
+                    pendingBackup?.discard()
+                } catch (cleanupError: Exception) {
+                    if (cleanupError is CancellationException) throw cleanupError
+                    // A stale backup is harmless after the candidate has committed successfully.
+                }
+                uuid
+            } catch (e: Exception) {
+                if (!committed) {
+                    try {
+                        if (pendingBackup != null) {
+                            pendingBackup.restore()
+                        } else {
+                            release(uuid)
+                        }
+                    } catch (rollbackError: Exception) {
+                        e.addSuppressed(rollbackError)
+                    }
+                }
+                throw e
             }
-            commit(uuid)
-            return uuid
-        } catch (e: Exception) {
-            release(uuid)
-            throw e
         }
-    }
 
     override suspend fun clone(uuid: UUID): UUID {
         val newUUID = generateProfileUUID()
@@ -312,6 +341,57 @@ class ProfileManager(private val context: Context) : IProfileManager,
         return context.pendingDir.resolve(uuid.toString()).directoryLastModified
             ?: context.importedDir.resolve(uuid.toString()).directoryLastModified
             ?: -1
+    }
+
+    private suspend fun createPending(
+        uuid: UUID,
+        type: Profile.Type,
+        name: String,
+        source: String = "",
+    ) {
+        val pending = Pending(
+            uuid = uuid,
+            name = name,
+            type = type,
+            source = source,
+            interval = 0,
+            upload = 0,
+            total = 0,
+            download = 0,
+            expire = 0,
+        )
+
+        PendingDao().insert(pending)
+
+        context.pendingDir.resolve(uuid.toString()).apply {
+            deleteRecursively()
+            mkdirs()
+
+            @Suppress("BlockingMethodInNonBlockingContext")
+            resolve("config.yaml").createNewFile()
+            resolve("providers").mkdir()
+        }
+    }
+
+    private suspend fun preparePendingFromImported(uuid: UUID) {
+        val imported = ImportedDao().queryByUUID(uuid)
+            ?: throw FileNotFoundException("profile $uuid not found")
+
+        cloneImportedFiles(uuid)
+
+        PendingDao().insert(
+            Pending(
+                uuid = imported.uuid,
+                name = imported.name,
+                type = imported.type,
+                source = imported.source,
+                interval = imported.interval,
+                upload = imported.upload,
+                total = imported.total,
+                download = imported.download,
+                expire = imported.expire,
+            )
+        )
     }
 
     private fun cloneImportedFiles(source: UUID, target: UUID = source) {

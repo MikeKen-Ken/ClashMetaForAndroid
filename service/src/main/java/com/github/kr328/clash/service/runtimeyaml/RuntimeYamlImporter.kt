@@ -4,17 +4,13 @@ import java.io.File
 
 object RuntimeYamlImporter {
     fun writeCandidate(destination: File, source: File) {
-        try {
-            require(source.isFile) { "Runtime YAML is not available" }
-            require(source.length() <= RuntimeYamlValidator.MAX_RUNTIME_YAML_BYTES) {
-                "Runtime YAML is larger than 10 MB"
-            }
-            val content = source.readText(Charsets.UTF_8)
-            RuntimeYamlValidator.validate(content)
-            destination.writeText(content, Charsets.UTF_8)
-        } catch (error: Exception) {
-            destination.delete()
-            throw error
+        require(source.isFile) { "Runtime YAML is not available" }
+        require(source.length() <= RuntimeYamlValidator.MAX_RUNTIME_YAML_BYTES) {
+            "Runtime YAML is larger than 10 MB"
         }
+        val content = source.readText(Charsets.UTF_8)
+        RuntimeYamlValidator.validate(content)
+        destination.parentFile?.mkdirs()
+        destination.writeText(content, Charsets.UTF_8)
     }
 }

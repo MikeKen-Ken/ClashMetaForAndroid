@@ -22,13 +22,18 @@ read as a fallback.
 - Upload serializes the currently generated runtime YAML and PUTs it to that
   WebDAV object, and warns that the export can contain sensitive connection data.
 - Download GETs that WebDAV object, accepts only a non-empty YAML mapping no
-  larger than 10 MB, imports it as a new local profile, and activates it through
-  the existing validated profile-switch path.
+  larger than 10 MB, imports it into a dedicated managed local profile, and
+  activates it through the existing validated profile-switch path. Later
+  downloads reuse only a profile carrying the client's private ownership marker.
 - Transfer requires a configured WebDAV URL, username, and password, and the
   URL must be HTTPS. Desktop uses the strict TLS client (valid certificates).
-- Download never overwrites a subscription or another source profile in place.
+- Download never identifies an overwrite target by display name alone and never
+  overwrites a subscription or another source profile in place. If the preferred
+  managed-profile identifier is already occupied, the client creates a new owned
+  slot with a collision-free identifier.
 - A failed validation or activation keeps the previous active profile. Partial
-  candidates and their files are removed.
+  candidates and their files are removed; when reusing a managed slot, its prior
+  files and metadata are restored.
 - Desktop serializes import with the existing profile-switch lock and places a
   successful import first because that client treats the first local profile as
   its active local target.
@@ -37,7 +42,7 @@ read as a fallback.
 
 - Runtime exports are portable between Android and desktop through the shared
   WebDAV object while source subscriptions remain unchanged.
-- Imported runtime YAML becomes a normal local profile and may still receive the
+- Imported runtime YAML becomes a managed local profile and may still receive the
   client's normal global enhancements and overrides.
 - WebDAV, runtime, Android-device, and rebuilt-desktop acceptance remain necessary;
   static checks cannot prove those interactions.
