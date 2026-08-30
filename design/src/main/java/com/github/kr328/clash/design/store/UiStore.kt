@@ -59,6 +59,11 @@ class UiStore(context: Context) {
         defaultValue = ""
     )
 
+    var connectivitySyncIntervalHours: Int by store.int(
+        key = "connectivity_sync_interval_hours",
+        defaultValue = 24,
+    )
+
     var proxyExcludeNotSelectable by store.boolean(
         key = "proxy_exclude_not_selectable",
         defaultValue = false,

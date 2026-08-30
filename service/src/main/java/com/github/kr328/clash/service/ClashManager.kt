@@ -260,6 +260,14 @@ class ClashManager(private val context: Context) : IClashManager,
         return Clash.queryProxyConnectivityStats()
     }
 
+    override fun exportProxyConnectivityStats(): String {
+        return Clash.exportProxyConnectivityStats()
+    }
+
+    override fun replaceProxyConnectivityStats(raw: String): Boolean {
+        return Clash.replaceProxyConnectivityStats(raw)
+    }
+
     override suspend fun healthCheck(group: String) {
         Clash.healthCheck(group).await()
     }

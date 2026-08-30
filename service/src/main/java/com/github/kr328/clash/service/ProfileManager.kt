@@ -1,6 +1,7 @@
 package com.github.kr328.clash.service
 
 import android.content.Context
+import android.net.Uri
 import com.github.kr328.clash.service.data.Database
 import com.github.kr328.clash.service.data.Imported
 import com.github.kr328.clash.service.data.ImportedDao
@@ -9,6 +10,7 @@ import com.github.kr328.clash.service.data.PendingDao
 import com.github.kr328.clash.service.model.Profile
 import com.github.kr328.clash.service.remote.IFetchObserver
 import com.github.kr328.clash.service.remote.IProfileManager
+import com.github.kr328.clash.service.runtimeyaml.RuntimeYamlImporter
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.directoryLastModified
 import com.github.kr328.clash.service.util.generateProfileUUID
@@ -63,6 +65,24 @@ class ProfileManager(private val context: Context) : IProfileManager,
         }
 
         return uuid
+    }
+
+    override suspend fun importRuntimeYaml(name: String, sourceUri: String): UUID {
+        val uuid = create(Profile.Type.File, name)
+
+        try {
+            val configFile = context.pendingDir
+                .resolve(uuid.toString())
+                .resolve("config.yaml")
+            withContext(Dispatchers.IO) {
+                RuntimeYamlImporter.copyCandidate(context, Uri.parse(sourceUri), configFile)
+            }
+            commit(uuid)
+            return uuid
+        } catch (e: Exception) {
+            release(uuid)
+            throw e
+        }
     }
 
     override suspend fun clone(uuid: UUID): UUID {

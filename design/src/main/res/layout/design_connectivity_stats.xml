@@ -35,7 +35,36 @@
                     android:layout_height="wrap_content"
                     android:layout_alignParentStart="true"
                     android:layout_centerVertical="true"
-                    android:layout_toStartOf="@id/clear_all_view" />
+                    android:layout_toStartOf="@id/sync_view" />
+
+                <ImageView
+                    android:id="@+id/sync_view"
+                    android:layout_width="@dimen/item_tailing_component_size"
+                    android:layout_height="@dimen/item_tailing_component_size"
+                    android:layout_centerVertical="true"
+                    android:layout_toStartOf="@id/sync_interval_view"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:contentDescription="@string/connectivity_stats_sync_now"
+                    android:focusable="true"
+                    android:onClick="@{() -> self.requestSync()}"
+                    android:padding="@dimen/toolbar_image_action_padding"
+                    android:src="@drawable/ic_baseline_sync" />
+
+                <TextView
+                    android:id="@+id/sync_interval_view"
+                    android:layout_width="@dimen/item_tailing_component_size"
+                    android:layout_height="@dimen/item_tailing_component_size"
+                    android:layout_centerVertical="true"
+                    android:layout_toStartOf="@id/clear_all_view"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:contentDescription="@string/connectivity_stats_sync_interval"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:onClick="@{() -> self.requestChooseSyncInterval()}"
+                    android:text="@{self.syncIntervalLabel}"
+                    android:textAppearance="@style/TextAppearance.MaterialComponents.Button" />
 
                 <ImageView
                     android:id="@+id/clear_all_view"

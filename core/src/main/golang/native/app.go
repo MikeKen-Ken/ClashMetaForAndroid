@@ -70,6 +70,19 @@ func queryProxyConnectivityStats() *C.char {
 	return marshalJson(rows)
 }
 
+//export exportProxyConnectivityStats
+func exportProxyConnectivityStats() *C.char {
+	return C.CString(connectivity.ExportRaw())
+}
+
+//export replaceProxyConnectivityStats
+func replaceProxyConnectivityStats(raw C.c_string) C.int {
+	if connectivity.ReplaceRaw(C.GoString(raw)) {
+		return 1
+	}
+	return 0
+}
+
 //export notifyInstalledAppsChanged
 func notifyInstalledAppsChanged(uids C.c_string) {
 	u := C.GoString(uids)

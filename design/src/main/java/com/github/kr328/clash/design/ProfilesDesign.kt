@@ -9,17 +9,23 @@ import android.view.animation.AnimationUtils
 import com.github.kr328.clash.design.adapter.ProfileAdapter
 import com.github.kr328.clash.design.databinding.DesignProfilesBinding
 import com.github.kr328.clash.design.databinding.DialogProfilesMenuBinding
+import com.github.kr328.clash.design.databinding.DialogRuntimeYamlMenuBinding
 import com.github.kr328.clash.design.dialog.AppBottomSheetDialog
 import com.github.kr328.clash.design.ui.ToastDuration
 import com.github.kr328.clash.design.util.*
 import com.github.kr328.clash.service.model.Profile
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.resume
 
 class ProfilesDesign(context: Context) : Design<ProfilesDesign.Request>(context) {
     sealed class Request {
         object UpdateAll : Request()
         object Create : Request()
+        object UploadRuntimeYaml : Request()
+        object DownloadRuntimeYaml : Request()
         data class Active(val profile: Profile) : Request()
         data class Update(val profile: Profile) : Request()
         data class Edit(val profile: Profile) : Request()
@@ -90,6 +96,57 @@ class ProfilesDesign(context: Context) : Design<ProfilesDesign.Request>(context)
 
         dialog.setContentView(binding.root)
         dialog.show()
+    }
+
+    fun showRuntimeYamlMenu() {
+        val dialog = AppBottomSheetDialog(context)
+        val menu = DialogRuntimeYamlMenuBinding
+            .inflate(context.layoutInflater, dialog.window?.decorView as ViewGroup?, false)
+
+        menu.master = this
+        menu.self = dialog
+        dialog.setContentView(menu.root)
+        dialog.show()
+    }
+
+    fun requestUploadRuntimeYaml(dialog: Dialog) {
+        dialog.dismiss()
+        requests.trySend(Request.UploadRuntimeYaml)
+    }
+
+    fun requestDownloadRuntimeYaml(dialog: Dialog) {
+        dialog.dismiss()
+        requests.trySend(Request.DownloadRuntimeYaml)
+    }
+
+    suspend fun confirmRuntimeYamlUpload(): Boolean = requestRuntimeYamlConfirmation(
+        R.string.upload_runtime_yaml,
+        R.string.upload_runtime_yaml_confirmation,
+        R.string.upload,
+    )
+
+    suspend fun confirmRuntimeYamlDownload(): Boolean = requestRuntimeYamlConfirmation(
+        R.string.download_runtime_yaml,
+        R.string.download_runtime_yaml_confirmation,
+        R.string.download,
+    )
+
+    private suspend fun requestRuntimeYamlConfirmation(
+        title: Int,
+        message: Int,
+        positiveButton: Int,
+    ): Boolean = suspendCancellableCoroutine { continuation ->
+        val dialog = MaterialAlertDialogBuilder(context)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton(positiveButton) { _, _ -> continuation.resume(true) }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+
+        dialog.setOnDismissListener {
+            if (!continuation.isCompleted) continuation.resume(false)
+        }
+        continuation.invokeOnCancellation { dialog.dismiss() }
     }
 
     fun requestUpdateAll() {

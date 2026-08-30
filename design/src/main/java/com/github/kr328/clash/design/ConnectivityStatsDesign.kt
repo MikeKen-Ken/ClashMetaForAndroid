@@ -10,10 +10,19 @@ import com.github.kr328.clash.design.util.*
 class ConnectivityStatsDesign(
     context: Context,
     rows: List<ConnectivityScoreRow>,
+    intervalHours: Int,
 ) : Design<ConnectivityStatsDesign.Request>(context) {
     sealed class Request {
         data class ClearOne(val name: String) : Request()
         object ClearAll : Request()
+        object Sync : Request()
+        object ChooseSyncInterval : Request()
+    }
+
+    val syncIntervalLabel: String = if (intervalHours == 168) {
+        "7d"
+    } else {
+        "${intervalHours}h"
     }
 
     private val binding = DesignConnectivityStatsBinding
@@ -35,6 +44,14 @@ class ConnectivityStatsDesign(
 
     fun requestClearAll() {
         requests.trySend(Request.ClearAll)
+    }
+
+    fun requestSync() {
+        requests.trySend(Request.Sync)
+    }
+
+    fun requestChooseSyncInterval() {
+        requests.trySend(Request.ChooseSyncInterval)
     }
 
     suspend fun replaceRows(rows: List<ConnectivityScoreRow>) {

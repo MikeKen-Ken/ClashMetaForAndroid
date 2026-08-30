@@ -365,6 +365,14 @@ object Clash {
         return Bridge.nativeQueryProxyConnectivityStats()
     }
 
+    fun exportProxyConnectivityStats(): String {
+        return Bridge.nativeExportProxyConnectivityStats()
+    }
+
+    fun replaceProxyConnectivityStats(raw: String): Boolean {
+        return Bridge.nativeReplaceProxyConnectivityStats(raw)
+    }
+
     fun subscribeLogcat(): ReceiveChannel<LogMessage> {
         return Channel<LogMessage>(32).apply {
             Bridge.nativeSubscribeLogcat(object : LogcatInterface {

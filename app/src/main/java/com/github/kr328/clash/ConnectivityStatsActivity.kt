@@ -1,10 +1,12 @@
 package com.github.kr328.clash
 
 import androidx.appcompat.app.AlertDialog
+import com.github.kr328.clash.connectivitysync.ConnectivityStatsSync
 import com.github.kr328.clash.design.ConnectivityStatsDesign
 import com.github.kr328.clash.design.R
 import com.github.kr328.clash.design.model.ConnectivityScoreRow
 import com.github.kr328.clash.util.withClash
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
@@ -16,7 +18,7 @@ class ConnectivityStatsActivity : BaseActivity<ConnectivityStatsDesign>() {
 
     override suspend fun main() {
         val rows = loadRows()
-        val design = ConnectivityStatsDesign(this, rows)
+        val design = ConnectivityStatsDesign(this, rows, uiStore.connectivitySyncIntervalHours)
         setContentDesign(design)
 
         while (isActive) {
@@ -33,6 +35,10 @@ class ConnectivityStatsActivity : BaseActivity<ConnectivityStatsDesign>() {
                     when (request) {
                         is ConnectivityStatsDesign.Request.ClearOne -> {
                             withClash { clearProxyConnectivityStatsFor(request.name) }
+                            ConnectivityStatsSync.resetBaseline(
+                                this@ConnectivityStatsActivity,
+                                request.name,
+                            )
                             design.replaceRows(loadRows())
                             design.showNativeToast(getString(R.string.connectivity_stats_clear_one, request.name))
                             setResult(RESULT_OK)
@@ -43,6 +49,7 @@ class ConnectivityStatsActivity : BaseActivity<ConnectivityStatsDesign>() {
                                 .setPositiveButton(R.string.connectivity_stats_clear) { _, _ ->
                                     launch {
                                         withClash { clearProxyConnectivityStats() }
+                                        ConnectivityStatsSync.resetBaseline(this@ConnectivityStatsActivity)
                                         design.replaceRows(loadRows())
                                         design.showNativeToast(getString(R.string.connectivity_stats_cleared_all))
                                         setResult(RESULT_OK)
@@ -50,6 +57,12 @@ class ConnectivityStatsActivity : BaseActivity<ConnectivityStatsDesign>() {
                                 }
                                 .setNegativeButton(R.string.cancel, null)
                                 .show()
+                        }
+                        ConnectivityStatsDesign.Request.Sync -> {
+                            mergeConnectivityStatistics(design)
+                        }
+                        ConnectivityStatsDesign.Request.ChooseSyncInterval -> {
+                            chooseSyncInterval()
                         }
                     }
                 }
@@ -63,5 +76,59 @@ class ConnectivityStatsActivity : BaseActivity<ConnectivityStatsDesign>() {
         return runCatching {
             json.decodeFromString(ListSerializer(ConnectivityScoreRow.serializer()), raw)
         }.getOrDefault(emptyList())
+    }
+
+    private suspend fun mergeConnectivityStatistics(design: ConnectivityStatsDesign) {
+        if (!ConnectivityStatsSync.isConfigured(uiStore)) {
+            design.showNativeToast(getString(R.string.connectivity_stats_sync_webdav_required))
+            return
+        }
+        try {
+            val result = ConnectivityStatsSync.merge(
+                context = this@ConnectivityStatsActivity,
+                store = uiStore,
+                readLocal = { withClash { exportProxyConnectivityStats() } },
+                replaceLocal = { raw -> withClash { replaceProxyConnectivityStats(raw) } },
+            )
+            design.replaceRows(loadRows())
+            design.showNativeToast(
+                resources.getQuantityString(
+                    R.plurals.connectivity_stats_sync_success,
+                    result.deviceCount,
+                    result.deviceCount,
+                ),
+            )
+            setResult(RESULT_OK)
+        } catch (error: Throwable) {
+            if (error is CancellationException) throw error
+            design.showNativeToast(
+                getString(
+                    R.string.connectivity_stats_sync_failed,
+                    error.message ?: error.javaClass.simpleName,
+                ),
+            )
+        }
+    }
+
+    private fun chooseSyncInterval() {
+        val values = ConnectivityStatsSync.intervalOptions
+        val labels = arrayOf(
+            getString(R.string.connectivity_stats_interval_1h),
+            getString(R.string.connectivity_stats_interval_6h),
+            getString(R.string.connectivity_stats_interval_12h),
+            getString(R.string.connectivity_stats_interval_24h),
+            getString(R.string.connectivity_stats_interval_48h),
+            getString(R.string.connectivity_stats_interval_7d),
+        )
+        val selected = values.indexOf(uiStore.connectivitySyncIntervalHours).coerceAtLeast(0)
+        AlertDialog.Builder(this)
+            .setTitle(R.string.connectivity_stats_sync_interval_title)
+            .setSingleChoiceItems(labels, selected) { dialog, index ->
+                uiStore.connectivitySyncIntervalHours = values[index]
+                dialog.dismiss()
+                recreate()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 }

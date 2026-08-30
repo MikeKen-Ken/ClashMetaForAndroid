@@ -10,6 +10,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.common.util.ticker
+import com.github.kr328.clash.connectivitysync.ConnectivityStatsSync
 import com.github.kr328.clash.design.MainDesign
 import com.github.kr328.clash.design.ui.ToastDuration
 import com.github.kr328.clash.util.startClashService
@@ -18,7 +19,9 @@ import com.github.kr328.clash.util.withClash
 import com.github.kr328.clash.util.withProfile
 import com.github.kr328.clash.core.bridge.*
 import com.github.kr328.clash.update.AppUpdateFlow
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
@@ -39,6 +42,13 @@ class MainActivity : BaseActivity<MainDesign>() {
         setContentDesign(design)
 
         design.fetch()
+
+        launch {
+            while (isActive) {
+                autoMergeConnectivityStatistics(design)
+                delay(TimeUnit.MINUTES.toMillis(1))
+            }
+        }
 
         val ticker = ticker(TimeUnit.SECONDS.toMillis(1))
 
@@ -144,6 +154,29 @@ class MainActivity : BaseActivity<MainDesign>() {
     private suspend fun MainDesign.fetchTraffic() {
         withClash {
             setForwarded(queryTrafficTotal())
+        }
+    }
+
+    private suspend fun autoMergeConnectivityStatistics(design: MainDesign) {
+        if (!clashRunning || !ConnectivityStatsSync.isConfigured(uiStore)) return
+        if (!ConnectivityStatsSync.isDue(this, uiStore.connectivitySyncIntervalHours)) return
+        try {
+            val result = ConnectivityStatsSync.merge(
+                context = this@MainActivity,
+                store = uiStore,
+                readLocal = { withClash { exportProxyConnectivityStats() } },
+                replaceLocal = { raw -> withClash { replaceProxyConnectivityStats(raw) } },
+            )
+            design.showNativeToast(
+                resources.getQuantityString(
+                    R.plurals.connectivity_stats_sync_success,
+                    result.deviceCount,
+                    result.deviceCount,
+                ),
+            )
+        } catch (error: Throwable) {
+            if (error is CancellationException) throw error
+            // Automatic sync retries when the interval check runs again.
         }
     }
 

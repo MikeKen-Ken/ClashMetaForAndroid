@@ -290,6 +290,46 @@ func persistConnectivityStats() {
 	_ = os.WriteFile(statsFilePath(), data, 0o644)
 }
 
+// ExportRaw returns the authoritative version-2 per-day counters for WebDAV sync.
+func ExportRaw() string {
+	statsMu.Lock()
+	defer statsMu.Unlock()
+	ensureStatsLoaded()
+	if pruneExpiredEntries(time.Now()) {
+		persistConnectivityStats()
+	}
+	payload := statsFileV2{V: 2, Data: statsCache}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return `{"v":2,"data":{}}`
+	}
+	return string(data)
+}
+
+// ReplaceRaw atomically replaces the aggregate counters after a validated merge.
+func ReplaceRaw(raw string) bool {
+	var payload statsFileV2
+	if json.Unmarshal([]byte(raw), &payload) != nil || payload.V != 2 || payload.Data == nil {
+		return false
+	}
+	for _, entry := range payload.Data {
+		for _, counts := range entry.Days {
+			if counts.Success < 0 || counts.Failure < 0 || counts.DelaySum < 0 {
+				return false
+			}
+		}
+	}
+
+	statsMu.Lock()
+	defer statsMu.Unlock()
+	statsCache = payload.Data
+	lastFailureAt = make(map[string]time.Time)
+	statsLoaded = true
+	_ = pruneExpiredEntries(time.Now())
+	persistConnectivityStats()
+	return true
+}
+
 // RecordDelayTestResult 成功记真实 delay，失败记 timeout 惩罚延迟，最多保留 30 天。
 // 同一节点在 failureMinInterval 内的重复失败只记一次。
 func RecordDelayTestResult(proxyName string, delay int, timeoutMs int) {
