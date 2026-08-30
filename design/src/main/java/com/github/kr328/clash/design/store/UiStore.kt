@@ -1,6 +1,7 @@
 package com.github.kr328.clash.design.store
 
 import android.content.Context
+import com.github.kr328.clash.common.secret.SecretString
 import com.github.kr328.clash.common.store.Store
 import com.github.kr328.clash.common.store.asStoreProvider
 import com.github.kr328.clash.core.model.ProxySort
@@ -54,10 +55,26 @@ class UiStore(context: Context) {
         defaultValue = ""
     )
 
-    var webdavPassword: String by store.string(
+    private var webdavPasswordStored: String by store.string(
         key = "webdav_password",
         defaultValue = ""
     )
+
+    var webdavPassword: String
+        get() {
+            val stored = webdavPasswordStored
+            val plain = SecretString.unwrap(stored)
+            if (plain.isNotEmpty() &&
+                (!SecretString.isWrapped(stored) || plain == stored) &&
+                SecretString.canWrap()
+            ) {
+                webdavPasswordStored = SecretString.wrap(plain)
+            }
+            return plain
+        }
+        set(value) {
+            webdavPasswordStored = SecretString.wrap(value)
+        }
 
     var connectivitySyncIntervalHours: Int by store.int(
         key = "connectivity_sync_interval_hours",

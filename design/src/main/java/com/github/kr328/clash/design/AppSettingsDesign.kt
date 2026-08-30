@@ -206,6 +206,8 @@ class AppSettingsDesign(
                 icon = R.drawable.ic_baseline_vpn_lock,
                 title = R.string.webdav_password,
                 placeholder = R.string.webdav_not_set,
+                secret = true,
+                secretSummary = R.string.webdav_password_set,
             )
 
             clickable(

@@ -13,6 +13,8 @@ interface EditableTextPreference : ClickablePreference {
     var placeholder: CharSequence?
     var empty: CharSequence?
     var text: String?
+    var secret: Boolean
+    var secretSummary: CharSequence?
 }
 
 fun <T> PreferenceScreen.editableText(
@@ -22,11 +24,15 @@ fun <T> PreferenceScreen.editableText(
     @DrawableRes icon: Int? = null,
     @StringRes placeholder: Int? = null,
     @StringRes empty: Int? = null,
+    secret: Boolean = false,
+    @StringRes secretSummary: Int? = null,
     configure: EditableTextPreference.() -> Unit = {},
 ): EditableTextPreference {
     val impl = object : EditableTextPreference, ClickablePreference by clickable(title, icon) {
         override var placeholder: CharSequence? = null
         override var empty: CharSequence? = null
+        override var secret: Boolean = false
+        override var secretSummary: CharSequence? = null
         override var text: String? = null
             set(value) {
                 field = value
@@ -37,6 +43,9 @@ fun <T> PreferenceScreen.editableText(
                     }
                     value.isEmpty() -> {
                         this.summary = this.empty
+                    }
+                    this.secret -> {
+                        this.summary = this.secretSummary ?: value
                     }
                     else -> {
                         this.summary = value
@@ -53,6 +62,11 @@ fun <T> PreferenceScreen.editableText(
         impl.empty = context.getText(empty)
     }
 
+    impl.secret = secret
+    if (secretSummary != null) {
+        impl.secretSummary = context.getText(secretSummary)
+    }
+
     impl.configure()
 
     launch(Dispatchers.Main) {
@@ -67,6 +81,7 @@ fun <T> PreferenceScreen.editableText(
                     title = impl.title,
                     reset = context.getText(R.string.reset),
                     hint = impl.title,
+                    password = impl.secret,
                 )
 
                 val newValue = withContext(Dispatchers.IO) {

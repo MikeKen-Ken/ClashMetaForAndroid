@@ -29,6 +29,7 @@ object ConnectivityStatsSync {
     suspend fun isDue(context: Context, intervalHours: Int): Boolean = withContext(Dispatchers.IO) {
         val state = loadState(context)
         val intervalMillis = intervalHours.coerceAtLeast(1) * 60L * 60L * 1000L
+        // lastSyncAt is persisted on disk so closing the app does not reset the 24h clock.
         System.currentTimeMillis() - state.lastSyncAt >= intervalMillis
     }
 

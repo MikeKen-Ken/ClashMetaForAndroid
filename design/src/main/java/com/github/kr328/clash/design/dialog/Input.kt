@@ -1,12 +1,14 @@
 package com.github.kr328.clash.design.dialog
 
 import android.content.Context
+import android.text.InputType
 import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.doOnTextChanged
 import com.github.kr328.clash.design.R
 import com.github.kr328.clash.design.databinding.DialogTextFieldBinding
 import com.github.kr328.clash.design.util.*
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
@@ -16,8 +18,9 @@ suspend fun Context.requestModelTextInput(
     hint: CharSequence? = null,
     error: CharSequence? = null,
     validator: Validator = ValidatorAcceptAll,
+    password: Boolean = false,
 ): String {
-    return this.requestModelTextInput(initial, title, null, hint, error, validator)!!
+    return this.requestModelTextInput(initial, title, null, hint, error, validator, password)!!
 }
 
 suspend fun Context.requestModelTextInput(
@@ -27,6 +30,7 @@ suspend fun Context.requestModelTextInput(
     hint: CharSequence? = null,
     error: CharSequence? = null,
     validator: Validator = ValidatorAcceptAll,
+    password: Boolean = false,
 ): String? {
     return suspendCancellableCoroutine {
         val binding = DialogTextFieldBinding
@@ -65,6 +69,12 @@ suspend fun Context.requestModelTextInput(
         dialog.setOnShowListener {
             if (hint != null)
                 binding.textLayout.hint = hint
+
+            if (password) {
+                binding.textLayout.endIconMode = TextInputLayout.END_ICON_PASSWORD_TOGGLE
+                binding.textField.inputType =
+                    InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            }
 
             binding.textField.apply {
                 binding.textLayout.isErrorEnabled = error != null
