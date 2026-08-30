@@ -1,10 +1,5 @@
 package com.github.kr328.clash
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import androidx.activity.result.contract.ActivityResultContracts
 import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.common.util.setUUID
 import com.github.kr328.clash.common.util.ticker
@@ -12,7 +7,7 @@ import com.github.kr328.clash.design.ProfilesDesign
 import com.github.kr328.clash.design.R
 import com.github.kr328.clash.design.ui.ToastDuration
 import com.github.kr328.clash.design.util.showExceptionToast
-import com.github.kr328.clash.runtimeyaml.RuntimeYamlDocuments
+import com.github.kr328.clash.runtimeyaml.RuntimeYamlWebDav
 import com.github.kr328.clash.service.model.Profile
 import com.github.kr328.clash.util.withClash
 import com.github.kr328.clash.util.withProfile
@@ -102,17 +97,13 @@ class ProfilesActivity : BaseActivity<ProfilesDesign>() {
     }
 
     private suspend fun uploadRuntimeYaml(design: ProfilesDesign) {
+        if (blockIfWebDavUnavailable(design)) return
         if (!design.confirmRuntimeYamlUpload()) return
 
-        val source = startActivityForResult(
-            ActivityResultContracts.OpenDocument(),
-            arrayOf("application/yaml", "text/yaml", "text/plain", "application/octet-stream"),
-        ) ?: return
-
         try {
-            val profileName = RuntimeYamlDocuments.profileName(contentResolver, source)
+            val content = RuntimeYamlWebDav.download(uiStore).toString(Charsets.UTF_8)
             withProfile {
-                val uuid = importRuntimeYaml(profileName, source.toString())
+                val uuid = importRuntimeYaml("Imported runtime YAML", content)
                 val profile = queryByUUID(uuid)
                     ?: error("Imported runtime YAML profile was not found")
                 setActive(profile)
@@ -125,6 +116,7 @@ class ProfilesActivity : BaseActivity<ProfilesDesign>() {
     }
 
     private suspend fun downloadRuntimeYaml(design: ProfilesDesign) {
+        if (blockIfWebDavUnavailable(design)) return
         if (!design.confirmRuntimeYamlDownload()) return
         if (!clashRunning) {
             design.showToast(R.string.runtime_yaml_requires_running, ToastDuration.Long)
@@ -138,18 +130,23 @@ class ProfilesActivity : BaseActivity<ProfilesDesign>() {
             val yaml = withClash { queryRuntimeYamlByProfile(profileDirectory.absolutePath) }
                 .takeIf(String::isNotBlank)
                 ?: error(getString(R.string.runtime_yaml_not_available))
-            val destination = startActivityForResult(
-                ActivityResultContracts.CreateDocument("application/yaml"),
-                RuntimeYamlDocuments.defaultExportName(),
-            ) ?: return
-
-            withContext(Dispatchers.IO) {
-                RuntimeYamlDocuments.write(contentResolver, destination, yaml)
-            }
+            RuntimeYamlWebDav.upload(uiStore, yaml.toByteArray(Charsets.UTF_8))
             design.showToast(R.string.runtime_yaml_exported, ToastDuration.Long)
         } catch (e: Exception) {
             design.showExceptionToast(e)
         }
+    }
+
+    private suspend fun blockIfWebDavUnavailable(design: ProfilesDesign): Boolean {
+        if (!RuntimeYamlWebDav.hasCredentials(uiStore)) {
+            design.showToast(R.string.webdav_not_configured, ToastDuration.Long)
+            return true
+        }
+        if (!RuntimeYamlWebDav.isConfigured(uiStore)) {
+            design.showToast(R.string.runtime_yaml_webdav_https_required, ToastDuration.Long)
+            return true
+        }
+        return false
     }
 
     override fun onProfileUpdateCompleted(uuid: UUID?) {

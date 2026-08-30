@@ -506,12 +506,13 @@
     <string name="runtime_yaml_actions">Runtime YAML upload and download</string>
     <string name="upload_runtime_yaml">Upload runtime YAML</string>
     <string name="download_runtime_yaml">Download runtime YAML</string>
-    <string name="upload_runtime_yaml_confirmation">Select a runtime YAML to import as a new local profile. It will be activated only after validation, and the current profile stays active if validation fails.</string>
-    <string name="download_runtime_yaml_confirmation">Save a copy of the currently generated runtime YAML? The file can contain server addresses and credentials.</string>
+    <string name="upload_runtime_yaml_confirmation">Download the shared runtime YAML from WebDAV and import it as a new local profile? It will be activated only after validation, and the current profile stays active if validation fails.</string>
+    <string name="download_runtime_yaml_confirmation">Upload the currently generated runtime YAML to WebDAV? The file can contain server addresses and credentials.</string>
     <string name="runtime_yaml_imported">Runtime YAML imported and activation requested.</string>
-    <string name="runtime_yaml_exported">Runtime YAML exported.</string>
+    <string name="runtime_yaml_exported">Runtime YAML uploaded to WebDAV.</string>
     <string name="runtime_yaml_requires_running">Start Clash.Meta before downloading the runtime YAML.</string>
     <string name="runtime_yaml_not_available">The runtime YAML is not available.</string>
+    <string name="runtime_yaml_webdav_https_required">Runtime YAML transfer requires an HTTPS WebDAV URL</string>
     <string name="upload">Upload</string>
     <string name="download">Download</string>
 </resources>

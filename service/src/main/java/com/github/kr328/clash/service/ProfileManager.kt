@@ -1,7 +1,6 @@
 package com.github.kr328.clash.service
 
 import android.content.Context
-import android.net.Uri
 import com.github.kr328.clash.service.data.Database
 import com.github.kr328.clash.service.data.Imported
 import com.github.kr328.clash.service.data.ImportedDao
@@ -67,7 +66,7 @@ class ProfileManager(private val context: Context) : IProfileManager,
         return uuid
     }
 
-    override suspend fun importRuntimeYaml(name: String, sourceUri: String): UUID {
+    override suspend fun importRuntimeYaml(name: String, yamlContent: String): UUID {
         val uuid = create(Profile.Type.File, name)
 
         try {
@@ -75,7 +74,7 @@ class ProfileManager(private val context: Context) : IProfileManager,
                 .resolve(uuid.toString())
                 .resolve("config.yaml")
             withContext(Dispatchers.IO) {
-                RuntimeYamlImporter.copyCandidate(context, Uri.parse(sourceUri), configFile)
+                RuntimeYamlImporter.writeCandidate(configFile, yamlContent)
             }
             commit(uuid)
             return uuid
