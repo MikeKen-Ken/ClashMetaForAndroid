@@ -45,7 +45,7 @@ class MainActivity : BaseActivity<MainDesign>() {
 
         launch {
             while (isActive) {
-                autoMergeConnectivityStatistics(design)
+                autoMergeConnectivityStatistics()
                 delay(TimeUnit.MINUTES.toMillis(1))
             }
         }
@@ -157,22 +157,15 @@ class MainActivity : BaseActivity<MainDesign>() {
         }
     }
 
-    private suspend fun autoMergeConnectivityStatistics(design: MainDesign) {
+    private suspend fun autoMergeConnectivityStatistics() {
         if (!clashRunning || !ConnectivityStatsSync.isConfigured(uiStore)) return
         if (!ConnectivityStatsSync.isDue(this, uiStore.connectivitySyncIntervalHours)) return
         try {
-            val result = ConnectivityStatsSync.merge(
+            ConnectivityStatsSync.merge(
                 context = this@MainActivity,
                 store = uiStore,
                 readLocal = { withClash { exportProxyConnectivityStats() } },
                 replaceLocal = { raw -> withClash { replaceProxyConnectivityStats(raw) } },
-            )
-            design.showNativeToast(
-                resources.getQuantityString(
-                    R.plurals.connectivity_stats_sync_success,
-                    result.deviceCount,
-                    result.deviceCount,
-                ),
             )
         } catch (error: Throwable) {
             if (error is CancellationException) throw error

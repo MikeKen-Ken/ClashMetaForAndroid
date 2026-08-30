@@ -79,8 +79,12 @@ class ConnectivityStatsActivity : BaseActivity<ConnectivityStatsDesign>() {
     }
 
     private suspend fun mergeConnectivityStatistics(design: ConnectivityStatsDesign) {
-        if (!ConnectivityStatsSync.isConfigured(uiStore)) {
+        if (!ConnectivityStatsSync.hasCredentials(uiStore)) {
             design.showNativeToast(getString(R.string.connectivity_stats_sync_webdav_required))
+            return
+        }
+        if (!ConnectivityStatsSync.isConfigured(uiStore)) {
+            design.showNativeToast(getString(R.string.connectivity_stats_sync_https_required))
             return
         }
         try {

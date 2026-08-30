@@ -495,6 +495,7 @@
     </plurals>
     <string name="connectivity_stats_sync_failed">Connectivity statistics merge failed: %s</string>
     <string name="connectivity_stats_sync_webdav_required">Configure WebDAV before syncing connectivity statistics</string>
+    <string name="connectivity_stats_sync_https_required">Connectivity statistics sync requires an HTTPS WebDAV URL</string>
     <string name="connectivity_stats_interval_1h">1 hour</string>
     <string name="connectivity_stats_interval_6h">6 hours</string>
     <string name="connectivity_stats_interval_12h">12 hours</string>

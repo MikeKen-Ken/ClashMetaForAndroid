@@ -132,5 +132,9 @@ internal class ConnectivityStatsWebDav(private val store: UiStore) {
 
         fun isValidDeviceId(value: String): Boolean = value.length in 1..64 &&
             value.all { it.isLetterOrDigit() || it == '-' || it == '_' }
+
+        fun tooManyDevices(listed: Collection<String>, ownDeviceId: String): Boolean =
+            listed.size > MAX_REMOTE_DEVICES ||
+                (ownDeviceId !in listed && listed.size >= MAX_REMOTE_DEVICES)
     }
 }

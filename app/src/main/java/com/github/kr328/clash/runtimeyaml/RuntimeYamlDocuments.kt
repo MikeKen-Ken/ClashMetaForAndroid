@@ -23,8 +23,7 @@ object RuntimeYamlDocuments {
 
     fun profileName(contentResolver: ContentResolver, uri: Uri): String {
         val fileName = displayName(contentResolver, uri)
-            ?.removeSuffix(".yaml")
-            ?.removeSuffix(".yml")
+            ?.replace(Regex("\\.ya?ml$", RegexOption.IGNORE_CASE), "")
             ?.trim()
         return fileName?.takeIf(String::isNotEmpty) ?: "Imported runtime YAML"
     }

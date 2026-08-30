@@ -20,7 +20,10 @@ object ConnectivityStatsSync {
     private val mutex = Mutex()
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
-    fun isConfigured(store: UiStore): Boolean = store.webdavUrl.isNotBlank() &&
+    fun isConfigured(store: UiStore): Boolean = hasCredentials(store) &&
+        store.webdavUrl.trim().startsWith("https://", ignoreCase = true)
+
+    fun hasCredentials(store: UiStore): Boolean = store.webdavUrl.isNotBlank() &&
         store.webdavUsername.isNotBlank() && store.webdavPassword.isNotBlank()
 
     suspend fun isDue(context: Context, intervalHours: Int): Boolean = withContext(Dispatchers.IO) {
@@ -46,23 +49,24 @@ object ConnectivityStatsSync {
                 ConnectivityStatsMerge.subtract(current, state.lastOthers),
             )
             val now = System.currentTimeMillis()
-            val ownSnapshot = DeviceSnapshot(
-                deviceId = state.deviceId,
-                updatedAt = now,
-                data = own,
-            )
-            val ownBytes = json.encodeToString(DeviceSnapshot.serializer(), ownSnapshot)
-                .encodeToByteArray()
-            webDav.upload(state.deviceId, ownBytes)
+            val listed = webDav.listDeviceIds()
+            check(!ConnectivityStatsWebDav.tooManyDevices(listed, state.deviceId)) {
+                "Too many connectivity sync devices"
+            }
 
             val snapshots = linkedMapOf<String, StatsData>()
-            webDav.listDeviceIds().forEach { deviceId ->
-                val snapshot = json.decodeFromString(
-                    DeviceSnapshot.serializer(),
-                    webDav.download(deviceId).decodeToString(),
-                )
-                check(snapshot.v == PROTOCOL_VERSION && snapshot.deviceId == deviceId) {
-                    "Connectivity snapshot identity mismatch"
+            listed.forEach { deviceId ->
+                val snapshot = runCatching {
+                    json.decodeFromString(
+                        DeviceSnapshot.serializer(),
+                        webDav.download(deviceId).decodeToString(),
+                    )
+                }.getOrNull()
+                if (snapshot == null ||
+                    snapshot.v != PROTOCOL_VERSION ||
+                    snapshot.deviceId != deviceId
+                ) {
+                    return@forEach
                 }
                 snapshots[deviceId] = ConnectivityStatsMerge.prune(snapshot.data)
             }
@@ -83,6 +87,16 @@ object ConnectivityStatsSync {
                     lastOthers = others,
                     lastSyncAt = now,
                 ),
+            )
+            val ownSnapshot = DeviceSnapshot(
+                deviceId = state.deviceId,
+                updatedAt = now,
+                data = own,
+            )
+            webDav.upload(
+                state.deviceId,
+                json.encodeToString(DeviceSnapshot.serializer(), ownSnapshot)
+                    .encodeToByteArray(),
             )
             ConnectivitySyncResult(
                 deviceCount = snapshots.size,
