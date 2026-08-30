@@ -500,6 +500,18 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeReplaceProxyConnectivitySta
     return replaceProxyConnectivityStats(_raw) != 0;
 }
 
+JNIEXPORT jstring JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeMergeProxyConnectivityStats(JNIEnv *env, jobject thiz,
+                                                                                 jstring previous_others,
+                                                                                 jstring remote_others) {
+    TRACE_METHOD();
+
+    scoped_string _previous_others = get_string(previous_others);
+    scoped_string _remote_others = get_string(remote_others);
+    scoped_string response = mergeProxyConnectivityStats(_previous_others, _remote_others);
+    return new_string(response);
+}
+
 JNIEXPORT void JNICALL
 Java_com_github_kr328_clash_core_bridge_Bridge_nativeSubscribeLogcat(JNIEnv *env, jobject thiz,
                                                                      jobject callback) {

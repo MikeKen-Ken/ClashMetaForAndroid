@@ -35,8 +35,7 @@ object ConnectivityStatsSync {
     suspend fun merge(
         context: Context,
         store: UiStore,
-        readLocal: suspend () -> String,
-        replaceLocal: suspend (String) -> Boolean,
+        mergeLocal: suspend (previousOthers: String, remoteOthers: String) -> String,
     ): ConnectivitySyncResult = mutex.withLock {
         withContext(Dispatchers.IO) {
             val webDav = ConnectivityStatsWebDav(store)
@@ -44,10 +43,6 @@ object ConnectivityStatsSync {
             webDav.prepareCollections()
 
             val state = loadState(context)
-            val current = decodeStats(readLocal())
-            val own = ConnectivityStatsMerge.prune(
-                ConnectivityStatsMerge.subtract(current, state.lastOthers),
-            )
             val now = System.currentTimeMillis()
             val listed = webDav.listDeviceIds()
             check(!ConnectivityStatsWebDav.tooManyDevices(listed, state.deviceId)) {
@@ -70,28 +65,36 @@ object ConnectivityStatsSync {
                 }
                 snapshots[deviceId] = ConnectivityStatsMerge.prune(snapshot.data)
             }
-            snapshots.putIfAbsent(state.deviceId, own)
-            val merged = ConnectivityStatsMerge.sum(snapshots.values)
-            val others = ConnectivityStatsMerge.sum(
+            val remoteOthers = ConnectivityStatsMerge.sum(
                 snapshots.filterKeys { it != state.deviceId }.values,
             )
-            val payload = json.encodeToString(
+            val previousOthersPayload = json.encodeToString(
                 StatsFile.serializer(),
-                StatsFile(v = STORE_VERSION, data = merged),
+                StatsFile(v = STORE_VERSION, data = state.lastOthers),
             )
-            check(replaceLocal(payload)) { "Core rejected merged connectivity statistics" }
+            val remoteOthersPayload = json.encodeToString(
+                StatsFile.serializer(),
+                StatsFile(v = STORE_VERSION, data = remoteOthers),
+            )
+            val localResult = json.decodeFromString(
+                CoreConnectivityMergeResult.serializer(),
+                mergeLocal(previousOthersPayload, remoteOthersPayload),
+            )
+            check(localResult.ok) {
+                localResult.error ?: "Core rejected merged connectivity statistics"
+            }
             saveState(
                 context,
                 SyncState(
                     deviceId = state.deviceId,
-                    lastOthers = others,
+                    lastOthers = remoteOthers,
                     lastSyncAt = now,
                 ),
             )
             val ownSnapshot = DeviceSnapshot(
                 deviceId = state.deviceId,
                 updatedAt = now,
-                data = own,
+                data = localResult.own,
             )
             runCatching {
                 webDav.upload(
@@ -101,8 +104,8 @@ object ConnectivityStatsSync {
                 )
             }
             ConnectivitySyncResult(
-                deviceCount = snapshots.size,
-                proxyCount = merged.size,
+                deviceCount = (snapshots.keys + state.deviceId).size,
+                proxyCount = localResult.merged.size,
                 lastSyncAt = now,
             )
         }
@@ -118,12 +121,6 @@ object ConnectivityStatsSync {
             }
             saveState(context, state.copy(lastOthers = remaining))
         }
-    }
-
-    private fun decodeStats(raw: String): StatsData {
-        val file = json.decodeFromString(StatsFile.serializer(), raw)
-        check(file.v == STORE_VERSION) { "Unsupported connectivity statistics version" }
-        return ConnectivityStatsMerge.prune(file.data)
     }
 
     private fun loadState(context: Context): SyncState {

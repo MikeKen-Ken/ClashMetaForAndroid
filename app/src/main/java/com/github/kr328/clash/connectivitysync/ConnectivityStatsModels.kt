@@ -38,6 +38,14 @@ internal data class SyncState(
     val lastSyncAt: Long = 0,
 )
 
+@Serializable
+internal data class CoreConnectivityMergeResult(
+    val ok: Boolean,
+    val error: String? = null,
+    val own: StatsData = emptyMap(),
+    val merged: StatsData = emptyMap(),
+)
+
 data class ConnectivitySyncResult(
     val deviceCount: Int,
     val proxyCount: Int,

@@ -20,7 +20,7 @@
             android:layout_height="wrap_content"
             android:onClick="@{() -> master.requestUploadRuntimeYaml(self)}"
             android:padding="@dimen/bottom_sheet_menu_items_padding"
-            app:icon="@drawable/ic_baseline_attach_file"
+            app:icon="@drawable/ic_baseline_cloud_upload"
             app:text="@string/upload_runtime_yaml" />
 
         <com.github.kr328.clash.design.view.LargeActionLabel

@@ -26,6 +26,12 @@ A connectivity sync module owns the merge interface on each client.
   The next local contribution is the current aggregate minus that remembered
   contribution, using saturating subtraction. Remote snapshots are then summed
   once by device ID and written back as the new local aggregate.
+- The authoritative local statistics file stores its imported-device baseline
+  in an optional `_sync` metadata object. The aggregate and baseline are updated
+  in one atomic local transaction after WebDAV I/O completes. The Android core
+  mutex and the desktop cross-process statistics lock are the transaction seams,
+  so delay tests recorded during WebDAV requests are preserved and retries after
+  a crash remain idempotent.
 - Sync is merge-only: another device's retained contribution is never deleted by
   a local clear. Expired days disappear through normal retention.
 - Clients run an opportunistic automatic sync when the configured interval is due.

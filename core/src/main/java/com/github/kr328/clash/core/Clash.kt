@@ -373,6 +373,10 @@ object Clash {
         return Bridge.nativeReplaceProxyConnectivityStats(raw)
     }
 
+    fun mergeProxyConnectivityStats(previousOthers: String, remoteOthers: String): String {
+        return Bridge.nativeMergeProxyConnectivityStats(previousOthers, remoteOthers)
+    }
+
     fun subscribeLogcat(): ReceiveChannel<LogMessage> {
         return Channel<LogMessage>(32).apply {
             Bridge.nativeSubscribeLogcat(object : LogcatInterface {

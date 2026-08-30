@@ -70,6 +70,10 @@ object Bridge {
     external fun nativeQueryProxyConnectivityStats(): String
     external fun nativeExportProxyConnectivityStats(): String
     external fun nativeReplaceProxyConnectivityStats(raw: String): Boolean
+    external fun nativeMergeProxyConnectivityStats(
+        previousOthers: String,
+        remoteOthers: String,
+    ): String
     external fun nativeSubscribeLogcat(callback: LogcatInterface)
     external fun nativeUnsubscribeLogcat()
     external fun nativeSubscribeHealthCheck(callback: HealthCheckCallback)

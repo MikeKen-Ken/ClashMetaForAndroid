@@ -2,8 +2,10 @@ package connectivity
 
 import (
 	"encoding/json"
+	"errors"
 	"math"
 	"os"
+	"path/filepath"
 	"sort"
 	"sync"
 	"time"
@@ -23,9 +25,9 @@ const (
 )
 
 type dayCounts struct {
-	Success  int `json:"s"`
-	Failure  int `json:"f"`
-	DelaySum int `json:"ds,omitempty"`
+	Success  int64 `json:"s"`
+	Failure  int64 `json:"f"`
+	DelaySum int64 `json:"ds,omitempty"`
 }
 
 type proxyConnectivityEntry struct {
@@ -35,11 +37,23 @@ type proxyConnectivityEntry struct {
 type statsFileV2 struct {
 	V    int                               `json:"v"`
 	Data map[string]proxyConnectivityEntry `json:"data"`
+	Sync *statsSyncState                   `json:"_sync,omitempty"`
+}
+
+type statsSyncState struct {
+	LastOthers map[string]proxyConnectivityEntry `json:"lastOthers"`
+}
+
+type statsSyncMergeResult struct {
+	OK     bool                              `json:"ok"`
+	Error  string                            `json:"error,omitempty"`
+	Own    map[string]proxyConnectivityEntry `json:"own,omitempty"`
+	Merged map[string]proxyConnectivityEntry `json:"merged,omitempty"`
 }
 
 type legacyEntry struct {
-	Success int `json:"success"`
-	Failure int `json:"failure"`
+	Success int64 `json:"success"`
+	Failure int64 `json:"failure"`
 }
 
 // WeightedStats 指数衰减加权后的成功/失败/有效延迟总和（可为小数）。
@@ -58,6 +72,8 @@ type ScoreContext struct {
 var (
 	statsMu          sync.Mutex
 	statsCache       map[string]proxyConnectivityEntry
+	statsLastOthers  map[string]proxyConnectivityEntry
+	statsHasBaseline bool
 	statsLoaded      bool
 	lastFailureAt    map[string]time.Time
 	failureMinInterval = failureRecordMinInterval // 单测可改短
@@ -245,12 +261,18 @@ func ensureStatsLoaded() {
 		return
 	}
 	statsCache = make(map[string]proxyConnectivityEntry)
+	statsLastOthers = nil
+	statsHasBaseline = false
 
 	raw, err := os.ReadFile(statsFilePath())
 	if err == nil && len(raw) > 0 {
 		var file statsFileV2
 		if json.Unmarshal(raw, &file) == nil && file.V == 2 && file.Data != nil {
 			statsCache = file.Data
+			if file.Sync != nil {
+				statsLastOthers = pruneStatsData(file.Sync.LastOthers, time.Now())
+				statsHasBaseline = true
+			}
 		} else {
 			var legacy map[string]legacyEntry
 			if json.Unmarshal(raw, &legacy) == nil {
@@ -278,16 +300,51 @@ func ensureStatsLoaded() {
 	statsLoaded = true
 }
 
-func persistConnectivityStats() {
-	if statsCache == nil {
-		return
+func persistConnectivityStatsData(
+	data map[string]proxyConnectivityEntry,
+	lastOthers map[string]proxyConnectivityEntry,
+	hasBaseline bool,
+) error {
+	payload := statsFileV2{V: 2, Data: data}
+	if hasBaseline {
+		payload.Sync = &statsSyncState{LastOthers: lastOthers}
 	}
-	payload := statsFileV2{V: 2, Data: statsCache}
-	data, err := json.Marshal(payload)
+	encoded, err := json.Marshal(payload)
 	if err != nil {
-		return
+		return err
 	}
-	_ = os.WriteFile(statsFilePath(), data, 0o644)
+
+	path := statsFilePath()
+	temporary, err := os.CreateTemp(filepath.Dir(path), ".proxy-connectivity-stats-*.tmp")
+	if err != nil {
+		return err
+	}
+	temporaryPath := temporary.Name()
+	defer os.Remove(temporaryPath)
+
+	if err := temporary.Chmod(0o644); err != nil {
+		_ = temporary.Close()
+		return err
+	}
+	if _, err := temporary.Write(encoded); err != nil {
+		_ = temporary.Close()
+		return err
+	}
+	if err := temporary.Sync(); err != nil {
+		_ = temporary.Close()
+		return err
+	}
+	if err := temporary.Close(); err != nil {
+		return err
+	}
+	return os.Rename(temporaryPath, path)
+}
+
+func persistConnectivityStats() error {
+	if statsCache == nil {
+		return nil
+	}
+	return persistConnectivityStatsData(statsCache, statsLastOthers, statsHasBaseline)
 }
 
 // ExportRaw returns the authoritative version-2 per-day counters for WebDAV sync.
@@ -296,7 +353,7 @@ func ExportRaw() string {
 	defer statsMu.Unlock()
 	ensureStatsLoaded()
 	if pruneExpiredEntries(time.Now()) {
-		persistConnectivityStats()
+		_ = persistConnectivityStats()
 	}
 	payload := statsFileV2{V: 2, Data: statsCache}
 	data, err := json.Marshal(payload)
@@ -322,12 +379,165 @@ func ReplaceRaw(raw string) bool {
 
 	statsMu.Lock()
 	defer statsMu.Unlock()
-	statsCache = payload.Data
+	ensureStatsLoaded()
+	candidate := pruneStatsData(payload.Data, time.Now())
+	if persistConnectivityStatsData(candidate, statsLastOthers, statsHasBaseline) != nil {
+		return false
+	}
+	statsCache = candidate
 	lastFailureAt = make(map[string]time.Time)
 	statsLoaded = true
-	_ = pruneExpiredEntries(time.Now())
-	persistConnectivityStats()
 	return true
+}
+
+func pruneStatsData(
+	data map[string]proxyConnectivityEntry,
+	now time.Time,
+) map[string]proxyConnectivityEntry {
+	pruned := make(map[string]proxyConnectivityEntry)
+	for name, entry := range data {
+		days := make(map[string]dayCounts)
+		for day, counts := range entry.Days {
+			if day >= cutoffDayKey(now) && day <= todayKey(now) &&
+				(counts.Success > 0 || counts.Failure > 0 || counts.DelaySum > 0) {
+				days[day] = counts
+			}
+		}
+		if len(days) > 0 {
+			pruned[name] = proxyConnectivityEntry{Days: days}
+		}
+	}
+	return pruned
+}
+
+func subtractStats(
+	current map[string]proxyConnectivityEntry,
+	imported map[string]proxyConnectivityEntry,
+) map[string]proxyConnectivityEntry {
+	result := make(map[string]proxyConnectivityEntry)
+	for name, entry := range current {
+		days := make(map[string]dayCounts)
+		previousDays := imported[name].Days
+		for day, counts := range entry.Days {
+			previous := previousDays[day]
+			own := dayCounts{
+				Success:  nonNegativeSubtract(counts.Success, previous.Success),
+				Failure:  nonNegativeSubtract(counts.Failure, previous.Failure),
+				DelaySum: nonNegativeSubtract(counts.DelaySum, previous.DelaySum),
+			}
+			if own.Success > 0 || own.Failure > 0 || own.DelaySum > 0 {
+				days[day] = own
+			}
+		}
+		if len(days) > 0 {
+			result[name] = proxyConnectivityEntry{Days: days}
+		}
+	}
+	return result
+}
+
+func nonNegativeSubtract(current, previous int64) int64 {
+	if current <= previous {
+		return 0
+	}
+	return current - previous
+}
+
+func safeAddCount(left, right int64) int64 {
+	const maxSafeCount = 9_007_199_254_740_991
+	if left < 0 || right < 0 {
+		return 0
+	}
+	if left > maxSafeCount-right {
+		return maxSafeCount
+	}
+	return left + right
+}
+
+func sumStats(parts ...map[string]proxyConnectivityEntry) map[string]proxyConnectivityEntry {
+	merged := make(map[string]proxyConnectivityEntry)
+	for _, data := range parts {
+		for name, entry := range data {
+			target := merged[name]
+			if target.Days == nil {
+				target.Days = make(map[string]dayCounts)
+			}
+			for day, counts := range entry.Days {
+				current := target.Days[day]
+				target.Days[day] = dayCounts{
+					Success:  safeAddCount(current.Success, counts.Success),
+					Failure:  safeAddCount(current.Failure, counts.Failure),
+					DelaySum: safeAddCount(current.DelaySum, counts.DelaySum),
+				}
+			}
+			merged[name] = target
+		}
+	}
+	return pruneStatsData(merged, time.Now())
+}
+
+func decodeStatsData(raw string) (map[string]proxyConnectivityEntry, error) {
+	var payload statsFileV2
+	if err := json.Unmarshal([]byte(raw), &payload); err != nil {
+		return nil, err
+	}
+	if payload.V != 2 || payload.Data == nil {
+		return nil, errors.New("unsupported connectivity statistics version")
+	}
+	for _, entry := range payload.Data {
+		for _, counts := range entry.Days {
+			if counts.Success < 0 || counts.Failure < 0 || counts.DelaySum < 0 {
+				return nil, errors.New("negative connectivity statistics")
+			}
+		}
+	}
+	return pruneStatsData(payload.Data, time.Now()), nil
+}
+
+func encodeMergeResult(result statsSyncMergeResult) string {
+	encoded, err := json.Marshal(result)
+	if err != nil {
+		return `{"ok":false,"error":"failed to encode connectivity merge result"}`
+	}
+	return string(encoded)
+}
+
+// MergeRaw owns the final local merge and persists the aggregate and imported
+// baseline together. WebDAV I/O remains outside statsMu.
+func MergeRaw(previousOthersRaw, remoteOthersRaw string) string {
+	fallbackOthers, err := decodeStatsData(previousOthersRaw)
+	if err != nil {
+		return encodeMergeResult(statsSyncMergeResult{OK: false, Error: err.Error()})
+	}
+	remoteOthers, err := decodeStatsData(remoteOthersRaw)
+	if err != nil {
+		return encodeMergeResult(statsSyncMergeResult{OK: false, Error: err.Error()})
+	}
+
+	statsMu.Lock()
+	defer statsMu.Unlock()
+	ensureStatsLoaded()
+
+	baseline := fallbackOthers
+	if statsHasBaseline {
+		baseline = statsLastOthers
+	}
+	own := pruneStatsData(subtractStats(statsCache, baseline), time.Now())
+	merged := sumStats(own, remoteOthers)
+	if err := persistConnectivityStatsData(merged, remoteOthers, true); err != nil {
+		return encodeMergeResult(statsSyncMergeResult{OK: false, Error: err.Error()})
+	}
+
+	statsCache = merged
+	statsLastOthers = remoteOthers
+	statsHasBaseline = true
+	lastFailureAt = make(map[string]time.Time)
+	statsLoaded = true
+	return encodeMergeResult(statsSyncMergeResult{
+		OK:     true,
+		Own:    own,
+		Merged: merged,
+	})
 }
 
 // RecordDelayTestResult 成功记真实 delay，失败记 timeout 惩罚延迟，最多保留 30 天。
@@ -369,10 +579,10 @@ func RecordDelayTestResult(proxyName string, delay int, timeoutMs int) {
 	counts := entry.Days[day]
 	if isSuccess {
 		counts.Success++
-		counts.DelaySum += delay
+		counts.DelaySum += int64(delay)
 	} else {
 		counts.Failure++
-		counts.DelaySum += effectiveTimeout
+		counts.DelaySum += int64(effectiveTimeout)
 		lastFailureAt[proxyName] = now
 	}
 	entry.Days[day] = counts
@@ -385,13 +595,15 @@ func RecordDelayTestResult(proxyName string, delay int, timeoutMs int) {
 	}
 	// 顺带清掉其他节点已过期的空条目，避免换订阅后历史节点名只增不减
 	_ = pruneExpiredEntries(now)
-	persistConnectivityStats()
+	_ = persistConnectivityStats()
 }
 
 func ClearAll() {
 	statsMu.Lock()
 	defer statsMu.Unlock()
 	statsCache = make(map[string]proxyConnectivityEntry)
+	statsLastOthers = nil
+	statsHasBaseline = false
 	lastFailureAt = make(map[string]time.Time)
 	statsLoaded = true
 	_ = os.Remove(statsFilePath())
@@ -409,8 +621,11 @@ func ClearProxy(proxyName string) {
 		return
 	}
 	delete(statsCache, proxyName)
+	if statsHasBaseline {
+		delete(statsLastOthers, proxyName)
+	}
 	delete(lastFailureAt, proxyName)
-	persistConnectivityStats()
+	_ = persistConnectivityStats()
 }
 
 // ScoreRow 面板列表行。

@@ -164,8 +164,11 @@ class MainActivity : BaseActivity<MainDesign>() {
             ConnectivityStatsSync.merge(
                 context = this@MainActivity,
                 store = uiStore,
-                readLocal = { withClash { exportProxyConnectivityStats() } },
-                replaceLocal = { raw -> withClash { replaceProxyConnectivityStats(raw) } },
+                mergeLocal = { previousOthers, remoteOthers ->
+                    withClash {
+                        mergeProxyConnectivityStats(previousOthers, remoteOthers)
+                    }
+                },
             )
         } catch (error: Throwable) {
             if (error is CancellationException) throw error

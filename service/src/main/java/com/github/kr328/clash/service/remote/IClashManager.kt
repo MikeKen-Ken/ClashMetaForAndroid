@@ -47,6 +47,7 @@ interface IClashManager {
     fun queryProxyConnectivityStats(): String
     fun exportProxyConnectivityStats(): String
     fun replaceProxyConnectivityStats(raw: String): Boolean
+    fun mergeProxyConnectivityStats(previousOthers: String, remoteOthers: String): String
 
     fun setLogObserver(observer: ILogObserver?)
 }

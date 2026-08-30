@@ -174,6 +174,64 @@ func TestOlderDayCountsLessThanToday(t *testing.T) {
 	}
 }
 
+func syncTestData(success, failure int64) map[string]proxyConnectivityEntry {
+	day := todayKey(time.Now())
+	return map[string]proxyConnectivityEntry{
+		"node": {
+			Days: map[string]dayCounts{
+				day: {
+					Success:  success,
+					Failure:  failure,
+					DelaySum: success*200 + failure*5000,
+				},
+			},
+		},
+	}
+}
+
+func syncTestCounts(data map[string]proxyConnectivityEntry) dayCounts {
+	return data["node"].Days[todayKey(time.Now())]
+}
+
+func TestSyncMergeUsesFreshLocalContribution(t *testing.T) {
+	current := syncTestData(8, 3)
+	remoteOthers := syncTestData(5, 1)
+	own := subtractStats(current, remoteOthers)
+	merged := sumStats(own, remoteOthers)
+
+	if counts := syncTestCounts(own); counts.Success != 3 || counts.Failure != 2 {
+		t.Fatalf("own=%+v, want s=3 f=2", counts)
+	}
+	if counts := syncTestCounts(merged); counts.Success != 8 || counts.Failure != 3 {
+		t.Fatalf("merged=%+v, want s=8 f=3", counts)
+	}
+}
+
+func TestSyncRetryUsesPersistedBaselineIdempotently(t *testing.T) {
+	current := syncTestData(8, 3)
+	persistedBaseline := syncTestData(5, 1)
+	own := subtractStats(current, persistedBaseline)
+	merged := sumStats(own, persistedBaseline)
+
+	if counts := syncTestCounts(merged); counts.Success != 8 || counts.Failure != 3 {
+		t.Fatalf("retry merged=%+v, want s=8 f=3", counts)
+	}
+}
+
+func TestSyncMergePreservesCountersRecordedDuringWebDav(t *testing.T) {
+	latestCurrent := syncTestData(9, 3)
+	persistedBaseline := syncTestData(5, 1)
+	own := subtractStats(latestCurrent, persistedBaseline)
+	merged := sumStats(own, persistedBaseline)
+
+	if counts := syncTestCounts(own); counts.Success != 4 || counts.Failure != 2 {
+		t.Fatalf("own=%+v, want s=4 f=2", counts)
+	}
+	if counts := syncTestCounts(merged); counts.Success != 9 || counts.Failure != 3 {
+		t.Fatalf("merged=%+v, want s=9 f=3", counts)
+	}
+}
+
 func TestClearProxyRemovesOnlyTarget(t *testing.T) {
 	statsMu.Lock()
 	statsCache = map[string]proxyConnectivityEntry{

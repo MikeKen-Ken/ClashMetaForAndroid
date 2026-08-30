@@ -91,8 +91,11 @@ class ConnectivityStatsActivity : BaseActivity<ConnectivityStatsDesign>() {
             val result = ConnectivityStatsSync.merge(
                 context = this@ConnectivityStatsActivity,
                 store = uiStore,
-                readLocal = { withClash { exportProxyConnectivityStats() } },
-                replaceLocal = { raw -> withClash { replaceProxyConnectivityStats(raw) } },
+                mergeLocal = { previousOthers, remoteOthers ->
+                    withClash {
+                        mergeProxyConnectivityStats(previousOthers, remoteOthers)
+                    }
+                },
             )
             design.replaceRows(loadRows())
             design.showNativeToast(

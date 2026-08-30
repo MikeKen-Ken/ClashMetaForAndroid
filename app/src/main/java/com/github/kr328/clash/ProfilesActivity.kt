@@ -99,9 +99,31 @@ class ProfilesActivity : BaseActivity<ProfilesDesign>() {
     private suspend fun uploadRuntimeYaml(design: ProfilesDesign) {
         if (blockIfWebDavUnavailable(design)) return
         if (!design.confirmRuntimeYamlUpload()) return
+        if (!clashRunning) {
+            design.showToast(R.string.runtime_yaml_requires_running, ToastDuration.Long)
+            return
+        }
 
         try {
-            val cacheFile = File(cacheDir, "runtime-yaml-import.yaml")
+            val activeProfile = withProfile { queryActive() }
+                ?: error(getString(R.string.running_config_no_active_profile))
+            val profileDirectory = File(filesDir, "imported/${activeProfile.uuid}")
+            val yaml = withClash { queryRuntimeYamlByProfile(profileDirectory.absolutePath) }
+                .takeIf(String::isNotBlank)
+                ?: error(getString(R.string.runtime_yaml_not_available))
+            RuntimeYamlWebDav.upload(uiStore, yaml.toByteArray(Charsets.UTF_8))
+            design.showToast(R.string.runtime_yaml_exported, ToastDuration.Long)
+        } catch (e: Exception) {
+            design.showExceptionToast(e)
+        }
+    }
+
+    private suspend fun downloadRuntimeYaml(design: ProfilesDesign) {
+        if (blockIfWebDavUnavailable(design)) return
+        if (!design.confirmRuntimeYamlDownload()) return
+
+        try {
+            val cacheFile = File(filesDir, "runtime-yaml-import.yaml")
             try {
                 val bytes = RuntimeYamlWebDav.download(uiStore)
                 withContext(Dispatchers.IO) {
@@ -118,28 +140,6 @@ class ProfilesActivity : BaseActivity<ProfilesDesign>() {
             }
             design.fetch()
             design.showToast(R.string.runtime_yaml_imported, ToastDuration.Long)
-        } catch (e: Exception) {
-            design.showExceptionToast(e)
-        }
-    }
-
-    private suspend fun downloadRuntimeYaml(design: ProfilesDesign) {
-        if (blockIfWebDavUnavailable(design)) return
-        if (!design.confirmRuntimeYamlDownload()) return
-        if (!clashRunning) {
-            design.showToast(R.string.runtime_yaml_requires_running, ToastDuration.Long)
-            return
-        }
-
-        try {
-            val activeProfile = withProfile { queryActive() }
-                ?: error(getString(R.string.running_config_no_active_profile))
-            val profileDirectory = File(filesDir, "imported/${activeProfile.uuid}")
-            val yaml = withClash { queryRuntimeYamlByProfile(profileDirectory.absolutePath) }
-                .takeIf(String::isNotBlank)
-                ?: error(getString(R.string.runtime_yaml_not_available))
-            RuntimeYamlWebDav.upload(uiStore, yaml.toByteArray(Charsets.UTF_8))
-            design.showToast(R.string.runtime_yaml_exported, ToastDuration.Long)
         } catch (e: Exception) {
             design.showExceptionToast(e)
         }

@@ -83,6 +83,11 @@ func replaceProxyConnectivityStats(raw C.c_string) C.int {
 	return 0
 }
 
+//export mergeProxyConnectivityStats
+func mergeProxyConnectivityStats(previousOthers C.c_string, remoteOthers C.c_string) *C.char {
+	return C.CString(connectivity.MergeRaw(C.GoString(previousOthers), C.GoString(remoteOthers)))
+}
+
 //export notifyInstalledAppsChanged
 func notifyInstalledAppsChanged(uids C.c_string) {
 	u := C.GoString(uids)

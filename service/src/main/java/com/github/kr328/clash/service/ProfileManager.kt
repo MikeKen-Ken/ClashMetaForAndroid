@@ -76,10 +76,11 @@ class ProfileManager(private val context: Context) : IProfileManager,
                 .resolve("config.yaml")
             withContext(Dispatchers.IO) {
                 val source = File(sourcePath).canonicalFile
-                val cacheRoot = context.cacheDir.canonicalFile
-                require(source.path.startsWith(cacheRoot.path + File.separator)) {
-                    "Runtime YAML must be imported from app cache"
+                val allowed = listOf(context.cacheDir, context.filesDir).any { root ->
+                    val rootPath = root.canonicalFile.path
+                    source.path == rootPath || source.path.startsWith(rootPath + File.separator)
                 }
+                require(allowed) { "Runtime YAML must be imported from app storage" }
                 RuntimeYamlImporter.writeCandidate(configFile, source)
             }
             commit(uuid)

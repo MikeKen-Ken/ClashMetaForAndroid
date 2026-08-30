@@ -8,27 +8,29 @@
 
 Android and desktop can display their generated Mihomo runtime YAML, but users
 need a shared way to move that generated configuration between clients. Runtime
-YAML can contain credentials, and applying an invalid upload must not break the
+YAML can contain credentials, and applying an invalid import must not break the
 currently working tunnel. Both clients already have a user-configured WebDAV
 account used by backups, wallpapers, and connectivity sync.
 
 ## Decision
 
 Both profile panels expose confirmed upload and download actions that use the
-same HTTPS WebDAV account. The shared object is `clash-runtime-yaml/runtime.yaml`.
+same HTTPS WebDAV account. The shared object is `clash-runtime.yaml` at the
+WebDAV root. A previous nested path `clash-runtime-yaml/runtime.yaml` is still
+read as a fallback.
 
-- Download serializes the currently generated runtime YAML and PUTs it to that
+- Upload serializes the currently generated runtime YAML and PUTs it to that
   WebDAV object, and warns that the export can contain sensitive connection data.
-- Upload GETs that WebDAV object, accepts only a non-empty YAML mapping no larger
-  than 10 MB, imports it as a new local profile, and activates it through the
-  existing validated profile-switch path.
+- Download GETs that WebDAV object, accepts only a non-empty YAML mapping no
+  larger than 10 MB, imports it as a new local profile, and activates it through
+  the existing validated profile-switch path.
 - Transfer requires a configured WebDAV URL, username, and password, and the
   URL must be HTTPS. Desktop uses the strict TLS client (valid certificates).
-- Upload never overwrites a subscription or another source profile in place.
+- Download never overwrites a subscription or another source profile in place.
 - A failed validation or activation keeps the previous active profile. Partial
   candidates and their files are removed.
-- Desktop serializes upload with the existing profile-switch lock and places a
-  successful upload first because that client treats the first local profile as
+- Desktop serializes import with the existing profile-switch lock and places a
+  successful import first because that client treats the first local profile as
   its active local target.
 
 ## Consequences
