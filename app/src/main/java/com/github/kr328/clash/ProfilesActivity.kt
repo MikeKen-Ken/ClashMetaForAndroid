@@ -101,12 +101,20 @@ class ProfilesActivity : BaseActivity<ProfilesDesign>() {
         if (!design.confirmRuntimeYamlUpload()) return
 
         try {
-            val content = RuntimeYamlWebDav.download(uiStore).toString(Charsets.UTF_8)
-            withProfile {
-                val uuid = importRuntimeYaml("Imported runtime YAML", content)
-                val profile = queryByUUID(uuid)
-                    ?: error("Imported runtime YAML profile was not found")
-                setActive(profile)
+            val cacheFile = File(cacheDir, "runtime-yaml-import.yaml")
+            try {
+                val bytes = RuntimeYamlWebDav.download(uiStore)
+                withContext(Dispatchers.IO) {
+                    cacheFile.writeBytes(bytes)
+                }
+                withProfile {
+                    val uuid = importRuntimeYaml("Imported runtime YAML", cacheFile.absolutePath)
+                    val profile = queryByUUID(uuid)
+                        ?: error("Imported runtime YAML profile was not found")
+                    setActive(profile)
+                }
+            } finally {
+                cacheFile.delete()
             }
             design.fetch()
             design.showToast(R.string.runtime_yaml_imported, ToastDuration.Long)

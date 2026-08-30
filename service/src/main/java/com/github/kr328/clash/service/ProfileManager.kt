@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.File
 import java.io.FileNotFoundException
 import java.math.BigDecimal
 import java.util.*
@@ -66,7 +67,7 @@ class ProfileManager(private val context: Context) : IProfileManager,
         return uuid
     }
 
-    override suspend fun importRuntimeYaml(name: String, yamlContent: String): UUID {
+    override suspend fun importRuntimeYaml(name: String, sourcePath: String): UUID {
         val uuid = create(Profile.Type.File, name)
 
         try {
@@ -74,7 +75,12 @@ class ProfileManager(private val context: Context) : IProfileManager,
                 .resolve(uuid.toString())
                 .resolve("config.yaml")
             withContext(Dispatchers.IO) {
-                RuntimeYamlImporter.writeCandidate(configFile, yamlContent)
+                val source = File(sourcePath).canonicalFile
+                val cacheRoot = context.cacheDir.canonicalFile
+                require(source.path.startsWith(cacheRoot.path + File.separator)) {
+                    "Runtime YAML must be imported from app cache"
+                }
+                RuntimeYamlImporter.writeCandidate(configFile, source)
             }
             commit(uuid)
             return uuid

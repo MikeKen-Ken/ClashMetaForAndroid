@@ -7,7 +7,7 @@ import java.util.*
 @BinderInterface
 interface IProfileManager {
     suspend fun create(type: Profile.Type, name: String, source: String = ""): UUID
-    suspend fun importRuntimeYaml(name: String, yamlContent: String): UUID
+    suspend fun importRuntimeYaml(name: String, sourcePath: String): UUID
     suspend fun clone(uuid: UUID): UUID
     suspend fun commit(uuid: UUID, callback: IFetchObserver? = null)
     suspend fun release(uuid: UUID)
