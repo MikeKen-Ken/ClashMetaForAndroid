@@ -93,11 +93,13 @@ object ConnectivityStatsSync {
                 updatedAt = now,
                 data = own,
             )
-            webDav.upload(
-                state.deviceId,
-                json.encodeToString(DeviceSnapshot.serializer(), ownSnapshot)
-                    .encodeToByteArray(),
-            )
+            runCatching {
+                webDav.upload(
+                    state.deviceId,
+                    json.encodeToString(DeviceSnapshot.serializer(), ownSnapshot)
+                        .encodeToByteArray(),
+                )
+            }
             ConnectivitySyncResult(
                 deviceCount = snapshots.size,
                 proxyCount = merged.size,
