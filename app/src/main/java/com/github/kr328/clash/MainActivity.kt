@@ -164,9 +164,13 @@ class MainActivity : BaseActivity<MainDesign>() {
             ConnectivityStatsSync.merge(
                 context = this@MainActivity,
                 store = uiStore,
-                mergeLocal = { previousOthers, remoteOthers ->
+                mergeLocal = { previousOthers, remoteOthers, resetWatermarks ->
                     withClash {
-                        mergeProxyConnectivityStats(previousOthers, remoteOthers)
+                        mergeProxyConnectivityStats(
+                            previousOthers,
+                            remoteOthers,
+                            resetWatermarks,
+                        )
                     }
                 },
             )

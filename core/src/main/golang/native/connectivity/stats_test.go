@@ -1,6 +1,7 @@
 package connectivity
 
 import (
+	"strconv"
 	"testing"
 	"time"
 )
@@ -232,6 +233,84 @@ func TestSyncMergePreservesCountersRecordedDuringWebDav(t *testing.T) {
 	}
 }
 
+func TestNewerResetRemovesOldAggregateAndBaseline(t *testing.T) {
+	current := syncTestData(300, 0)
+	baseline := syncTestData(200, 0)
+	active := map[string]resetGeneration{
+		"node": {Counter: 1, DeviceID: "device-b"},
+	}
+
+	removeAdvancedResetData(current, baseline, nil, active)
+
+	if _, found := current["node"]; found {
+		t.Fatal("new reset should remove the old aggregate")
+	}
+	if _, found := baseline["node"]; found {
+		t.Fatal("new reset should remove the old imported baseline")
+	}
+}
+
+func TestKnownResetPreservesPostResetMeasurements(t *testing.T) {
+	current := syncTestData(3, 0)
+	baseline := map[string]proxyConnectivityEntry{}
+	known := map[string]resetGeneration{
+		"node": {Counter: 1, DeviceID: "device-b"},
+	}
+
+	removeAdvancedResetData(current, baseline, known, known)
+
+	if counts := syncTestCounts(current); counts.Success != 3 {
+		t.Fatalf("post-reset success=%d, want 3", counts.Success)
+	}
+}
+
+func TestConcurrentResetOrderingUsesDeviceIDAsTieBreaker(t *testing.T) {
+	left := map[string]resetGeneration{
+		"node": {Counter: 4, DeviceID: "device-a"},
+	}
+	right := map[string]resetGeneration{
+		"node": {Counter: 4, DeviceID: "device-b"},
+	}
+
+	merged, err := mergeResetWatermarks(left, right)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if merged["node"].DeviceID != "device-b" {
+		t.Fatalf("winner=%+v, want device-b", merged["node"])
+	}
+}
+
+func TestResetWatermarksKeepOnlyLatestGenerationPerNode(t *testing.T) {
+	older := map[string]resetGeneration{
+		"node": {Counter: 2, DeviceID: "device-z"},
+	}
+	newer := map[string]resetGeneration{
+		"node": {Counter: 3, DeviceID: "device-a"},
+	}
+
+	merged, err := mergeResetWatermarks(older, newer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(merged) != 1 || merged["node"].Counter != 3 {
+		t.Fatalf("merged=%+v, want one generation at counter 3", merged)
+	}
+}
+
+func TestResetWatermarkUnionRejectsMoreThanLimit(t *testing.T) {
+	left := make(map[string]resetGeneration, maxResetEntries)
+	right := make(map[string]resetGeneration, maxResetEntries)
+	for index := 0; index < maxResetEntries; index++ {
+		left["left-"+strconv.Itoa(index)] = resetGeneration{Counter: 1, DeviceID: "device-a"}
+		right["right-"+strconv.Itoa(index)] = resetGeneration{Counter: 1, DeviceID: "device-b"}
+	}
+
+	if _, err := mergeResetWatermarks(left, right); err == nil {
+		t.Fatal("oversized reset watermark union should be rejected")
+	}
+}
+
 func TestClearProxyRemovesOnlyTarget(t *testing.T) {
 	statsMu.Lock()
 	statsCache = map[string]proxyConnectivityEntry{
@@ -268,8 +347,8 @@ func TestPruneExpiredEntriesRemovesEmptyProxyKeys(t *testing.T) {
 		"empty": {Days: map[string]dayCounts{}},
 	}
 	lastFailureAt = map[string]time.Time{
-		"stale": now.Add(-2 * time.Minute),
-		"keep":  now.Add(-2 * time.Minute),
+		"stale":  now.Add(-2 * time.Minute),
+		"keep":   now.Add(-2 * time.Minute),
 		"orphan": now.Add(-time.Hour),
 	}
 	statsLoaded = true

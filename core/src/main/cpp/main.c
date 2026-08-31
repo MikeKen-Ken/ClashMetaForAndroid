@@ -458,20 +458,24 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeFlushFakeIpCache(JNIEnv *en
     return result;
 }
 
-JNIEXPORT void JNICALL
-Java_com_github_kr328_clash_core_bridge_Bridge_nativeClearProxyConnectivityStats(JNIEnv *env, jobject thiz) {
+JNIEXPORT jboolean JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeClearProxyConnectivityStats(JNIEnv *env, jobject thiz,
+                                                                                 jstring reset_watermarks) {
     TRACE_METHOD();
 
-    clearProxyConnectivityStats();
+    scoped_string _reset_watermarks = get_string(reset_watermarks);
+    return clearProxyConnectivityStats(_reset_watermarks) != 0;
 }
 
-JNIEXPORT void JNICALL
+JNIEXPORT jboolean JNICALL
 Java_com_github_kr328_clash_core_bridge_Bridge_nativeClearProxyConnectivityStatsFor(JNIEnv *env, jobject thiz,
-                                                                                    jstring name) {
+                                                                                     jstring name,
+                                                                                     jstring reset_watermarks) {
     TRACE_METHOD();
 
     scoped_string _name = get_string(name);
-    clearProxyConnectivityStatsFor(_name);
+    scoped_string _reset_watermarks = get_string(reset_watermarks);
+    return clearProxyConnectivityStatsFor(_name, _reset_watermarks) != 0;
 }
 
 JNIEXPORT jstring JNICALL
@@ -503,12 +507,15 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeReplaceProxyConnectivitySta
 JNIEXPORT jstring JNICALL
 Java_com_github_kr328_clash_core_bridge_Bridge_nativeMergeProxyConnectivityStats(JNIEnv *env, jobject thiz,
                                                                                  jstring previous_others,
-                                                                                 jstring remote_others) {
+                                                                                 jstring remote_others,
+                                                                                 jstring reset_watermarks) {
     TRACE_METHOD();
 
     scoped_string _previous_others = get_string(previous_others);
     scoped_string _remote_others = get_string(remote_others);
-    scoped_string response = mergeProxyConnectivityStats(_previous_others, _remote_others);
+    scoped_string _reset_watermarks = get_string(reset_watermarks);
+    scoped_string response = mergeProxyConnectivityStats(_previous_others, _remote_others,
+                                                          _reset_watermarks);
     return new_string(response);
 }
 

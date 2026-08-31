@@ -65,14 +65,15 @@ object Bridge {
     external fun nativeCloseConnectionsUsingProxyGroup(group: String)
     external fun nativeCloseLanConnections()
     external fun nativeFlushFakeIpCache(): String?
-    external fun nativeClearProxyConnectivityStats()
-    external fun nativeClearProxyConnectivityStatsFor(name: String)
+    external fun nativeClearProxyConnectivityStats(resetWatermarks: String): Boolean
+    external fun nativeClearProxyConnectivityStatsFor(name: String, resetWatermarks: String): Boolean
     external fun nativeQueryProxyConnectivityStats(): String
     external fun nativeExportProxyConnectivityStats(): String
     external fun nativeReplaceProxyConnectivityStats(raw: String): Boolean
     external fun nativeMergeProxyConnectivityStats(
         previousOthers: String,
         remoteOthers: String,
+        resetWatermarks: String,
     ): String
     external fun nativeSubscribeLogcat(callback: LogcatInterface)
     external fun nativeUnsubscribeLogcat()

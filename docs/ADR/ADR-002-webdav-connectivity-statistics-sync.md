@@ -1,6 +1,6 @@
 # ADR-002: Merge-Only WebDAV Connectivity Statistics Sync
 
-- Status: accepted
+- Status: superseded by ADR-004
 - Date: 2026-08-30
 
 ## Context

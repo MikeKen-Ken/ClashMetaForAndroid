@@ -14,12 +14,13 @@ import (
 )
 
 const (
-	retentionDays           = 30
-	decayHalfLifeDays       = 3.0
-	priorVirtualSamples     = 20.0
-	fallbackDelayMs         = 400.0
-	scoreReferenceDelayMs   = 400.0
-	defaultPenaltyDelayMs   = 5000
+	retentionDays               = 30
+	decayHalfLifeDays           = 3.0
+	priorVirtualSamples         = 20.0
+	fallbackDelayMs             = 400.0
+	scoreReferenceDelayMs       = 400.0
+	defaultPenaltyDelayMs       = 5000
+	maxSafeCount          int64 = 9_007_199_254_740_991
 	// 同一节点一分钟内最多记 1 次失败，避免重连/健康检查风暴把分数打崩。
 	failureRecordMinInterval = time.Minute
 )
@@ -41,7 +42,8 @@ type statsFileV2 struct {
 }
 
 type statsSyncState struct {
-	LastOthers map[string]proxyConnectivityEntry `json:"lastOthers"`
+	LastOthers      map[string]proxyConnectivityEntry `json:"lastOthers"`
+	ResetWatermarks map[string]resetGeneration        `json:"resetWatermarks,omitempty"`
 }
 
 type statsSyncMergeResult struct {
@@ -49,6 +51,7 @@ type statsSyncMergeResult struct {
 	Error  string                            `json:"error,omitempty"`
 	Own    map[string]proxyConnectivityEntry `json:"own,omitempty"`
 	Merged map[string]proxyConnectivityEntry `json:"merged,omitempty"`
+	Resets map[string]resetGeneration        `json:"resets,omitempty"`
 }
 
 type legacyEntry struct {
@@ -70,12 +73,13 @@ type ScoreContext struct {
 }
 
 var (
-	statsMu          sync.Mutex
-	statsCache       map[string]proxyConnectivityEntry
-	statsLastOthers  map[string]proxyConnectivityEntry
-	statsHasBaseline bool
-	statsLoaded      bool
-	lastFailureAt    map[string]time.Time
+	statsMu            sync.Mutex
+	statsCache         map[string]proxyConnectivityEntry
+	statsLastOthers    map[string]proxyConnectivityEntry
+	statsHasBaseline   bool
+	statsResets        map[string]resetGeneration
+	statsLoaded        bool
+	lastFailureAt      map[string]time.Time
 	failureMinInterval = failureRecordMinInterval // 单测可改短
 )
 
@@ -263,6 +267,7 @@ func ensureStatsLoaded() {
 	statsCache = make(map[string]proxyConnectivityEntry)
 	statsLastOthers = nil
 	statsHasBaseline = false
+	statsResets = make(map[string]resetGeneration)
 
 	raw, err := os.ReadFile(statsFilePath())
 	if err == nil && len(raw) > 0 {
@@ -271,6 +276,15 @@ func ensureStatsLoaded() {
 			statsCache = file.Data
 			if file.Sync != nil {
 				statsLastOthers = pruneStatsData(file.Sync.LastOthers, time.Now())
+				if sanitized, sanitizeErr := sanitizeResetWatermarks(
+					file.Sync.ResetWatermarks,
+				); sanitizeErr == nil {
+					statsResets = sanitized
+				} else {
+					// Preserve invalid/oversized state so later merge/reset operations fail
+					// closed instead of silently forgetting every reset watermark.
+					statsResets = file.Sync.ResetWatermarks
+				}
 				statsHasBaseline = true
 			}
 		} else {
@@ -303,11 +317,15 @@ func ensureStatsLoaded() {
 func persistConnectivityStatsData(
 	data map[string]proxyConnectivityEntry,
 	lastOthers map[string]proxyConnectivityEntry,
+	resetWatermarks map[string]resetGeneration,
 	hasBaseline bool,
 ) error {
 	payload := statsFileV2{V: 2, Data: data}
-	if hasBaseline {
-		payload.Sync = &statsSyncState{LastOthers: lastOthers}
+	if hasBaseline || len(resetWatermarks) > 0 {
+		payload.Sync = &statsSyncState{
+			LastOthers:      lastOthers,
+			ResetWatermarks: resetWatermarks,
+		}
 	}
 	encoded, err := json.Marshal(payload)
 	if err != nil {
@@ -344,7 +362,7 @@ func persistConnectivityStats() error {
 	if statsCache == nil {
 		return nil
 	}
-	return persistConnectivityStatsData(statsCache, statsLastOthers, statsHasBaseline)
+	return persistConnectivityStatsData(statsCache, statsLastOthers, statsResets, statsHasBaseline)
 }
 
 // ExportRaw returns the authoritative version-2 per-day counters for WebDAV sync.
@@ -381,7 +399,7 @@ func ReplaceRaw(raw string) bool {
 	defer statsMu.Unlock()
 	ensureStatsLoaded()
 	candidate := pruneStatsData(payload.Data, time.Now())
-	if persistConnectivityStatsData(candidate, statsLastOthers, statsHasBaseline) != nil {
+	if persistConnectivityStatsData(candidate, statsLastOthers, statsResets, statsHasBaseline) != nil {
 		return false
 	}
 	statsCache = candidate
@@ -444,7 +462,6 @@ func nonNegativeSubtract(current, previous int64) int64 {
 }
 
 func safeAddCount(left, right int64) int64 {
-	const maxSafeCount = 9_007_199_254_740_991
 	if left < 0 || right < 0 {
 		return 0
 	}
@@ -504,7 +521,7 @@ func encodeMergeResult(result statsSyncMergeResult) string {
 
 // MergeRaw owns the final local merge and persists the aggregate and imported
 // baseline together. WebDAV I/O remains outside statsMu.
-func MergeRaw(previousOthersRaw, remoteOthersRaw string) string {
+func MergeRaw(previousOthersRaw, remoteOthersRaw, resetWatermarksRaw string) string {
 	fallbackOthers, err := decodeStatsData(previousOthersRaw)
 	if err != nil {
 		return encodeMergeResult(statsSyncMergeResult{OK: false, Error: err.Error()})
@@ -513,23 +530,34 @@ func MergeRaw(previousOthersRaw, remoteOthersRaw string) string {
 	if err != nil {
 		return encodeMergeResult(statsSyncMergeResult{OK: false, Error: err.Error()})
 	}
+	incomingResets, err := decodeResetWatermarks(resetWatermarksRaw)
+	if err != nil {
+		return encodeMergeResult(statsSyncMergeResult{OK: false, Error: err.Error()})
+	}
 
 	statsMu.Lock()
 	defer statsMu.Unlock()
 	ensureStatsLoaded()
 
-	baseline := fallbackOthers
+	current := pruneStatsData(statsCache, time.Now())
+	baseline := pruneStatsData(fallbackOthers, time.Now())
 	if statsHasBaseline {
-		baseline = statsLastOthers
+		baseline = pruneStatsData(statsLastOthers, time.Now())
 	}
-	own := pruneStatsData(subtractStats(statsCache, baseline), time.Now())
+	activeResets, err := mergeResetWatermarks(statsResets, incomingResets)
+	if err != nil {
+		return encodeMergeResult(statsSyncMergeResult{OK: false, Error: err.Error()})
+	}
+	removeAdvancedResetData(current, baseline, statsResets, activeResets)
+	own := pruneStatsData(subtractStats(current, baseline), time.Now())
 	merged := sumStats(own, remoteOthers)
-	if err := persistConnectivityStatsData(merged, remoteOthers, true); err != nil {
+	if err := persistConnectivityStatsData(merged, remoteOthers, activeResets, true); err != nil {
 		return encodeMergeResult(statsSyncMergeResult{OK: false, Error: err.Error()})
 	}
 
 	statsCache = merged
 	statsLastOthers = remoteOthers
+	statsResets = activeResets
 	statsHasBaseline = true
 	lastFailureAt = make(map[string]time.Time)
 	statsLoaded = true
@@ -537,6 +565,7 @@ func MergeRaw(previousOthersRaw, remoteOthersRaw string) string {
 		OK:     true,
 		Own:    own,
 		Merged: merged,
+		Resets: activeResets,
 	})
 }
 
@@ -604,9 +633,37 @@ func ClearAll() {
 	statsCache = make(map[string]proxyConnectivityEntry)
 	statsLastOthers = nil
 	statsHasBaseline = false
+	statsResets = make(map[string]resetGeneration)
 	lastFailureAt = make(map[string]time.Time)
 	statsLoaded = true
 	_ = os.Remove(statsFilePath())
+}
+
+// ClearAllWithResets clears the aggregate while atomically preserving the
+// reset generations that make the deletion win over older remote snapshots.
+func ClearAllWithResets(resetWatermarksRaw string) bool {
+	incomingResets, err := decodeResetWatermarks(resetWatermarksRaw)
+	if err != nil {
+		return false
+	}
+	statsMu.Lock()
+	defer statsMu.Unlock()
+	ensureStatsLoaded()
+	activeResets, err := mergeResetWatermarks(statsResets, incomingResets)
+	if err != nil {
+		return false
+	}
+	empty := make(map[string]proxyConnectivityEntry)
+	if err := persistConnectivityStatsData(empty, empty, activeResets, true); err != nil {
+		return false
+	}
+	statsCache = empty
+	statsLastOthers = empty
+	statsHasBaseline = true
+	statsResets = activeResets
+	lastFailureAt = make(map[string]time.Time)
+	statsLoaded = true
+	return true
 }
 
 // ClearProxy 清空单个节点的测速联通统计。
@@ -626,6 +683,39 @@ func ClearProxy(proxyName string) {
 	}
 	delete(lastFailureAt, proxyName)
 	_ = persistConnectivityStats()
+}
+
+// ClearProxyWithResets clears one node and stores its reset generation in the
+// same file replacement, so a crash cannot expose the deletion without its
+// reset watermark (or vice versa).
+func ClearProxyWithResets(proxyName, resetWatermarksRaw string) bool {
+	if proxyName == "" {
+		return false
+	}
+	incomingResets, err := decodeResetWatermarks(resetWatermarksRaw)
+	if err != nil {
+		return false
+	}
+	statsMu.Lock()
+	defer statsMu.Unlock()
+	ensureStatsLoaded()
+	current := pruneStatsData(statsCache, time.Now())
+	baseline := pruneStatsData(statsLastOthers, time.Now())
+	delete(current, proxyName)
+	delete(baseline, proxyName)
+	activeResets, err := mergeResetWatermarks(statsResets, incomingResets)
+	if err != nil {
+		return false
+	}
+	if err := persistConnectivityStatsData(current, baseline, activeResets, statsHasBaseline); err != nil {
+		return false
+	}
+	statsCache = current
+	statsLastOthers = baseline
+	statsResets = activeResets
+	delete(lastFailureAt, proxyName)
+	statsLoaded = true
+	return true
 }
 
 // ScoreRow 面板列表行。

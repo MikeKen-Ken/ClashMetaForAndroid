@@ -34,11 +34,14 @@ class ConnectivityStatsActivity : BaseActivity<ConnectivityStatsDesign>() {
                 design.requests.onReceive { request ->
                     when (request) {
                         is ConnectivityStatsDesign.Request.ClearOne -> {
-                            withClash { clearProxyConnectivityStatsFor(request.name) }
-                            ConnectivityStatsSync.resetBaseline(
+                            ConnectivityStatsSync.reset(
                                 this@ConnectivityStatsActivity,
-                                request.name,
-                            )
+                                listOf(request.name),
+                            ) { resetWatermarks ->
+                                withClash {
+                                    clearProxyConnectivityStatsFor(request.name, resetWatermarks)
+                                }
+                            }
                             design.replaceRows(loadRows())
                             design.showNativeToast(getString(R.string.connectivity_stats_clear_one, request.name))
                             setResult(RESULT_OK)
@@ -48,8 +51,17 @@ class ConnectivityStatsActivity : BaseActivity<ConnectivityStatsDesign>() {
                                 .setMessage(R.string.connectivity_stats_clear_all_message)
                                 .setPositiveButton(R.string.connectivity_stats_clear) { _, _ ->
                                     launch {
-                                        withClash { clearProxyConnectivityStats() }
-                                        ConnectivityStatsSync.resetBaseline(this@ConnectivityStatsActivity)
+                                        val raw = withClash { exportProxyConnectivityStats() }
+                                        val names = ConnectivityStatsSync.namesFromStatsPayload(raw)
+                                        ConnectivityStatsSync.reset(
+                                            this@ConnectivityStatsActivity,
+                                            names,
+                                            includeKnownResets = true,
+                                        ) { resetWatermarks ->
+                                            withClash {
+                                                clearProxyConnectivityStats(resetWatermarks)
+                                            }
+                                        }
                                         design.replaceRows(loadRows())
                                         design.showNativeToast(getString(R.string.connectivity_stats_cleared_all))
                                         setResult(RESULT_OK)
@@ -91,9 +103,13 @@ class ConnectivityStatsActivity : BaseActivity<ConnectivityStatsDesign>() {
             val result = ConnectivityStatsSync.merge(
                 context = this@ConnectivityStatsActivity,
                 store = uiStore,
-                mergeLocal = { previousOthers, remoteOthers ->
+                mergeLocal = { previousOthers, remoteOthers, resetWatermarks ->
                     withClash {
-                        mergeProxyConnectivityStats(previousOthers, remoteOthers)
+                        mergeProxyConnectivityStats(
+                            previousOthers,
+                            remoteOthers,
+                            resetWatermarks,
+                        )
                     }
                 },
             )

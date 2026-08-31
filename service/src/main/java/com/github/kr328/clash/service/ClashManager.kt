@@ -248,13 +248,11 @@ class ClashManager(private val context: Context) : IClashManager,
         }
     }
 
-    override fun clearProxyConnectivityStats() {
-        Clash.clearProxyConnectivityStats()
-    }
+    override fun clearProxyConnectivityStats(resetWatermarks: String): Boolean =
+        Clash.clearProxyConnectivityStats(resetWatermarks)
 
-    override fun clearProxyConnectivityStatsFor(name: String) {
-        Clash.clearProxyConnectivityStatsFor(name)
-    }
+    override fun clearProxyConnectivityStatsFor(name: String, resetWatermarks: String): Boolean =
+        Clash.clearProxyConnectivityStatsFor(name, resetWatermarks)
 
     override fun queryProxyConnectivityStats(): String {
         return Clash.queryProxyConnectivityStats()
@@ -268,8 +266,12 @@ class ClashManager(private val context: Context) : IClashManager,
         return Clash.replaceProxyConnectivityStats(raw)
     }
 
-    override fun mergeProxyConnectivityStats(previousOthers: String, remoteOthers: String): String {
-        return Clash.mergeProxyConnectivityStats(previousOthers, remoteOthers)
+    override fun mergeProxyConnectivityStats(
+        previousOthers: String,
+        remoteOthers: String,
+        resetWatermarks: String,
+    ): String {
+        return Clash.mergeProxyConnectivityStats(previousOthers, remoteOthers, resetWatermarks)
     }
 
     override suspend fun healthCheck(group: String) {

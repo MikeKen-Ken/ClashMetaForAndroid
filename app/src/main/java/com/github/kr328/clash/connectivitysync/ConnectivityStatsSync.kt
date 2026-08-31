@@ -14,7 +14,7 @@ object ConnectivityStatsSync {
     const val DEFAULT_INTERVAL_HOURS = 24
     val intervalOptions = arrayOf(1, 6, 12, 24, 48, 168)
 
-    private const val PROTOCOL_VERSION = 1
+    private const val PROTOCOL_VERSION = ConnectivityStatsProtocol.PROTOCOL_VERSION
     private const val STORE_VERSION = 2
     private const val STATE_FILE = "connectivity-sync-state.json"
     private val mutex = Mutex()
@@ -36,7 +36,11 @@ object ConnectivityStatsSync {
     suspend fun merge(
         context: Context,
         store: UiStore,
-        mergeLocal: suspend (previousOthers: String, remoteOthers: String) -> String,
+        mergeLocal: suspend (
+            previousOthers: String,
+            remoteOthers: String,
+            resetWatermarks: String,
+        ) -> String,
     ): ConnectivitySyncResult = mutex.withLock {
         withContext(Dispatchers.IO) {
             val webDav = ConnectivityStatsWebDav(store)
@@ -45,29 +49,40 @@ object ConnectivityStatsSync {
 
             val state = loadState(context)
             val now = System.currentTimeMillis()
-            val listed = webDav.listDeviceIds()
+            val listed = webDav.listSnapshotRefs()
             check(!ConnectivityStatsWebDav.tooManyDevices(listed, state.deviceId)) {
                 "Too many connectivity sync devices"
             }
 
-            val snapshots = linkedMapOf<String, StatsData>()
-            listed.forEach { deviceId ->
-                val snapshot = runCatching {
-                    json.decodeFromString(
-                        DeviceSnapshot.serializer(),
-                        webDav.download(deviceId).decodeToString(),
-                    )
-                }.getOrNull()
-                if (snapshot == null ||
-                    snapshot.v != PROTOCOL_VERSION ||
-                    snapshot.deviceId != deviceId
-                ) {
-                    return@forEach
+            val snapshots = linkedMapOf<String, DeviceSnapshot>()
+            listed.groupBy { it.deviceId }.forEach deviceLoop@ { (deviceId, refs) ->
+                val candidates = refs.map { ref ->
+                    runCatching {
+                        json.decodeFromString(
+                            DeviceSnapshot.serializer(),
+                            webDav.download(ref).decodeToString(),
+                        )
+                    }.getOrNull()?.takeIf {
+                        ConnectivityStatsProtocol.snapshotMatches(it, ref)
+                    }
                 }
-                snapshots[deviceId] = ConnectivityStatsMerge.prune(snapshot.data)
+                // Slot filenames do not expose their revision. If any listed slot cannot be
+                // validated, accepting the other one could resurrect a pre-reset snapshot.
+                if (candidates.any { it == null }) return@deviceLoop
+                val newest = candidates.filterNotNull().maxByOrNull { it.revision }
+                    ?: return@deviceLoop
+                snapshots[deviceId] = newest.copy(
+                    data = ConnectivityStatsMerge.prune(newest.data),
+                    resets = ConnectivityStatsProtocol.sanitizeResets(newest.resets),
+                )
             }
+            val activeResets = ConnectivityStatsProtocol.mergeResets(
+                listOf(state.resets) + snapshots.values.map { it.resets },
+            )
             val remoteOthers = ConnectivityStatsMerge.sum(
-                snapshots.filterKeys { it != state.deviceId }.values,
+                snapshots.filterKeys { it != state.deviceId }.values.map { snapshot ->
+                    ConnectivityStatsProtocol.filterSnapshotData(snapshot, activeResets)
+                },
             )
             val previousOthersPayload = json.encodeToString(
                 StatsFile.serializer(),
@@ -77,33 +92,53 @@ object ConnectivityStatsSync {
                 StatsFile.serializer(),
                 StatsFile(v = STORE_VERSION, data = remoteOthers),
             )
+            val resetWatermarksPayload = json.encodeToString(
+                ResetWatermarksPayload.serializer(),
+                ResetWatermarksPayload(resets = activeResets),
+            )
             val localResult = json.decodeFromString(
                 CoreConnectivityMergeResult.serializer(),
-                mergeLocal(previousOthersPayload, remoteOthersPayload),
+                mergeLocal(previousOthersPayload, remoteOthersPayload, resetWatermarksPayload),
             )
             check(localResult.ok) {
                 localResult.error ?: "Core rejected merged connectivity statistics"
             }
+            val mergedResets = ConnectivityStatsProtocol.mergeResets(
+                listOf(activeResets, localResult.resets),
+            )
+            // Preserve adopted reset knowledge even when the following upload fails. This does
+            // not advance revision, baseline, or lastSyncAt, so the merge is still not successful.
+            saveState(context, state.copy(v = PROTOCOL_VERSION, resets = mergedResets))
+            val remoteOwnRevision = snapshots[state.deviceId]?.revision ?: 0
+            val currentRevision = maxOf(state.revision, remoteOwnRevision)
+            check(currentRevision < ConnectivityStatsProtocol.MAX_SAFE_COUNTER) {
+                "Connectivity snapshot revision exhausted"
+            }
+            val nextRevision = currentRevision + 1
+            val slot = (nextRevision % ConnectivityStatsProtocol.SLOT_COUNT).toInt()
+            val ownSnapshot = DeviceSnapshot(
+                deviceId = state.deviceId,
+                revision = nextRevision,
+                slot = slot,
+                updatedAt = now,
+                resets = mergedResets,
+                generations = ConnectivityStatsProtocol.generationsFor(localResult.own, mergedResets),
+                data = localResult.own,
+            )
+            webDav.upload(
+                RemoteSnapshotRef(state.deviceId, slot),
+                json.encodeToString(DeviceSnapshot.serializer(), ownSnapshot).encodeToByteArray(),
+            )
             saveState(
                 context,
                 SyncState(
                     deviceId = state.deviceId,
+                    revision = nextRevision,
                     lastOthers = remoteOthers,
+                    resets = mergedResets,
                     lastSyncAt = now,
                 ),
             )
-            val ownSnapshot = DeviceSnapshot(
-                deviceId = state.deviceId,
-                updatedAt = now,
-                data = localResult.own,
-            )
-            runCatching {
-                webDav.upload(
-                    state.deviceId,
-                    json.encodeToString(DeviceSnapshot.serializer(), ownSnapshot)
-                        .encodeToByteArray(),
-                )
-            }
             ConnectivitySyncResult(
                 deviceCount = (snapshots.keys + state.deviceId).size,
                 proxyCount = localResult.merged.size,
@@ -112,27 +147,59 @@ object ConnectivityStatsSync {
         }
     }
 
-    suspend fun resetBaseline(context: Context, proxyName: String? = null) = mutex.withLock {
+    suspend fun reset(
+        context: Context,
+        proxyNames: Collection<String>,
+        includeKnownResets: Boolean = false,
+        clearLocal: suspend (resetWatermarks: String) -> Boolean,
+    ) = mutex.withLock {
         withContext(Dispatchers.IO) {
             val state = loadState(context)
-            val remaining = if (proxyName.isNullOrEmpty()) {
-                emptyMap()
+            val requestedNames = proxyNames.asSequence().filter { it.isNotEmpty() }
+            val names = if (includeKnownResets) {
+                (requestedNames + state.resets.keys.asSequence()).distinct().toList()
             } else {
-                state.lastOthers - proxyName
+                requestedNames.distinct().toList()
             }
-            saveState(context, state.copy(lastOthers = remaining))
+            if (names.isEmpty()) return@withContext
+            val resets = ConnectivityStatsProtocol.advanceResets(
+                state.resets,
+                names,
+                state.deviceId,
+            )
+            val resetPayload = json.encodeToString(
+                ResetWatermarksPayload.serializer(),
+                ResetWatermarksPayload(resets = resets.filterKeys { it in names }),
+            )
+            saveState(
+                context,
+                state.copy(
+                    v = PROTOCOL_VERSION,
+                    lastOthers = state.lastOthers - names.toSet(),
+                    resets = resets,
+                ),
+            )
+            check(clearLocal(resetPayload)) { "Core failed to persist connectivity reset" }
         }
     }
+
+    internal fun namesFromStatsPayload(raw: String): Set<String> = runCatching {
+        json.decodeFromString(StatsFile.serializer(), raw).data.keys
+    }.getOrDefault(emptySet())
 
     private fun loadState(context: Context): SyncState {
         val file = context.filesDir.resolve(STATE_FILE)
         val loaded = runCatching {
             json.decodeFromString(SyncState.serializer(), file.readText())
         }.getOrNull()
-        if (loaded != null && loaded.v == PROTOCOL_VERSION &&
+        if (loaded != null && loaded.v in 1..PROTOCOL_VERSION &&
             ConnectivityStatsWebDav.isValidDeviceId(loaded.deviceId)
         ) {
-            return loaded.copy(lastOthers = ConnectivityStatsMerge.prune(loaded.lastOthers))
+            return loaded.copy(
+                v = PROTOCOL_VERSION,
+                lastOthers = ConnectivityStatsMerge.prune(loaded.lastOthers),
+                resets = ConnectivityStatsProtocol.sanitizeResets(loaded.resets),
+            )
         }
         return SyncState(deviceId = UUID.randomUUID().toString())
     }

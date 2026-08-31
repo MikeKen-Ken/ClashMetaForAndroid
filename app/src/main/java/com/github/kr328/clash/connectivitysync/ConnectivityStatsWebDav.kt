@@ -28,13 +28,13 @@ internal class ConnectivityStatsWebDav(private val store: UiStore) {
 
     fun prepareCollections() {
         ensureCollection("clash-connectivity-sync")
-        ensureCollection("clash-connectivity-sync/v1")
+        ensureCollection("clash-connectivity-sync/v2")
         ensureCollection(DEVICES_PATH)
     }
 
-    fun upload(deviceId: String, bytes: ByteArray) {
+    fun upload(ref: RemoteSnapshotRef, bytes: ByteArray) {
         require(bytes.size <= MAX_SNAPSHOT_BYTES) { "Statistics snapshot is too large" }
-        val request = requestBuilder("$DEVICES_PATH/$deviceId.json")
+        val request = requestBuilder("$DEVICES_PATH/${snapshotFilename(ref)}")
             .put(bytes.toRequestBody(JSON_MEDIA_TYPE))
             .build()
         http.newCall(request).execute().use { response ->
@@ -42,7 +42,7 @@ internal class ConnectivityStatsWebDav(private val store: UiStore) {
         }
     }
 
-    fun listDeviceIds(): List<String> {
+    fun listSnapshotRefs(): List<RemoteSnapshotRef> {
         val body = """
             <?xml version="1.0" encoding="utf-8" ?>
             <d:propfind xmlns:d="DAV:"><d:prop><d:resourcetype /></d:prop></d:propfind>
@@ -56,28 +56,33 @@ internal class ConnectivityStatsWebDav(private val store: UiStore) {
             check(response.code == 207 || response.isSuccessful) { "HTTP ${response.code}" }
             response.body?.string().orEmpty()
         }
-        val ids = linkedSetOf<String>()
+        val refs = linkedSetOf<RemoteSnapshotRef>()
+        val deviceIds = linkedSetOf<String>()
         val parser = Xml.newPullParser().apply { setInput(StringReader(xml)) }
         while (parser.eventType != XmlPullParser.END_DOCUMENT) {
             if (parser.eventType == XmlPullParser.START_TAG && parser.name.equals("href", true)) {
                 val href = parser.nextText()
                 val name = Uri.parse(href).lastPathSegment
                     ?.let { URLDecoder.decode(it, Charsets.UTF_8.name()) }
-                val id = name?.removeSuffix(".json")
-                if (name?.endsWith(".json") == true && id != null && isValidDeviceId(id)) {
-                    ids += id
-                    check(ids.size <= MAX_REMOTE_DEVICES) {
+                val ref = name?.let(::parseSnapshotFilename)
+                if (ref != null) {
+                    refs += ref
+                    deviceIds += ref.deviceId
+                    check(refs.size <= ConnectivityStatsProtocol.MAX_REMOTE_FILES) {
+                        "Too many connectivity snapshot files"
+                    }
+                    check(deviceIds.size <= ConnectivityStatsProtocol.MAX_REMOTE_DEVICES) {
                         "Too many connectivity sync devices"
                     }
                 }
             }
             parser.next()
         }
-        return ids.toList()
+        return refs.toList()
     }
 
-    fun download(deviceId: String): ByteArray {
-        val request = requestBuilder("$DEVICES_PATH/$deviceId.json").get().build()
+    fun download(ref: RemoteSnapshotRef): ByteArray {
+        val request = requestBuilder("$DEVICES_PATH/${snapshotFilename(ref)}").get().build()
         return http.newCall(request).execute().use { response ->
             check(response.isSuccessful) { "HTTP ${response.code}" }
             val body = response.body ?: error("Empty WebDAV response")
@@ -124,17 +129,33 @@ internal class ConnectivityStatsWebDav(private val store: UiStore) {
     }
 
     companion object {
-        private const val DEVICES_PATH = "clash-connectivity-sync/v1/devices"
-        private const val MAX_REMOTE_DEVICES = 128
+        private const val DEVICES_PATH = "clash-connectivity-sync/v2/devices"
         private const val MAX_SNAPSHOT_BYTES = 2 * 1024 * 1024
         private val JSON_MEDIA_TYPE = "application/json".toMediaType()
         private val XML_MEDIA_TYPE = "application/xml".toMediaType()
 
         fun isValidDeviceId(value: String): Boolean = value.length in 1..64 &&
-            value.all { it.isLetterOrDigit() || it == '-' || it == '_' }
+            value.all { it in 'a'..'z' || it in 'A'..'Z' || it in '0'..'9' || it == '-' || it == '_' }
 
-        fun tooManyDevices(listed: Collection<String>, ownDeviceId: String): Boolean =
-            listed.size > MAX_REMOTE_DEVICES ||
-                (ownDeviceId !in listed && listed.size >= MAX_REMOTE_DEVICES)
+        fun snapshotFilename(ref: RemoteSnapshotRef): String =
+            "${ref.deviceId}-${ref.slot}.json"
+
+        fun parseSnapshotFilename(value: String): RemoteSnapshotRef? {
+            val slot = when {
+                value.endsWith("-0.json") -> 0
+                value.endsWith("-1.json") -> 1
+                else -> return null
+            }
+            val deviceId = value.removeSuffix("-$slot.json")
+            return if (isValidDeviceId(deviceId)) RemoteSnapshotRef(deviceId, slot) else null
+        }
+
+        fun tooManyDevices(listed: Collection<RemoteSnapshotRef>, ownDeviceId: String): Boolean {
+            val deviceIds = listed.mapTo(linkedSetOf()) { it.deviceId }
+            return listed.size > ConnectivityStatsProtocol.MAX_REMOTE_FILES ||
+                deviceIds.size > ConnectivityStatsProtocol.MAX_REMOTE_DEVICES ||
+                (ownDeviceId !in deviceIds &&
+                    deviceIds.size >= ConnectivityStatsProtocol.MAX_REMOTE_DEVICES)
+        }
     }
 }

@@ -353,13 +353,11 @@ object Clash {
         if (error != null) throw ClashException(error)
     }
 
-    fun clearProxyConnectivityStats() {
-        Bridge.nativeClearProxyConnectivityStats()
-    }
+    fun clearProxyConnectivityStats(resetWatermarks: String): Boolean =
+        Bridge.nativeClearProxyConnectivityStats(resetWatermarks)
 
-    fun clearProxyConnectivityStatsFor(name: String) {
-        Bridge.nativeClearProxyConnectivityStatsFor(name)
-    }
+    fun clearProxyConnectivityStatsFor(name: String, resetWatermarks: String): Boolean =
+        Bridge.nativeClearProxyConnectivityStatsFor(name, resetWatermarks)
 
     fun queryProxyConnectivityStats(): String {
         return Bridge.nativeQueryProxyConnectivityStats()
@@ -373,8 +371,16 @@ object Clash {
         return Bridge.nativeReplaceProxyConnectivityStats(raw)
     }
 
-    fun mergeProxyConnectivityStats(previousOthers: String, remoteOthers: String): String {
-        return Bridge.nativeMergeProxyConnectivityStats(previousOthers, remoteOthers)
+    fun mergeProxyConnectivityStats(
+        previousOthers: String,
+        remoteOthers: String,
+        resetWatermarks: String,
+    ): String {
+        return Bridge.nativeMergeProxyConnectivityStats(
+            previousOthers,
+            remoteOthers,
+            resetWatermarks,
+        )
     }
 
     fun subscribeLogcat(): ReceiveChannel<LogMessage> {

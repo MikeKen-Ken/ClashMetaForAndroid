@@ -54,13 +54,19 @@ func flushFakeIPCache() *C.char {
 }
 
 //export clearProxyConnectivityStats
-func clearProxyConnectivityStats() {
-	connectivity.ClearAll()
+func clearProxyConnectivityStats(resetWatermarks C.c_string) C.int {
+	if connectivity.ClearAllWithResets(C.GoString(resetWatermarks)) {
+		return 1
+	}
+	return 0
 }
 
 //export clearProxyConnectivityStatsFor
-func clearProxyConnectivityStatsFor(name C.c_string) {
-	connectivity.ClearProxy(C.GoString(name))
+func clearProxyConnectivityStatsFor(name C.c_string, resetWatermarks C.c_string) C.int {
+	if connectivity.ClearProxyWithResets(C.GoString(name), C.GoString(resetWatermarks)) {
+		return 1
+	}
+	return 0
 }
 
 //export queryProxyConnectivityStats
@@ -84,8 +90,12 @@ func replaceProxyConnectivityStats(raw C.c_string) C.int {
 }
 
 //export mergeProxyConnectivityStats
-func mergeProxyConnectivityStats(previousOthers C.c_string, remoteOthers C.c_string) *C.char {
-	return C.CString(connectivity.MergeRaw(C.GoString(previousOthers), C.GoString(remoteOthers)))
+func mergeProxyConnectivityStats(previousOthers C.c_string, remoteOthers C.c_string, resetWatermarks C.c_string) *C.char {
+	return C.CString(connectivity.MergeRaw(
+		C.GoString(previousOthers),
+		C.GoString(remoteOthers),
+		C.GoString(resetWatermarks),
+	))
 }
 
 //export notifyInstalledAppsChanged

@@ -42,12 +42,16 @@ interface IClashManager {
 
     fun flushFakeIpCache()
 
-    fun clearProxyConnectivityStats()
-    fun clearProxyConnectivityStatsFor(name: String)
+    fun clearProxyConnectivityStats(resetWatermarks: String): Boolean
+    fun clearProxyConnectivityStatsFor(name: String, resetWatermarks: String): Boolean
     fun queryProxyConnectivityStats(): String
     fun exportProxyConnectivityStats(): String
     fun replaceProxyConnectivityStats(raw: String): Boolean
-    fun mergeProxyConnectivityStats(previousOthers: String, remoteOthers: String): String
+    fun mergeProxyConnectivityStats(
+        previousOthers: String,
+        remoteOthers: String,
+        resetWatermarks: String,
+    ): String
 
     fun setLogObserver(observer: ILogObserver?)
 }
