@@ -11,4 +11,4 @@ Cursor 侧的保证机制是 `.cursor/rules/upstream-review.mdc`（`alwaysApply:
 3. MUST NOT 从 fork 起点或 `HEAD..upstream` 的全部历史重扫。
 4. 扫完后 MUST 更新该 JSON：`reviewedThrough` 改为当时的上游 tip；摘入写入 `ported`，明确跳过写入 `skipped`。
 
-本仓不跟上游整树 rebase。只摘冲突面小的补丁。内核改动提交到自有 mihomo，再更新 gitlink 与 `clash-verge-rev/scripts/mihomo.pin.json`。
+本仓不跟上游整树 rebase。只摘冲突面小的补丁。内核改动提交到自有 mihomo 并发布 `Prerelease-Alpha`，再更新父仓 gitlink。桌面 sidecar 跟 `version.txt`，不要再钉 `mihomo.pin.json`。

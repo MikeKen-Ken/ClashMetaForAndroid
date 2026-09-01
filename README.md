@@ -11,7 +11,7 @@
 | 桌面客户端 | [MikeKen-Ken/clash-verge-rev](https://github.com/MikeKen-Ken/clash-verge-rev) | submodule |
 | 桌面特权服务 | [MikeKen-Ken/clash-verge-service-ipc](https://github.com/MikeKen-Ken/clash-verge-service-ipc) | `pin/v2.1.2` (`dc7238ef`) |
 
-升级内核时须同步：父仓 gitlink + `clash-verge-rev/scripts/mihomo.pin.json`。详见 `docs/own-repo-docking.md`。
+升级内核时须更新父仓 gitlink；桌面 sidecar 在 prebuild 时跟随 `Prerelease-Alpha/version.txt`。详见 `docs/own-repo-docking.md`。
 
 ### Feature
 
@@ -81,10 +81,10 @@ APP package name defaults to `com.github.metacubex.clash.meta`（可按 `local.p
 #### Meta Kernel
 
 - 本仓内核来自 **MikeKen-Ken/mihomo**（submodule `core/src/foss/golang/clash`），不再使用 MetaCubeX `android-real` 自动同步。
-- 内核改动请提交到自有 `mihomo` 仓库，再更新本仓 gitlink 与桌面 `mihomo.pin.json`。
+- 内核改动请提交到自有 `mihomo` 仓库并发布 `Prerelease-Alpha` 产物，再更新本仓 gitlink。桌面下次 prebuild 会按 `version.txt` 拉取最新 sidecar。
 
 #### Maintenance
 
 - CI `Build Pre-Release` 使用父仓 gitlink 初始化 submodule（已去掉 `--remote`）。
 - 桌面特权服务仅从 `vendor/clash-verge-service-ipc` 本地编译，不下载上游 service release。
-- 桌面 mihomo sidecar 版本以 `clash-verge-rev/scripts/mihomo.pin.json` 钉死。
+- 桌面 mihomo sidecar 版本以 `MikeKen-Ken/mihomo` 的 `Prerelease-Alpha/version.txt` 为准。
