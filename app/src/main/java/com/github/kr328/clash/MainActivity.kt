@@ -11,6 +11,7 @@ import androidx.core.content.ContextCompat
 import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.common.util.ticker
 import com.github.kr328.clash.connectivitysync.ConnectivityStatsSync
+import com.github.kr328.clash.connectivitysync.ConnectivitySyncBackoff
 import com.github.kr328.clash.design.MainDesign
 import com.github.kr328.clash.design.ui.ToastDuration
 import com.github.kr328.clash.util.startClashService
@@ -158,8 +159,10 @@ class MainActivity : BaseActivity<MainDesign>() {
     }
 
     private suspend fun autoMergeConnectivityStatistics() {
+        ConnectivitySyncBackoff.rememberSettings(uiStore)
         if (!clashRunning || !ConnectivityStatsSync.isConfigured(uiStore)) return
         if (!ConnectivityStatsSync.isDue(this, uiStore.connectivitySyncIntervalHours)) return
+        if (!ConnectivitySyncBackoff.isOpen()) return
         try {
             ConnectivityStatsSync.merge(
                 context = this@MainActivity,
@@ -176,7 +179,7 @@ class MainActivity : BaseActivity<MainDesign>() {
             )
         } catch (error: Throwable) {
             if (error is CancellationException) throw error
-            // Automatic sync retries when the interval check runs again.
+            ConnectivitySyncBackoff.noteFailure()
         }
     }
 

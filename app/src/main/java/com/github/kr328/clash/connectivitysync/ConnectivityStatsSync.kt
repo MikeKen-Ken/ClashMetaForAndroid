@@ -139,6 +139,7 @@ object ConnectivityStatsSync {
                     lastSyncAt = now,
                 ),
             )
+            ConnectivitySyncBackoff.clear()
             ConnectivitySyncResult(
                 deviceCount = (snapshots.keys + state.deviceId).size,
                 proxyCount = localResult.merged.size,

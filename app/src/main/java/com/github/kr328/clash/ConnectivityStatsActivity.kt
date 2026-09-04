@@ -2,6 +2,7 @@ package com.github.kr328.clash
 
 import androidx.appcompat.app.AlertDialog
 import com.github.kr328.clash.connectivitysync.ConnectivityStatsSync
+import com.github.kr328.clash.connectivitysync.ConnectivitySyncBackoff
 import com.github.kr328.clash.design.ConnectivityStatsDesign
 import com.github.kr328.clash.design.R
 import com.github.kr328.clash.design.model.ConnectivityScoreRow
@@ -148,6 +149,7 @@ class ConnectivityStatsActivity : BaseActivity<ConnectivityStatsDesign>() {
             .setTitle(R.string.connectivity_stats_sync_interval_title)
             .setSingleChoiceItems(labels, selected) { dialog, index ->
                 uiStore.connectivitySyncIntervalHours = values[index]
+                ConnectivitySyncBackoff.rememberSettings(uiStore)
                 dialog.dismiss()
                 recreate()
             }
