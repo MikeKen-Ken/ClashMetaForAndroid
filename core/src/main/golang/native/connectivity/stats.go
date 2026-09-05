@@ -32,7 +32,8 @@ type dayCounts struct {
 }
 
 type proxyConnectivityEntry struct {
-	Days map[string]dayCounts `json:"days"`
+	Days          map[string]dayCounts `json:"days"`
+	LastSuccessAt int64                `json:"ls,omitempty"`
 }
 
 type statsFileV2 struct {
@@ -68,8 +69,9 @@ type WeightedStats struct {
 
 // ScoreContext 批量排序时一次性构建，避免重复扫描统计。
 type ScoreContext struct {
-	byProxy      map[string]WeightedStats
-	priorDelayMs float64
+	byProxy       map[string]WeightedStats
+	lastSuccessAt map[string]int64
+	priorDelayMs  float64
 }
 
 var (
@@ -243,6 +245,16 @@ func penalizedDelayScore(stats WeightedStats, priorDelayMs float64) float64 {
 	return connectivityScoreFromAvgDelay(avg)
 }
 
+func collectLastSuccessAt(cache map[string]proxyConnectivityEntry) map[string]int64 {
+	out := make(map[string]int64)
+	for name, entry := range cache {
+		if at := lastSuccessAtOf(entry); at > 0 {
+			out[name] = at
+		}
+	}
+	return out
+}
+
 func BuildScoreContext() ScoreContext {
 	statsMu.Lock()
 	defer statsMu.Unlock()
@@ -250,8 +262,9 @@ func BuildScoreContext() ScoreContext {
 	today := time.Now()
 	global, byProxy := collectWeightedStatsFromCache(statsCache, today)
 	return ScoreContext{
-		byProxy:      byProxy,
-		priorDelayMs: computePriorEffectiveDelayMs(global),
+		byProxy:       byProxy,
+		lastSuccessAt: collectLastSuccessAt(statsCache),
+		priorDelayMs:  computePriorEffectiveDelayMs(global),
 	}
 }
 
@@ -422,7 +435,10 @@ func pruneStatsData(
 			}
 		}
 		if len(days) > 0 {
-			pruned[name] = proxyConnectivityEntry{Days: days}
+			pruned[name] = proxyConnectivityEntry{
+				Days:          days,
+				LastSuccessAt: lastSuccessAtOf(entry),
+			}
 		}
 	}
 	return pruned
@@ -448,10 +464,33 @@ func subtractStats(
 			}
 		}
 		if len(days) > 0 {
-			result[name] = proxyConnectivityEntry{Days: days}
+			result[name] = proxyConnectivityEntry{
+				Days:          days,
+				LastSuccessAt: lastSuccessAtOf(entry),
+			}
 		}
 	}
 	return result
+}
+
+func lastSuccessAtOf(entry proxyConnectivityEntry) int64 {
+	if entry.LastSuccessAt < 0 {
+		return 0
+	}
+	return entry.LastSuccessAt
+}
+
+func maxLastSuccessAt(left, right int64) int64 {
+	if left < 0 {
+		left = 0
+	}
+	if right < 0 {
+		right = 0
+	}
+	if left > right {
+		return left
+	}
+	return right
 }
 
 func nonNegativeSubtract(current, previous int64) int64 {
@@ -487,6 +526,7 @@ func sumStats(parts ...map[string]proxyConnectivityEntry) map[string]proxyConnec
 					DelaySum: safeAddCount(current.DelaySum, counts.DelaySum),
 				}
 			}
+			target.LastSuccessAt = maxLastSuccessAt(target.LastSuccessAt, entry.LastSuccessAt)
 			merged[name] = target
 		}
 	}
@@ -609,6 +649,7 @@ func RecordDelayTestResult(proxyName string, delay int, timeoutMs int) {
 	if isSuccess {
 		counts.Success++
 		counts.DelaySum += int64(delay)
+		entry.LastSuccessAt = now.Unix()
 	} else {
 		counts.Failure++
 		counts.DelaySum += int64(effectiveTimeout)
@@ -725,6 +766,7 @@ type ScoreRow struct {
 	WeightedSuccess     float64 `json:"weightedSuccess"`
 	WeightedFailure     float64 `json:"weightedFailure"`
 	EffectiveAvgDelayMs float64 `json:"effectiveAvgDelayMs"`
+	LastSuccessAt       int64   `json:"lastSuccessAt,omitempty"`
 	HasStats            bool    `json:"hasStats"`
 }
 
@@ -751,6 +793,7 @@ func QueryScoreRows(names []string) []ScoreRow {
 				WeightedSuccess:     stats.Success,
 				WeightedFailure:     stats.Failure,
 				EffectiveAvgDelayMs: avg,
+				LastSuccessAt:       ctx.lastSuccessAt[name],
 				HasStats:            hasStats,
 			},
 		}

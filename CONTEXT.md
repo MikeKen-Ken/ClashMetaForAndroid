@@ -19,3 +19,7 @@ _Avoid_: Delete timestamp, file generation
 **Global clear**:
 A reset that advances a node's reset generation so every installation excludes measurements from older generations.
 _Avoid_: Local delete, baseline reset
+
+**Last success time**:
+The instant of the most recent successful delay test retained for a node in the merged view.
+_Avoid_: Success day, last check, last test

@@ -419,7 +419,6 @@
     <string name="clash_meta_wiki_url" translatable="false">https://wiki.metacubex.one</string>
 
     <string name="meta_features">Meta Features</string>
-    <string name="unified_delay">Unified Delay</string>
     <string name="geodata_mode">Geodata Mode</string>
     <string name="tcp_concurrent">TCP Concurrent</string>
     <string name="find_process_mode">Find Process Mode</string>
@@ -480,7 +479,9 @@
     <string name="import_from_qr_exception">An unhandled system exception occurred.</string>
     <string name="connectivity_stats_title">Node Connectivity Statistics</string>
     <string name="connectivity_stats_no_stats">No statistics</string>
-    <string name="connectivity_stats_subtitle">Score %1$.3f · Success %2$s · Failure %3$s · Effective delay %4$s</string>
+    <string name="connectivity_stats_subtitle">Score %1$.3f · Success %2$s · Failure %3$s · Effective delay %4$s · %5$s</string>
+    <string name="connectivity_stats_last_success">Last success %s</string>
+    <string name="connectivity_stats_last_success_never">Last success —</string>
     <string name="connectivity_stats_clear_one">Cleared connectivity statistics for “%s”</string>
     <string name="connectivity_stats_clear_all_message">Clear connectivity statistics for all nodes? This action cannot be undone.</string>
     <string name="connectivity_stats_clear">Clear</string>

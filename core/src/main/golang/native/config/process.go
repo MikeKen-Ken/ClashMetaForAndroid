@@ -70,7 +70,6 @@ var legacyHiddenOverrideKeys = map[string]struct{}{
 	"dns": {},
 
 	// 旧页面已隐藏的 Meta Features 覆写项。
-	"unified-delay":     {},
 	"geodata-mode":      {},
 	"tcp-concurrent":    {},
 	"find-process-mode": {},

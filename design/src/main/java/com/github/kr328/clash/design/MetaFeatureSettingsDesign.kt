@@ -66,13 +66,6 @@ class MetaFeatureSettingsDesign(
             category(R.string.settings)
 
             selectableList(
-                value = configuration::unifiedDelay,
-                values = booleanValues,
-                valuesText = booleanValuesText,
-                title = R.string.unified_delay,
-            )
-
-            selectableList(
                 value = configuration::geodataMode,
                 values = booleanValues,
                 valuesText = booleanValuesText,

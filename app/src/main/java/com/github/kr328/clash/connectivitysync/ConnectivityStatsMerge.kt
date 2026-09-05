@@ -34,7 +34,7 @@ internal object ConnectivityStatsMerge {
                     null
                 }
             }.toMap()
-            if (days.isEmpty()) null else name to ProxyEntry(days)
+            if (days.isEmpty()) null else name to ProxyEntry(days, ls = entry.ls.coerceAtLeast(0))
         }.toMap()
     }
 
@@ -50,12 +50,13 @@ internal object ConnectivityStatsMerge {
                 )
                 if (own.s == 0L && own.f == 0L && own.ds == 0L) null else day to own
             }.toMap()
-            if (days.isEmpty()) null else name to ProxyEntry(days)
+            if (days.isEmpty()) null else name to ProxyEntry(days, ls = entry.ls.coerceAtLeast(0))
         }.toMap()
     }
 
     fun sum(parts: Iterable<StatsData>): StatsData {
         val merged = mutableMapOf<String, MutableMap<String, DayCounts>>()
+        val lastSuccess = mutableMapOf<String, Long>()
         parts.forEach { data ->
             data.forEach { (name, entry) ->
                 val days = merged.getOrPut(name) { mutableMapOf() }
@@ -67,9 +68,14 @@ internal object ConnectivityStatsMerge {
                         ds = safeAdd(current.ds, counts.ds),
                     )
                 }
+                lastSuccess[name] = maxOf(lastSuccess[name] ?: 0L, entry.ls.coerceAtLeast(0))
             }
         }
-        return prune(merged.mapValues { ProxyEntry(it.value) })
+        return prune(
+            merged.mapValues { (name, days) ->
+                ProxyEntry(days, ls = lastSuccess[name] ?: 0L)
+            },
+        )
     }
 
     private fun safeAdd(left: Long, right: Long): Long {

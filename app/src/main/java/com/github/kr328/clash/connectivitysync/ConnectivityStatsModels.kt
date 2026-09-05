@@ -12,6 +12,7 @@ internal data class DayCounts(
 @Serializable
 internal data class ProxyEntry(
     val days: Map<String, DayCounts> = emptyMap(),
+    val ls: Long = 0,
 )
 
 internal typealias StatsData = Map<String, ProxyEntry>

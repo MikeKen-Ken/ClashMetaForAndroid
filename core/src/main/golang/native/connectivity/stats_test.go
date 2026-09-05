@@ -93,6 +93,9 @@ func TestRecordFailureAddsPenaltyDelay(t *testing.T) {
 	if found.Failure != 1 || found.DelaySum != 5000 {
 		t.Fatalf("counts=%+v, want f=1 ds=5000", found)
 	}
+	if entry.LastSuccessAt != 0 {
+		t.Fatalf("failure should not set lastSuccessAt, got %d", entry.LastSuccessAt)
+	}
 
 	ClearAll()
 }
@@ -160,6 +163,74 @@ func TestFailureDedupWithinOneMinute(t *testing.T) {
 	statsMu.Unlock()
 	if found.Success != 2 || found.Failure != 2 || found.DelaySum != 5000+200+300+5000 {
 		t.Fatalf("after window counts=%+v, want s=2 f=2 ds=10500", found)
+	}
+}
+
+func TestRecordSuccessSetsLastSuccessAt(t *testing.T) {
+	statsMu.Lock()
+	statsCache = make(map[string]proxyConnectivityEntry)
+	lastFailureAt = make(map[string]time.Time)
+	statsLoaded = true
+	statsMu.Unlock()
+	defer ClearAll()
+
+	before := time.Now().Unix()
+	RecordDelayTestResult("ok-node", 180, 5000)
+	after := time.Now().Unix()
+
+	statsMu.Lock()
+	entry := statsCache["ok-node"]
+	statsMu.Unlock()
+	if entry.LastSuccessAt < before || entry.LastSuccessAt > after {
+		t.Fatalf("lastSuccessAt=%d, want in [%d,%d]", entry.LastSuccessAt, before, after)
+	}
+
+	RecordDelayTestResult("ok-node", 0, 5000)
+	statsMu.Lock()
+	afterFail := statsCache["ok-node"].LastSuccessAt
+	statsMu.Unlock()
+	if afterFail != entry.LastSuccessAt {
+		t.Fatalf("failure should not change lastSuccessAt: got %d want %d", afterFail, entry.LastSuccessAt)
+	}
+}
+
+func TestSumStatsTakesMaxLastSuccessAt(t *testing.T) {
+	day := todayKey(time.Now())
+	left := map[string]proxyConnectivityEntry{
+		"node": {
+			Days:          map[string]dayCounts{day: {Success: 1, DelaySum: 100}},
+			LastSuccessAt: 100,
+		},
+	}
+	right := map[string]proxyConnectivityEntry{
+		"node": {
+			Days:          map[string]dayCounts{day: {Success: 1, DelaySum: 200}},
+			LastSuccessAt: 250,
+		},
+	}
+	merged := sumStats(left, right)
+	if merged["node"].LastSuccessAt != 250 {
+		t.Fatalf("lastSuccessAt=%d want 250", merged["node"].LastSuccessAt)
+	}
+}
+
+func TestSubtractCopiesLastSuccessAt(t *testing.T) {
+	day := todayKey(time.Now())
+	current := map[string]proxyConnectivityEntry{
+		"node": {
+			Days:          map[string]dayCounts{day: {Success: 8, DelaySum: 800}},
+			LastSuccessAt: 500,
+		},
+	}
+	imported := map[string]proxyConnectivityEntry{
+		"node": {
+			Days:          map[string]dayCounts{day: {Success: 5, DelaySum: 500}},
+			LastSuccessAt: 400,
+		},
+	}
+	own := subtractStats(current, imported)
+	if own["node"].LastSuccessAt != 500 {
+		t.Fatalf("own lastSuccessAt=%d want 500", own["node"].LastSuccessAt)
 	}
 }
 
@@ -391,6 +462,7 @@ func TestQueryScoreRowsOrder(t *testing.T) {
 			Days: map[string]dayCounts{
 				todayKey(time.Now()): {Success: 45, Failure: 2, DelaySum: 45*200 + 2*5000},
 			},
+			LastSuccessAt: 1_725_000_000,
 		},
 	}
 	statsLoaded = true
@@ -403,8 +475,18 @@ func TestQueryScoreRowsOrder(t *testing.T) {
 	if rows[0].Name != "high" {
 		t.Fatalf("first=%s want high", rows[0].Name)
 	}
-	if rows[2].Name != "none" || rows[2].HasStats {
-		t.Fatalf("last=%+v want none without stats", rows[2])
+	if rows[0].LastSuccessAt != 1_725_000_000 {
+		t.Fatalf("high lastSuccessAt=%d want 1725000000", rows[0].LastSuccessAt)
+	}
+	var none *ScoreRow
+	for i := range rows {
+		if rows[i].Name == "none" {
+			none = &rows[i]
+			break
+		}
+	}
+	if none == nil || none.HasStats || none.LastSuccessAt != 0 {
+		t.Fatalf("none=%+v want no stats", none)
 	}
 	ClearAll()
 }

@@ -90,8 +90,9 @@ type DelayTestResult struct {
 }
 
 // HealthCheckWithTimeout tests only the effective members of the requested
-// group using the URL owned by that group. The timeout is applied independently
-// to each network phase; ElapsedMs is the whole group operation duration.
+// group using the URL owned by that group. timeoutMs is both the displayed
+// delay limit and the per-node URLTest deadline. ElapsedMs is the whole group
+// operation duration.
 func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) (result DelayTestResult) {
 	startedAt := time.Now()
 	result = DelayTestResult{Group: name}

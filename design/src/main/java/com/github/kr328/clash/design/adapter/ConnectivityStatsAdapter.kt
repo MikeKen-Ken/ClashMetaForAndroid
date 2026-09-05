@@ -1,6 +1,7 @@
 package com.github.kr328.clash.design.adapter
 
 import android.content.Context
+import android.text.format.DateUtils
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.github.kr328.clash.design.R
@@ -53,7 +54,29 @@ class ConnectivityStatsAdapter(
             } else {
                 "—"
             }
-            return context.getString(R.string.connectivity_stats_subtitle, row.score, success, failure, delay)
+            val lastSuccess = formatLastSuccess(context, row.lastSuccessAt)
+            return context.getString(
+                R.string.connectivity_stats_subtitle,
+                row.score,
+                success,
+                failure,
+                delay,
+                lastSuccess,
+            )
+        }
+
+        private fun formatLastSuccess(context: Context, lastSuccessAt: Long): String {
+            if (lastSuccessAt <= 0L) {
+                return context.getString(R.string.connectivity_stats_last_success_never)
+            }
+            val relative = DateUtils.getRelativeDateTimeString(
+                context,
+                lastSuccessAt * 1000L,
+                DateUtils.MINUTE_IN_MILLIS,
+                DateUtils.WEEK_IN_MILLIS,
+                0,
+            )
+            return context.getString(R.string.connectivity_stats_last_success, relative)
         }
 
         private fun formatCount(n: Double): String {

@@ -117,7 +117,7 @@ profile:
 
 find-process-mode: always
 tcp-concurrent: true
-unified-delay: true
+unified-delay: false
 keep-alive-interval: 15               # 优化：降低不必要的激进保活开销
 keep-alive-idle: 15                  # 优化：与 interval 保持合理同步
 disable-keep-alive: false
