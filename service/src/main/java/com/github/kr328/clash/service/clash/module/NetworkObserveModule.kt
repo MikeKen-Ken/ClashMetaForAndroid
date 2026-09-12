@@ -7,12 +7,14 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Build
+import android.os.SystemClock
 import androidx.core.content.getSystemService
 import com.github.kr328.clash.common.log.Log
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.service.util.asSocketAddressText
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
 import java.net.InetAddress
 import java.util.concurrent.ConcurrentHashMap
 
@@ -43,14 +45,6 @@ private data class ObservedNetworkState(
 ) {
     fun publicSnapshot(change: NetworkChange) = NetworkSnapshot(network, dnsList, change)
 }
-
-private data class NetworkRouteFingerprint(
-    val interfaceName: String?,
-    val linkAddresses: Set<String>,
-    val routes: Set<String>,
-    val mtu: Int,
-    val nat64Prefix: String?,
-)
 
 class NetworkObserveModule(service: Service) : Module<NetworkSnapshot>(service) {
     private val connectivity = service.getSystemService<ConnectivityManager>()!!
@@ -169,34 +163,54 @@ class NetworkObserveModule(service: Service) : Module<NetworkSnapshot>(service) 
         return readinessPenalty + transportPriority
     }
 
-    private fun currentSnapshot(): ObservedNetworkState {
+    private fun currentSnapshot(preferred: Network?): ObservedNetworkState {
         val selected = networkInfos.entries.asSequence()
             .filter { it.value.isAvailable() }
-            .minByOrNull(::networkPriority)
-        val dnsList = selected?.value?.dnsList.orEmpty()
+            .minWithOrNull(compareBy<Map.Entry<Network, NetworkInfo>>(::networkPriority)
+                .thenBy { if (it.key == preferred) 0 else 1 })
+        return snapshotFor(selected?.key)
+    }
+
+    private fun snapshotFor(network: Network?): ObservedNetworkState {
+        val info = networkInfos[network ?: return ObservedNetworkState(null, emptyList(), null)]
+        val dnsList = info?.dnsList.orEmpty()
             .map { it.asSocketAddressText(53) }
-        return ObservedNetworkState(selected?.key, dnsList, selected?.value?.route)
+        return ObservedNetworkState(network, dnsList, info?.route)
+    }
+
+    private fun isUsable(network: Network?): Boolean {
+        val info = network?.let(networkInfos::get) ?: return false
+        val caps = info.capabilities ?: return false
+        return info.isAvailable() &&
+            (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) &&
+            (Build.VERSION.SDK_INT < Build.VERSION_CODES.P || caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_SUSPENDED))
     }
 
     override suspend fun run() {
         register()
 
         var previous: ObservedNetworkState? = null
+        val handover = NetworkHandoverGate<Network>()
         signalChange()
         try {
             while (true) {
-                changes.receive()
+                val remaining = handover.remaining(SystemClock.elapsedRealtime())
+                if (remaining == null) changes.receive()
+                else withTimeoutOrNull(remaining) { changes.receive() }
                 delay(NETWORK_CHANGE_DEBOUNCE_MS)
                 while (changes.tryReceive().isSuccess) {
                     // Coalesce callback bursts into one complete snapshot.
                 }
 
-                val snapshot = currentSnapshot()
+                val candidate = currentSnapshot(previous?.network)
+                val chosen = handover.choose(previous?.network, candidate.network,
+                    isUsable(previous?.network), SystemClock.elapsedRealtime())
+                val snapshot = if (chosen == candidate.network) candidate else snapshotFor(chosen)
                 if (snapshot == previous) continue
 
                 val previousState = previous
                 val routeChanged = previousState?.network != snapshot.network ||
-                    previousState?.route != snapshot.route
+                    routeRequiresRecovery(previousState?.route, snapshot.route)
                 Log.i(
                     "NetworkObserve transition ${previous?.network} -> ${snapshot.network}, " +
                         "routeChanged=$routeChanged, dns=${snapshot.dnsList}",
@@ -225,7 +239,7 @@ class NetworkObserveModule(service: Service) : Module<NetworkSnapshot>(service) 
 private fun LinkProperties.routeSnapshot() = NetworkRouteFingerprint(
     interfaceName = interfaceName,
     linkAddresses = linkAddresses.mapTo(mutableSetOf()) { it.toString() },
-    routes = routes.mapTo(mutableSetOf()) { it.toString() },
+    routes = routes.filter { it.isDefaultRoute }.mapTo(mutableSetOf()) { it.toString() },
     mtu = mtu,
     nat64Prefix = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         nat64Prefix?.toString()
