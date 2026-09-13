@@ -35,7 +35,15 @@
       "reviewedThrough": "c454d0e73b047d9f4c0173e8d35088f08b65bc98",
       "reviewedThroughSubject": "Bump version to 2.11.33 (211033)",
       "note": "本仓 main 与 MetaCubeX main 历史分叉较大。增量窗口以 upstream/main 的 SHA 为准，不要用本仓 HEAD..upstream/main 当全量历史。",
-      "ported": [],
+      "ported": [
+        {
+          "sha": "2954f8e772dbc65e6582bc031bf358ddef84a1c1",
+          "subject": "Update Dependencies",
+          "how": "Partial adaptation: align both wrapper modules with selected fork core dependencies, preserving fork gitlink; no wholesale upstream core update.",
+          "date": "2026-09-13",
+          "status": "Applied in working tree; Android arm64 dependency graph resolved, APK not built"
+        }
+      ],
       "skipped": [
         {
           "sha": "12d4a5f83356275e4226a94f41c96f724c866f8d",
@@ -48,15 +56,7 @@
           "reason": "本 fork 无 ShortcutManager / setupShortcuts，补丁不适用"
         }
       ],
-      "pending": [
-        {
-          "sha": "2954f8e772dbc65e6582bc031bf358ddef84a1c1",
-          "subject": "Update Dependencies",
-          "branch": "update-dependencies",
-          "reason": "Use as Android wrapper dependency alignment reference after selective mihomo fixes; do not replace fork gitlink wholesale.",
-          "reviewDate": "2026-09-13"
-        }
-      ],
+      "pending": [],
       "lastIncrementalReview": {
         "date": "2026-09-13",
         "from": "c454d0e73b047d9f4c0173e8d35088f08b65bc98",
@@ -144,6 +144,34 @@
           "sha": "9a7e72665766e8874f9aef2e608b081e3e4e093c",
           "subject": "fix: performance regression caused by unnecessary wrapping in stream encryption",
           "how": "移除 AES-CTR/CFB 创建流时对 cipher.Block 的多余包装，并提交到自有 mihomo 为 5e7878d9"
+        },
+        {
+          "sha": "5f9510988ceedff71d3d9c037e9630d79ba22726",
+          "subject": "fix: DomainSet wildcard matching with overlapping rules",
+          "date": "2026-09-13",
+          "how": "Selective adaptation; see docs/upstream-port-2026-09-13.md",
+          "status": "Committed as a043a65a, pushed to Alpha and published as alpha-a043a65 / Prerelease-Alpha"
+        },
+        {
+          "sha": "20bcda2d1a12064b22e8b2cb208dc4ff3dd549cf",
+          "subject": "fix: avoid VLESS decryption cleanup panic (#3195)",
+          "date": "2026-09-13",
+          "how": "Selective adaptation; see docs/upstream-port-2026-09-13.md",
+          "status": "Committed as a043a65a, pushed to Alpha and published as alpha-a043a65 / Prerelease-Alpha"
+        },
+        {
+          "sha": "634b31991c6e708226537c3173fc24449ef008d8",
+          "subject": "fix: hysteria2 UDP sessions not closed on connection close",
+          "date": "2026-09-13",
+          "how": "Selective adaptation; see docs/upstream-port-2026-09-13.md",
+          "status": "Committed as a043a65a, pushed to Alpha and published as alpha-a043a65 / Prerelease-Alpha"
+        },
+        {
+          "sha": "0159cf47ed687c1945bfc6dc470d91553e993d94",
+          "subject": "fix: restore hysteria v1 udp handling (#3178)",
+          "date": "2026-09-13",
+          "how": "Selective adaptation; see docs/upstream-port-2026-09-13.md",
+          "status": "Committed as a043a65a, pushed to Alpha and published as alpha-a043a65 / Prerelease-Alpha"
         }
       ],
       "skipped": [
@@ -281,18 +309,6 @@
           "reviewDate": "2026-09-13"
         },
         {
-          "sha": "5f9510988ceedff71d3d9c037e9630d79ba22726",
-          "subject": "fix: DomainSet wildcard matching with overlapping rules",
-          "reason": "Prioritize: local HasWithMatch retains faulty wildcard backtracking; adapt fix while preserving matched-rule reporting.",
-          "reviewDate": "2026-09-13"
-        },
-        {
-          "sha": "20bcda2d1a12064b22e8b2cb208dc4ff3dd549cf",
-          "subject": "fix: avoid VLESS decryption cleanup panic (#3195)",
-          "reason": "Prioritize: local VLESS constructor defers through named result sl, which can become nil on error; capture decryption locally.",
-          "reviewDate": "2026-09-13"
-        },
-        {
           "sha": "d5f57a5e290eafd77a2b28d8db36e3bd70071398",
           "subject": "fix: missing NeedHandshake for shadowsocks none",
           "reason": "Candidate: local sing-shadowsocks 0.2.12 and sing-shadowsocks2 0.2.7 predate NeedHandshake fix.",
@@ -314,18 +330,6 @@
           "sha": "fd74ecb6e22bbdba17a4d7441531fea69ee43036",
           "subject": "fix: trusttunnel client not waiting for TCP connection established",
           "reason": "Candidate: local TrustTunnel still returns before transport establishment; adapt against custom transport lifecycle changes.",
-          "reviewDate": "2026-09-13"
-        },
-        {
-          "sha": "634b31991c6e708226537c3173fc24449ef008d8",
-          "subject": "fix: hysteria2 UDP sessions not closed on connection close",
-          "reason": "Prioritize dependency review: local sing-quic predates UDP-session cleanup fix; check intervening dependency changes before upgrade.",
-          "reviewDate": "2026-09-13"
-        },
-        {
-          "sha": "0159cf47ed687c1945bfc6dc470d91553e993d94",
-          "subject": "fix: restore hysteria v1 udp handling (#3178)",
-          "reason": "Prioritize: local Hysteria v1 still sets UDP false and allocates a nonempty packet buffer before appending.",
           "reviewDate": "2026-09-13"
         },
         {
@@ -367,6 +371,27 @@
           "sha": "85b5501faffc676e128a44990e7f0900a04ee9ca",
           "subject": "fix(profile): prevent crash when editing proxies with empty name",
           "how": "按上游逻辑改 proxies-editor-viewer.tsx，非 cherry-pick"
+        },
+        {
+          "sha": "78d6f8eeae133303c3eb7e21a3111f4f2cd882e9",
+          "subject": "fix(proxy-group): prevent PASS-RULE from being filtered out (#7893)",
+          "date": "2026-09-13",
+          "how": "Selective adaptation; see docs/upstream-port-2026-09-13.md",
+          "status": "Applied in working tree; full app build not completed"
+        },
+        {
+          "sha": "44f6f6e19baadf5acab7b2835994488c9ee21bb1",
+          "subject": "fix(profile): preserve files until explicit deletion",
+          "date": "2026-09-13",
+          "how": "Selective adaptation; see docs/upstream-port-2026-09-13.md",
+          "status": "Applied in working tree; full app build not completed"
+        },
+        {
+          "sha": "695fadf21e392fb25327b3ab1cd3bf12caa28b2d",
+          "subject": "fix(security): restrict external URL opening",
+          "date": "2026-09-13",
+          "how": "Selective adaptation; see docs/upstream-port-2026-09-13.md",
+          "status": "Applied in working tree; full app build not completed"
         }
       ],
       "skipped": [
@@ -828,33 +853,15 @@
           "reviewDate": "2026-09-13"
         },
         {
-          "sha": "78d6f8eeae133303c3eb7e21a3111f4f2cd882e9",
-          "subject": "fix(proxy-group): prevent PASS-RULE from being filtered out (#7893)",
-          "reason": "Small fix: local BUILTIN_POLICIES omits PASS-RULE and can remove it from proxy groups.",
-          "reviewDate": "2026-09-13"
-        },
-        {
           "sha": "86b5493a9d5ce386e196dfd452294ae6604fe058",
           "subject": "fix: windows shutdown being blocked (#7848)",
           "reason": "Candidate: devtools dependency is unconditional locally; make feature-gated. Windows shutdown symptom not reproduced.",
           "reviewDate": "2026-09-13"
         },
         {
-          "sha": "44f6f6e19baadf5acab7b2835994488c9ee21bb1",
-          "subject": "fix(profile): preserve files until explicit deletion",
-          "reason": "Prioritize: startup calls cleanup_orphaned_files; local cleanup deletes files absent from index without explicit deletion.",
-          "reviewDate": "2026-09-13"
-        },
-        {
           "sha": "4c1df582ba540aaff4fc6913ed080c5e65099ac0",
           "subject": "fix(profile): propagate subscription update failures",
           "reason": "Partial adaptation: local typed DownloadFailed already exists; runtime apply errors are still swallowed while returning DownloadSucceeded. Preserve retry semantics.",
-          "reviewDate": "2026-09-13"
-        },
-        {
-          "sha": "695fadf21e392fb25327b3ab1cd3bf12caa28b2d",
-          "subject": "fix(security): restrict external URL opening",
-          "reason": "Prioritize scoped hardening: profile home URL accepted from response header and passed to plugin-shell open; adapt HTTP/HTTPS validation and audit required capabilities.",
           "reviewDate": "2026-09-13"
         },
         {
@@ -877,5 +884,13 @@
         "scope": "All incremental subjects screened; selected fix diffs compared with local source. No builds, runtime tests or patches applied."
       }
     }
+  },
+  "lastPort": {
+    "date": "2026-09-13",
+    "report": "docs/upstream-port-2026-09-13.md",
+    "coreCommit": "a043a65a10d3a565b44c899ea45a295e87a2c50f",
+    "releaseRun": "https://github.com/MikeKen-Ken/mihomo/actions/runs/34736844190",
+    "releaseStatus": "success",
+    "releaseVersion": "alpha-a043a65"
   }
 }
