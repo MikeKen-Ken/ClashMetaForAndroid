@@ -22,8 +22,8 @@
     "afterReview": "把对应组件的 reviewedThrough 更新为当时的上游 tip SHA；把摘入/跳过的提交追加进 ported 或 skipped。"
   },
   "lastReview": {
-    "date": "2026-08-23",
-    "method": "按 reviewedThrough 增量审阅功能、安全与稳定性提交；仅评估，未摘入补丁"
+    "date": "2026-09-13",
+    "method": "Incremental subject screening and selected patch/local-source comparison; recommendations in pending, explicit deferrals in skipped; no patches applied."
   },
   "components": {
     "android": {
@@ -31,7 +31,7 @@
       "upstreamRemote": "upstream",
       "upstreamUrl": "git@github.com:MetaCubeX/ClashMetaForAndroid.git",
       "upstreamRef": "main",
-      "localHeadAtReview": "d48185307fb1c85dd8db4bb5e91c1a1e576b0d0f",
+      "localHeadAtReview": "ea2da9e5dcebc92822e871a91b9bae30e8559a60",
       "reviewedThrough": "c454d0e73b047d9f4c0173e8d35088f08b65bc98",
       "reviewedThroughSubject": "Bump version to 2.11.33 (211033)",
       "note": "本仓 main 与 MetaCubeX main 历史分叉较大。增量窗口以 upstream/main 的 SHA 为准，不要用本仓 HEAD..upstream/main 当全量历史。",
@@ -47,17 +47,41 @@
           "subject": "Fix crash when Hide App Icon is enabled alongside dynamic shortcuts",
           "reason": "本 fork 无 ShortcutManager / setupShortcuts，补丁不适用"
         }
-      ]
+      ],
+      "pending": [
+        {
+          "sha": "2954f8e772dbc65e6582bc031bf358ddef84a1c1",
+          "subject": "Update Dependencies",
+          "branch": "update-dependencies",
+          "reason": "Use as Android wrapper dependency alignment reference after selective mihomo fixes; do not replace fork gitlink wholesale.",
+          "reviewDate": "2026-09-13"
+        }
+      ],
+      "lastIncrementalReview": {
+        "date": "2026-09-13",
+        "from": "c454d0e73b047d9f4c0173e8d35088f08b65bc98",
+        "commitCount": 0,
+        "scope": "All incremental subjects screened; selected fix diffs compared with local source. No builds, runtime tests or patches applied."
+      },
+      "additionalBranchReview": {
+        "date": "2026-09-13",
+        "branch": "update-dependencies",
+        "reviewedThrough": "2954f8e772dbc65e6582bc031bf358ddef84a1c1",
+        "subject": "Update Dependencies",
+        "coreTip": "dca26db017bcde90071f3e16f97b12fafbccfa31",
+        "finding": "Five files: core gitlink plus foss/main Go module and checksum files. No Android app source changes. Core tip matches reviewed mihomo Alpha. Preserve fork core and selectively align wrapper dependencies after chosen core patches.",
+        "otherBranches": "refactor-flavor-structure and init have no commits outside main checkpoint; try-fix-reload has one old 2022 commit, outside current incremental date window."
+      }
     },
     "mihomo": {
       "path": "core/src/foss/golang/clash",
       "upstreamRemote": "upstream",
       "upstreamUrl": "git@github.com:MetaCubeX/mihomo.git",
       "upstreamRef": "Alpha",
-      "localHeadAtReview": "1e6912389a02299999061ad21af41a90414dcb57",
+      "localHeadAtReview": "b32bb2593f24dc92b7a269e2835b7bed82d25342",
       "mergeBaseWithUpstreamAtReview": "f99d4e1be6bef9479fd5f13213ad17edcd0cd3e4",
-      "reviewedThrough": "f295ba6da4928af24f6f4c15f732e728b045db0a",
-      "reviewedThroughSubject": "chore: update mipstack for api adjustment",
+      "reviewedThrough": "dca26db017bcde90071f3e16f97b12fafbccfa31",
+      "reviewedThroughSubject": "feat: add EasyTier outbound (#3194)",
       "note": "2026-08-13 已在工作区摘入下列补丁，但 submodule HEAD 仍可能停在 localHeadAtReview，直到提交到自有 mihomo 并更新 gitlink。",
       "ported": [
         {
@@ -127,18 +151,212 @@
           "sha": "5b54b3ad467896d016a428e7db172a1115e7e464",
           "subject": "fix: panic when dial failed in masque",
           "reason": "本 fork 已有 DialQuic 失败返回，无需再摘"
+        },
+        {
+          "sha": "dca26db017bcde90071f3e16f97b12fafbccfa31",
+          "subject": "feat: add EasyTier outbound (#3194)",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "b59a7e7bafd411381824af991d95bb119f7bf0f9",
+          "subject": "chore: sharing synthetic datasets used for build benchmarking",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "ebf82e2962c592496061b035a9bcc3ef1d5b92fa",
+          "subject": "chore: reuse queues during DomainSet build",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "f6a038ce0fa9fa7b4b8b6c340b4e7d1e36d25e7a",
+          "subject": "chore: add some benchmark code for new DomainMap",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "d37f58e768b7c1f3d193d69241498f3140f325a3",
+          "subject": "chore: add new DomainMap implement based on succinct DomainSet",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "6087521e6004c4787dfc12c4e53ea05024695441",
+          "subject": "chore: avoid a separate rule slice in DumpMrs",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "518c7036dfc85248d304181993664e4fb2a65bcb",
+          "subject": "chore: convert support REALITY ML-KEM option (#3199)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "4aa9cc17fc91feb60d406bd273206ddb7d43f431",
+          "subject": "chore: avoid redundant select calculations in DomainSet",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "8e2f18a1a9162acfd632481f4251547c07cffd1d",
+          "subject": "chore: avoid redundant rank calculations in DomainSet",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "390870c7b48b5f19e6e64df330b5ba160f893f42",
+          "subject": "feat: support `identity-secret` for ZeroTier",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "a91201f1fc1eb9576f284a4655d819326662fb61",
+          "subject": "fix: correct android amd64 core asset name in updater (#3167)",
+          "reason": "Fork updater already uses custom amd64 release naming without GOAMD64; upstream naming patch not applicable.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "6d179a1c45b07dee549c8ff1bcc186c55902c171",
+          "subject": "fix: openvpn derive the tls-auth HMAC digest from auth instead of hard-coding SHA-1 (#3189)",
+          "reason": "Local OpenVPN has no tlsauth.go/NewTLSAuth implementation; patch targets a newer upstream feature.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "bbb8cb924b4443c7f4c6b13ce3045a71ddab342a",
+          "subject": "chore: add standalone DomainSetBuilder",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "8f54283e97728859d88f45025bab250504337687",
+          "subject": "chore: updated sudoku to v0.5.0 (#3187)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "810b014ee9c2a577fbda8ecf20deafd53d62566b",
+          "subject": "action: update-tag action v1->v3 (#3172)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "2ecceb5b8a12d1d956f0974a86be8eee46f87073",
+          "subject": "chore: improve mipstack under device backpressure",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "65287f0e0f3f8e5aaa1e95ded15a80235ecb8c04",
+          "subject": "chore: reduce memory usage in converter (#3159)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "061966e79798ae1f953b6d96308738a082b394a5",
+          "subject": "chore: OpenVPN no longer relies on the underlying conn deadline functions",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "4dfaa9027d87b20bee34b04f5535558675c689a0",
+          "subject": "chore: align the APIs between mipstack and gvisor",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "fb66af813b3e65023851e94166ec8a4f61e02634",
+          "subject": "fix: typo in config.yaml (#3145)",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
         }
-      ]
+      ],
+      "pending": [
+        {
+          "sha": "77b9393c32fe042f3e4b008aa0b56b2d91994501",
+          "subject": "fix: preserve domain rules across Foreach round trips",
+          "reason": "Candidate: local Foreach retains wildcard rewriting; port round-trip fixes together with constructor and DumpMrs consumers, not independently.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "5f9510988ceedff71d3d9c037e9630d79ba22726",
+          "subject": "fix: DomainSet wildcard matching with overlapping rules",
+          "reason": "Prioritize: local HasWithMatch retains faulty wildcard backtracking; adapt fix while preserving matched-rule reporting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "20bcda2d1a12064b22e8b2cb208dc4ff3dd549cf",
+          "subject": "fix: avoid VLESS decryption cleanup panic (#3195)",
+          "reason": "Prioritize: local VLESS constructor defers through named result sl, which can become nil on error; capture decryption locally.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "d5f57a5e290eafd77a2b28d8db36e3bd70071398",
+          "subject": "fix: missing NeedHandshake for shadowsocks none",
+          "reason": "Candidate: local sing-shadowsocks 0.2.12 and sing-shadowsocks2 0.2.7 predate NeedHandshake fix.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "5183232e7f6728e0523ba051b9a5c19615c65370",
+          "subject": "fix: RandomPaddingAddition and DisableCookies for AmneziaWG v3",
+          "reason": "Candidate: AmneziaWG v3 support exists locally but dependency remains 20260816073447-736a78668832.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "92433dbafcfd48774ad04033692c82179403f3e4",
+          "subject": "chore: reduce gVisor memory usage",
+          "reason": "Benchmark first: gVisor processors-per-channel memory reduction requires coordinated sing-tun/config changes; local sing-tun is 0.4.20.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "fd74ecb6e22bbdba17a4d7441531fea69ee43036",
+          "subject": "fix: trusttunnel client not waiting for TCP connection established",
+          "reason": "Candidate: local TrustTunnel still returns before transport establishment; adapt against custom transport lifecycle changes.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "634b31991c6e708226537c3173fc24449ef008d8",
+          "subject": "fix: hysteria2 UDP sessions not closed on connection close",
+          "reason": "Prioritize dependency review: local sing-quic predates UDP-session cleanup fix; check intervening dependency changes before upgrade.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "0159cf47ed687c1945bfc6dc470d91553e993d94",
+          "subject": "fix: restore hysteria v1 udp handling (#3178)",
+          "reason": "Prioritize: local Hysteria v1 still sets UDP false and allocates a nonempty packet buffer before appending.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "68ec4fae652318bb1474bdfca3918191b167806d",
+          "subject": "fix: ipv6 url parse in xhttp (#3160)",
+          "reason": "Candidate: local XHTTP request/download host construction lacks IPv6 brackets.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "99c49780fdc3146d9ee708d04db0d4185b2df5c3",
+          "subject": "fix: prevent nil pointer dereference in WireGuard initialization (#3148)",
+          "reason": "Low-priority defensive candidate: bind nil guard absent; verify local dependency can actually return nil before claiming a reachable crash.",
+          "reviewDate": "2026-09-13"
+        }
+      ],
+      "lastIncrementalReview": {
+        "date": "2026-09-13",
+        "from": "f295ba6da4928af24f6f4c15f732e728b045db0a",
+        "commitCount": 31,
+        "scope": "All incremental subjects screened; selected fix diffs compared with local source. No builds, runtime tests or patches applied."
+      }
     },
     "clash-verge-rev": {
       "path": "clash-verge-rev",
       "upstreamRemote": "upstream",
       "upstreamUrl": "git@github.com:clash-verge-rev/clash-verge-rev.git",
       "upstreamRef": "dev",
-      "localHeadAtReview": "6f00a7409cfea28fa2a0f36ff2d5dc4bd6611296",
+      "localHeadAtReview": "e7d16a273fc12e0daf116ae7a1fd85f5e5ea13de",
       "mergeBaseWithUpstreamAtReview": "95281632a15f4af1fef189273cbb2a25743aa342",
-      "reviewedThrough": "f68f204fc296d9f2151132bb9fe18c76d28db44f",
-      "reviewedThroughSubject": "chore(deps): revert dependency rust to v1.95.0 (#7796)",
+      "reviewedThrough": "d72ffcde0366fcd8612fd08bb0534fac3702fb98",
+      "reviewedThroughSubject": "chore(deps): update github/gh-aw-actions action to v0.89.8 (#7922)",
       "ported": [
         {
           "sha": "4673360f693d0117c8f244159d2aae6d8a7896c5",
@@ -186,8 +404,478 @@
           "sha": "bcece774",
           "subject": "fix(deps): security update thin-vec to 0.2.16",
           "reason": "Cargo lock 与分叉纠缠，未动依赖升级"
+        },
+        {
+          "sha": "d72ffcde0366fcd8612fd08bb0534fac3702fb98",
+          "subject": "chore(deps): update github/gh-aw-actions action to v0.89.8 (#7922)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "12c87597e14d36251a386782a4dc92fde2435785",
+          "subject": "chore(deps): update pnpm to v12.4.1 (#7921)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "f624ffc382a03fea21d39e7130000bce96678189",
+          "subject": "chore(deps): update github/gh-aw-actions action to v0.89.4 (#7918)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "f4651061d20bab898ed7ebdf452df717b796f1dc",
+          "subject": "chore: bump version",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "82d76113f28ebccaa29b98379c49e2bfedebf45a",
+          "subject": "refactor(frontend): drop dead code in traffic and ws pipelines",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "38c54c5b3b963f6802ec253276033d9a10c32fe2",
+          "subject": "perf(traffic): single-slice snapshots with worker-side aging",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "2a975d546ed150b55e1d2399e157da99371b398e",
+          "subject": "chore(devcontainers): Pin `pnpm` version for Nodejs feature (#7913)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "ece82c5b1fa570c411e4d15329f57c48d7e51d7b",
+          "subject": "chore(deps): update github/gh-aw-actions action to v0.89.2 (#7912)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "181c4319a4badc6e875b26b7da3d86296ae0f3fd",
+          "subject": "ci(gh-aw): upgrade agentic workflows to v0.89.1 (#7911)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "d8ea624e3f661bd07c0caa6b272ea562d86d4edf",
+          "subject": "chore(deps): update node.js to v24.21.0 (#7909)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "ed0e1b38f069f6927ed3524092a53e5cde700e66",
+          "subject": "feat(proxy): support dragging to swap proxy group header sections",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "bf6f43f15b8bef6500e0c6404c5c60550d4db1a0",
+          "subject": "fix(singleton): let a restart-spawned child take over the instance lock",
+          "reason": "Local singleton uses a different port-based implementation, not the upstream instance-lock loop.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "f77f60ecd57fe043e430d6caf3ae322e65c82b68",
+          "subject": "docs(changelog): distill release notes and add platform grouping",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "8812923eda29916094f316aa3c33aeb72aee66cc",
+          "subject": "perf(enhance): cut fixed config-generation cost",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "92624108c9e06ebe09c7c8fd1a2ede3d039d847f",
+          "subject": "docs: add privacy",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "f60839097cb521bb344716036c8066ef56f1db7f",
+          "subject": "chore: update changelog",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "b06a966a4ba05f71eef5547294965e69858a5f50",
+          "subject": "fix(ui): use utf-8 encoding for inline SVG icons to support non-latin characters (#7892)",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "380d03cb97f9a6ebb0abd039965baed4fae38e81",
+          "subject": "fix(macos): discard a core cache the current user cannot write (#7883)",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "3253828bf0fe1c871b3c08028f240a11a4861073",
+          "subject": "feat/fix: service core staging (#7899)",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "c56e78a7263de4913140f9d4defff6f6e2703b62",
+          "subject": "chore(deps): update rust crate dirs to v7 (#7897)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "c1dcacf0329955d099fb6aaf5b46d160ecd015aa",
+          "subject": "chore(deps): update dependency vitest to v5 (#7894)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "c3ceea6258f40b76d71b246b0bf366b755f407c0",
+          "subject": "refactor: extract sidebar into standalone component (#7859)",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "f754ee53a0b25ed3b115f978838947455cacecef",
+          "subject": "ci(ai-slop): cap review cost with per-run budgets and a leaner prompt",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "37fa9b65fa9ba31af9d73e3becfa7ef78f95f5ed",
+          "subject": "ci: add AI-collaboration contract and PR gates for slop review",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "66d3e701604139f0a55b2e4afeaea58ad486e0ac",
+          "subject": "fix(ci): align AI review configuration with the gh-aw runtime (#7887)",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "2f370d649005166fdc8f86c3a1e6745e972f5700",
+          "subject": "refactor(log): in-place writer lifecycle and span-based core observability (#7889)",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "f8b69b5d62a46a20f75544464dfccad841d74b6e",
+          "subject": "fix(sysproxy): tell the window when a background apply lands",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "4ddd021826d10f80b8ae0694246c5a2a1b23b1b3",
+          "subject": "Revert \"chore(deps): update pnpm to v12.3.4 (#7878)\"",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "800e11a718155f80f090dfa1152343ba82ed2a8e",
+          "subject": "feat(window): clear all WebSocket connections before stopping core (#7862)",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "714a84c91f2c0d36ede11693e931db6d76b95056",
+          "subject": "chore(deps): update dependency ws to v8.21.0 [security] (#7879)",
+          "reason": "No ws package entry found in local package.json or pnpm lock; upstream dependency patch not applicable as written.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "3c689a92337463b5ca8fa68dcbafb1d9633ebf7f",
+          "subject": "chore(deps): update pnpm to v12.3.4 (#7878)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "6de0a59756253f337efa86c01b31a365188f4316",
+          "subject": "chore(deps): bump tauri-plugin-mihomo to 0.6.0 and move home card to count stream",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "b39c5f9b6d2d799f6ce482e634416ae70668b56a",
+          "subject": "test(perf): add macOS Tauri WebView performance harness",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "dd7b032cb107d5cc5cb16eac78936cdbf97bcef2",
+          "subject": "refactor: retire application portable mode",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "9c9b7c39927a3e2997947b11f5ef64005b79cdf3",
+          "subject": "perf(proxy): read delays once per latency sort",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "ee497cc65db752726abb30af53e2583e18640340",
+          "subject": "refactor(ipc): remove unused commands",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "4ed474706a884d24a772bf556083a920671b7203",
+          "subject": "refactor(frontend): consolidate query state ownership",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "00a8518e7a6bb87bbb0b0762d68134639ba61b13",
+          "subject": "chore(deps): update rust toolchain to v1.98.1 (#7871)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "e179ce9ac5322f61e5c2a6acf5681a43e72b6a0d",
+          "subject": "chore(deps): update pnpm to v12.3.3 (#7870)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "3e0a773bd748b6cd5cfb0d24ed979988d28c35f4",
+          "subject": "chore(deps): update github actions (#7869)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "d8b94d12dd58ef0913977af36217d251e37f9ac2",
+          "subject": "perf(core): batch close connections on mode change",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "836199cfe2308b02b5fcbc8e9d491f5d31684f46",
+          "subject": "fix: unify font-family usage across GUI",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "a640010bc3fab25711fd9d25a484f9162422422a",
+          "subject": "fix(clippy): Restrict 2 imports to macOS only (#7858)",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "c0c1fbcfc29fef4e9a9585d14157196bc465580a",
+          "subject": "refactor(sysproxy): watch the network from the main run loop",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "e57d115110a69ebbe93e08bb3adf69d4c6c29deb",
+          "subject": "feat(sysproxy): re-apply the proxy when macOS gains a network service",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "c89f431cb04f2d5deae57019aff5e300e100fd00",
+          "subject": "fix(sysproxy): wait for the network before the login-time proxy write",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "7ffb0ef23b1a3ee48c6698867377ee4cd99994fe",
+          "subject": "test: remove useless test",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "ff4b4dd8229ebf3de630c141dff189b5ed5bb7fb",
+          "subject": "chore: cleanup build script",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "dab16471259913a0f533b6328ed790db826dbb59",
+          "subject": "chore(deps): update ghcr.io/devcontainers/features/node docker tag to v2 (#7854)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "9cb4ce6cb1d98cd2764c6fb80f012af2a27e6c84",
+          "subject": "refactor: simplify side menu layout and drag-and-drop logic (#7838)",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "ef042ddf82a034a2edaead556590186afac22e7f",
+          "subject": "fix(sysproxy): stop turning a missing network service into a hard failure",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "78cc4dc53217a4a0a32b56d95278c407e8764ab1",
+          "subject": "chore(deps): update github/gh-aw-actions action to v0.88.0 (#7833)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "aca9c34dfbd38ab264043a87f0d54ed24cb8adeb",
+          "subject": "ci(renovate): Unlock auto updates for basic built tools and group updates together (#7835)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "f5cc24ec9fc7c6f025ecbd5b1952c27b3facc17a",
+          "subject": "chore: update tauri-plugin-mihomo dep (#7847)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "e60285b4ae878021622e07a7654a8476e78cc62d",
+          "subject": "fix(tun): make the TUN switch reflect what the Core actually runs",
+          "reason": "Fork already separates TUN preference/effective state and has custom validated restart transactions; do not replace wholesale.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "8611fdc34f6da5dc97fa1f03ab334558084b17e5",
+          "subject": "chore(deps): update mihomo plugin",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "eafa91938d3cdc3bb9aa7df4be9e0124ef6346ab",
+          "subject": "chore(gitattributes): Lock end of line style for shell scripts (#7834)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "632c5b2bc5d4d380c0004dc0f833d4a4b3f3ebf4",
+          "subject": "fix(windows): repair a data root owned by another account",
+          "reason": "Upstream owner_identity architecture differs; defer platform ownership migration rather than port as a small fix.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "1b76b222fb54e82ba48a0bff850df4b5c418805e",
+          "subject": "fix(sysproxy): gsettings command is no longer mandatory on KDE desktop (#7829)",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "598b5e690c0ec9768203fe442c01dbc7b6100eff",
+          "subject": "feat(updater): sanitize release notes and standardize semver",
+          "reason": "Upstream update-viewer surface absent locally; defer updater redesign.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "b6de05ffe4ea4b530bd14ce47fa415b0ad1c17b3",
+          "subject": "refactor: migrate to @dnd-kit/react and simplify sortable components (#7819)",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "181dfb87a4503884b0f74bb62c7a116f337ea21d",
+          "subject": "chore: migrate to pnpm 12",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "3503a2da29d68a4398c0b8e9234cffb711e65783",
+          "subject": "fix: reset fake-ip-range6: \"2001:2::0/64\" as default on Tun Mode (#7811)",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "b7c4f7d39b6542da6bafbb4bd45d8b963d304bd0",
+          "subject": "refactor: api cleanup (#7812)",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "9085d907cd06bebed8f7f1804bb6ecbb5e920cca",
+          "subject": "perf: reduce idle backend work",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "eb6c81b00fd159dc8e9fe18c099574ac1625e891",
+          "subject": "feat(macos): adopt Icon Composer 2 app icon",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "a1dae06791b5aed84437b3f4de8adef390890c6f",
+          "subject": "chore(deps): update native service stack (#7792)",
+          "reason": "Screened out of this targeted fix shortlist: maintenance, tooling, benchmarks or dependency/API work; not validated for porting.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "6eaf65ff0f59d10d092dc6b913408c8c8b9b5ecf",
+          "subject": "fix(profiles): stabilize drag reorder motion",
+          "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
+          "reviewDate": "2026-09-13"
         }
-      ]
+      ],
+      "pending": [
+        {
+          "sha": "bea03e1a09118e86b3eb0c2438aa262d853aa773",
+          "subject": "fix: preserve custom TUN fields and sync service provider caches",
+          "reason": "Deferred deeper review: split TUN field preservation from large service-cache changes; custom fork runtime ownership differs.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "35a2b6c75c5eeed98617fbf8f8779589680f281d",
+          "subject": "feat(dns): protect provider DNS from unconfirmed overrides (#7902)",
+          "reason": "Deferred deeper review: provider DNS ownership requires product/config policy decision; avoid wholesale upstream replacement.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "78d6f8eeae133303c3eb7e21a3111f4f2cd882e9",
+          "subject": "fix(proxy-group): prevent PASS-RULE from being filtered out (#7893)",
+          "reason": "Small fix: local BUILTIN_POLICIES omits PASS-RULE and can remove it from proxy groups.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "86b5493a9d5ce386e196dfd452294ae6604fe058",
+          "subject": "fix: windows shutdown being blocked (#7848)",
+          "reason": "Candidate: devtools dependency is unconditional locally; make feature-gated. Windows shutdown symptom not reproduced.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "44f6f6e19baadf5acab7b2835994488c9ee21bb1",
+          "subject": "fix(profile): preserve files until explicit deletion",
+          "reason": "Prioritize: startup calls cleanup_orphaned_files; local cleanup deletes files absent from index without explicit deletion.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "4c1df582ba540aaff4fc6913ed080c5e65099ac0",
+          "subject": "fix(profile): propagate subscription update failures",
+          "reason": "Partial adaptation: local typed DownloadFailed already exists; runtime apply errors are still swallowed while returning DownloadSucceeded. Preserve retry semantics.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "695fadf21e392fb25327b3ab1cd3bf12caa28b2d",
+          "subject": "fix(security): restrict external URL opening",
+          "reason": "Prioritize scoped hardening: profile home URL accepted from response header and passed to plugin-shell open; adapt HTTP/HTTPS validation and audit required capabilities.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "272c09568cc0ab206f926a012cba581cf915db9f",
+          "subject": "fix(sysproxy): retry a transient system proxy write on Windows",
+          "reason": "Deferred adaptation: Windows transient sysproxy retry must be assessed with active local network-recovery changes.",
+          "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "8df8edb6ddb1049d95d7ed0b9f283368fbaba497",
+          "subject": "fix(sysproxy): keep the system proxy usable when the core is not ready",
+          "reason": "Deferred adaptation: core readiness/system-proxy recovery overlaps custom lifecycle; no wholesale port.",
+          "reviewDate": "2026-09-13"
+        }
+      ],
+      "lastIncrementalReview": {
+        "date": "2026-09-13",
+        "from": "f68f204fc296d9f2151132bb9fe18c76d28db44f",
+        "commitCount": 77,
+        "scope": "All incremental subjects screened; selected fix diffs compared with local source. No builds, runtime tests or patches applied."
+      }
     }
   }
 }

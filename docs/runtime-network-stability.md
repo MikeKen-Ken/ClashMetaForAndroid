@@ -57,6 +57,14 @@ installed applications. Desktop still resolves its sidecar through `version.txt`
 
 ## Validation boundaries
 
+The follow-up hardening retains dedicated traffic evidence for the proxy being
+checked, so replies from overlapping older connections cannot overwrite it.
+Recovery diagnostics are available at authenticated `GET /network/diagnostics`
+with 64 in-memory events and lifetime counters. Windows route notifications wake
+the settled fingerprint observer; five-second polling remains a fallback and
+continues independently of notification bursts. Other desktop platforms retain
+polling. See [acceptance procedure](network-recovery-acceptance.md).
+
 Focused Go tests cover failure confirmation, diagnostic history isolation, DNS
 waiter accounting, working-traffic protection, verified candidate selection,
 cancellation, and failback hold. Android policy tests cover handover and route
