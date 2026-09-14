@@ -279,13 +279,12 @@ class ClashManager(private val context: Context) : IClashManager,
     }
 
     override suspend fun healthCheckWithTimeout(group: String, timeoutMs: Int, concurrency: Int): DelayTestResult {
-        val result = Clash.healthCheckWithTimeout(group, timeoutMs, concurrency)
-        if (result.hasSuccess) {
-            store.activeProfile?.let { uuid ->
-                SelectionDao().removeSelected(uuid, group)
-            }
-        }
-        return result
+        return runProfileScopedDelayTest(
+            activeProfile = { store.activeProfile },
+            test = { Clash.healthCheckWithTimeout(group, timeoutMs, concurrency) },
+            hasSuccess = { it.hasSuccess },
+            clearSelection = { profile -> SelectionDao().removeSelected(profile, group) },
+        )
     }
 
     override suspend fun applyManualConnectivityOrder() {
