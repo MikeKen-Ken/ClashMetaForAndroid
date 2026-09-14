@@ -1,6 +1,8 @@
 package com.github.kr328.clash.design.adapter
 
 import android.content.Context
+import android.graphics.drawable.Drawable
+import android.util.LruCache
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -14,7 +16,12 @@ class ConnectionAdapter(
     private val onCopy: ((String) -> Unit)? = null,
     private val onAddTemporaryRule: ((Connection) -> Unit)? = null,
 ) : RecyclerView.Adapter<ConnectionAdapter.Holder>() {
-    class Holder(val binding: AdapterConnectionItemBinding) : RecyclerView.ViewHolder(binding.root)
+    class Holder(val binding: AdapterConnectionItemBinding) : RecyclerView.ViewHolder(binding.root) {
+        var item: ConnectionDisplayItem? = null
+    }
+
+    private data class CachedIcon(val drawable: Drawable?)
+    private val icons = LruCache<String, CachedIcon>(128)
 
     var displayItems: List<ConnectionDisplayItem> = emptyList()
 
@@ -33,6 +40,15 @@ class ConnectionAdapter(
     override fun onBindViewHolder(holder: Holder, position: Int) {
         val item = displayItems[position]
         val conn = item.connection
+        val previous = holder.item
+        holder.item = item
+        if (previous != null && previous.isClosed == item.isClosed &&
+            previous.startTimeDisplayText == item.startTimeDisplayText &&
+            previous.connection.copy(upload = conn.upload, download = conn.download) == conn
+        ) {
+            holder.binding.trafficDisplayText = item.trafficDisplayText
+            return
+        }
         holder.binding.connection = conn
         holder.binding.networkDisplayText = conn.metadata?.network?.takeIf { it.isNotEmpty() }?.uppercase()
         holder.binding.trafficDisplayText = item.trafficDisplayText
@@ -47,21 +63,21 @@ class ConnectionAdapter(
         processView.visibility = if (process != null) View.VISIBLE else View.GONE
         val iconView = holder.binding.appIconView
         if (process != null) {
-            try {
-                iconView.setImageDrawable(context.packageManager.getApplicationIcon(process))
-                iconView.visibility = View.VISIBLE
-            } catch (_: Exception) {
-                iconView.visibility = View.GONE
-            }
+            val cached = icons.get(process) ?: CachedIcon(
+                try { context.packageManager.getApplicationIcon(process) }
+                catch (_: Exception) { null }
+            ).also { icons.put(process, it) }
+            iconView.setImageDrawable(cached.drawable?.constantState?.newDrawable(context.resources) ?: cached.drawable)
+            iconView.visibility = if (cached.drawable != null) View.VISIBLE else View.GONE
         } else {
             iconView.visibility = View.GONE
         }
         holder.binding.closeView.visibility = if (item.isClosed) View.GONE else View.VISIBLE
-        holder.binding.closeView.setOnClickListener { onClose(conn) }
+        holder.binding.closeView.setOnClickListener { holder.item?.let { onClose(it.connection) } }
         holder.binding.temporaryRuleView.visibility = if (item.isClosed) View.GONE else View.VISIBLE
-        holder.binding.temporaryRuleView.setOnClickListener { onAddTemporaryRule?.invoke(conn) }
+        holder.binding.temporaryRuleView.setOnClickListener { holder.item?.let { onAddTemporaryRule?.invoke(it.connection) } }
         holder.binding.root.setOnLongClickListener {
-            onCopy?.invoke(formatCopyText(item))
+            holder.item?.let { onCopy?.invoke(formatCopyText(it)) }
             true
         }
     }

@@ -1,10 +1,11 @@
 package com.github.kr328.clash
 
-import com.github.kr328.clash.common.util.ticker
 import com.github.kr328.clash.design.ConnectionsDesign
 import com.github.kr328.clash.util.scheduleClashMutation
 import com.github.kr328.clash.util.withClash
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
@@ -42,6 +43,7 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
         var refreshJob: Job? = null
         var refreshPending = false
         fun requestRefresh() {
+            if (!activityStarted) return
             if (refreshJob?.isActive == true) {
                 refreshPending = true
                 return
@@ -50,19 +52,34 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
                 do {
                     refreshPending = false
                     refreshConnections(design)
-                } while (refreshPending && isActive)
+                } while (refreshPending && isActive && activityStarted)
             }
         }
 
-        requestRefresh()
-
-        val ticker = ticker(TimeUnit.SECONDS.toMillis(1))
+        var pollingJob: Job? = null
+        fun startPolling() {
+            if (pollingJob?.isActive == true) return
+            requestRefresh()
+            pollingJob = launch {
+                while (isActive && activityStarted) {
+                    delay(TimeUnit.SECONDS.toMillis(1))
+                    requestRefresh()
+                }
+            }
+        }
+        if (activityStarted) startPolling()
 
         while (isActive) {
             select<Unit> {
                 events.onReceive {
                     when (it) {
-                        Event.ActivityStart -> requestRefresh()
+                        Event.ActivityStart -> startPolling()
+                        Event.ActivityStop -> {
+                            pollingJob?.cancel()
+                            pollingJob = null
+                            refreshPending = false
+                            refreshJob?.cancel()
+                        }
                         Event.ProfileLoaded -> {
                             val ids = pendingCloseAfterRule.toList()
                             pendingCloseAfterRule.clear()
@@ -148,9 +165,6 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
                         }
                     }
                 }
-                ticker.onReceive {
-                    requestRefresh()
-                }
             }
         }
     }
@@ -175,6 +189,8 @@ class ConnectionsActivity : BaseActivity<ConnectionsDesign>() {
                 )
             }
             design.patchConnections(filtered)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (_: Exception) {
             design.patchConnections(
                 com.github.kr328.clash.core.model.ConnectionsSnapshot(connections = emptyList())

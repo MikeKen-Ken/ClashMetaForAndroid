@@ -342,6 +342,8 @@ func shouldApplyRuntimeConnectivityOrder(adapterType C.AdapterType) bool {
 // ApplyRuntimeConnectivityOrder 按最新联通评分重排 url-test / fallback 组的运行时节点列表，
 // 不清整包 ApplyConfig。测速后 Fallback 会自动使用评分第一且当前可用的节点。
 func ApplyRuntimeConnectivityOrder(name string) bool {
+	runtimeConnectivityOrder.Lock()
+	defer runtimeConnectivityOrder.Unlock()
 	if shouldSkipDelayCheckGroup(name) {
 		return false
 	}
@@ -360,11 +362,8 @@ func ApplyRuntimeConnectivityOrder(name string) bool {
 	if len(proxies) <= 1 {
 		return false
 	}
-	names := make([]string, len(proxies))
-	for i, px := range proxies {
-		names[i] = px.Name()
-	}
-	sorted := connectivity.SortNamesByConnectivity(names)
+	testURL, _ := delayTestSpec(g)
+	sorted := stableRuntimeConnectivityOrder(name, proxies, testURL)
 	r, ok := p.Adapter().(cachedProxyReorderAble)
 	if !ok {
 		log.Warnln("ApplyRuntimeConnectivityOrder `%s`: ReorderCachedProxies not available", name)
@@ -376,7 +375,15 @@ func ApplyRuntimeConnectivityOrder(name string) bool {
 
 // ApplyRuntimeConnectivityOrderAll 按最新积分重排全部 url-test / fallback 组。
 func ApplyRuntimeConnectivityOrderAll() {
-	for name, p := range tunnel.Proxies() {
+	proxies := tunnel.Proxies()
+	runtimeConnectivityOrder.Lock()
+	for name := range runtimeConnectivityOrder.groups {
+		if _, exists := proxies[name]; !exists {
+			delete(runtimeConnectivityOrder.groups, name)
+		}
+	}
+	runtimeConnectivityOrder.Unlock()
+	for name, p := range proxies {
 		if p == nil {
 			continue
 		}

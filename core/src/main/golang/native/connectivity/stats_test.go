@@ -73,7 +73,6 @@ func TestSortNamesByConnectivityOrder(t *testing.T) {
 func TestRecordFailureAddsPenaltyDelay(t *testing.T) {
 	statsMu.Lock()
 	statsCache = make(map[string]proxyConnectivityEntry)
-	lastFailureAt = make(map[string]time.Time)
 	statsLoaded = true
 	statsMu.Unlock()
 
@@ -100,76 +99,9 @@ func TestRecordFailureAddsPenaltyDelay(t *testing.T) {
 	ClearAll()
 }
 
-func TestFailureDedupWithinOneMinute(t *testing.T) {
-	statsMu.Lock()
-	statsCache = make(map[string]proxyConnectivityEntry)
-	lastFailureAt = make(map[string]time.Time)
-	statsLoaded = true
-	origInterval := failureMinInterval
-	failureMinInterval = time.Minute
-	statsMu.Unlock()
-	defer func() {
-		statsMu.Lock()
-		failureMinInterval = origInterval
-		statsMu.Unlock()
-		ClearAll()
-	}()
-
-	// 一分钟内多次失败只记一次
-	RecordDelayTestResult("dedup-node", 0, 5000)
-	RecordDelayTestResult("dedup-node", 0, 5000)
-	RecordDelayTestResult("dedup-node", 0, 5000)
-
-	statsMu.Lock()
-	entry := statsCache["dedup-node"]
-	var found dayCounts
-	for _, counts := range entry.Days {
-		found = counts
-		break
-	}
-	statsMu.Unlock()
-	if found.Failure != 1 || found.DelaySum != 5000 {
-		t.Fatalf("burst failures counts=%+v, want f=1 ds=5000", found)
-	}
-
-	// 成功不受失败去重影响，始终记账
-	RecordDelayTestResult("dedup-node", 200, 5000)
-	RecordDelayTestResult("dedup-node", 300, 5000)
-
-	statsMu.Lock()
-	entry = statsCache["dedup-node"]
-	found = dayCounts{}
-	for _, counts := range entry.Days {
-		found = counts
-		break
-	}
-	// 模拟窗口已过：上次失败时间推到一分钟前
-	lastFailureAt["dedup-node"] = time.Now().Add(-time.Minute - time.Second)
-	statsMu.Unlock()
-
-	if found.Success != 2 || found.Failure != 1 || found.DelaySum != 5000+200+300 {
-		t.Fatalf("after success counts=%+v, want s=2 f=1 ds=5500", found)
-	}
-
-	RecordDelayTestResult("dedup-node", 0, 5000)
-
-	statsMu.Lock()
-	entry = statsCache["dedup-node"]
-	found = dayCounts{}
-	for _, counts := range entry.Days {
-		found = counts
-		break
-	}
-	statsMu.Unlock()
-	if found.Success != 2 || found.Failure != 2 || found.DelaySum != 5000+200+300+5000 {
-		t.Fatalf("after window counts=%+v, want s=2 f=2 ds=10500", found)
-	}
-}
-
 func TestRecordSuccessSetsLastSuccessAt(t *testing.T) {
 	statsMu.Lock()
 	statsCache = make(map[string]proxyConnectivityEntry)
-	lastFailureAt = make(map[string]time.Time)
 	statsLoaded = true
 	statsMu.Unlock()
 	defer ClearAll()
@@ -417,19 +349,11 @@ func TestPruneExpiredEntriesRemovesEmptyProxyKeys(t *testing.T) {
 		"keep":  {Days: map[string]dayCounts{freshDay: {Success: 2, DelaySum: 200}}},
 		"empty": {Days: map[string]dayCounts{}},
 	}
-	lastFailureAt = map[string]time.Time{
-		"stale":  now.Add(-2 * time.Minute),
-		"keep":   now.Add(-2 * time.Minute),
-		"orphan": now.Add(-time.Hour),
-	}
 	statsLoaded = true
 	changed := pruneExpiredEntries(now)
 	_, staleOk := statsCache["stale"]
 	_, keepOk := statsCache["keep"]
 	_, emptyOk := statsCache["empty"]
-	_, orphanFailOk := lastFailureAt["orphan"]
-	_, staleFailOk := lastFailureAt["stale"]
-	_, keepFailOk := lastFailureAt["keep"]
 	statsMu.Unlock()
 	defer ClearAll()
 
@@ -442,12 +366,7 @@ func TestPruneExpiredEntriesRemovesEmptyProxyKeys(t *testing.T) {
 	if !keepOk {
 		t.Fatal("keep should remain")
 	}
-	if orphanFailOk || staleFailOk {
-		t.Fatalf("orphan/stale lastFailureAt should be cleared: orphan=%v stale=%v", orphanFailOk, staleFailOk)
-	}
-	if keepFailOk {
-		t.Fatal("keep lastFailureAt past failureMinInterval should be cleared")
-	}
+
 }
 
 func TestQueryScoreRowsOrder(t *testing.T) {

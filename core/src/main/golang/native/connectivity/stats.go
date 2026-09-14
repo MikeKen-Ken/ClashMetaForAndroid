@@ -21,8 +21,6 @@ const (
 	scoreReferenceDelayMs       = 400.0
 	defaultPenaltyDelayMs       = 5000
 	maxSafeCount          int64 = 9_007_199_254_740_991
-	// 同一节点一分钟内最多记 1 次失败，避免重连/健康检查风暴把分数打崩。
-	failureRecordMinInterval = time.Minute
 )
 
 type dayCounts struct {
@@ -75,14 +73,12 @@ type ScoreContext struct {
 }
 
 var (
-	statsMu            sync.Mutex
-	statsCache         map[string]proxyConnectivityEntry
-	statsLastOthers    map[string]proxyConnectivityEntry
-	statsHasBaseline   bool
-	statsResets        map[string]resetGeneration
-	statsLoaded        bool
-	lastFailureAt      map[string]time.Time
-	failureMinInterval = failureRecordMinInterval // 单测可改短
+	statsMu          sync.Mutex
+	statsCache       map[string]proxyConnectivityEntry
+	statsLastOthers  map[string]proxyConnectivityEntry
+	statsHasBaseline bool
+	statsResets      map[string]resetGeneration
+	statsLoaded      bool
 )
 
 func statsFilePath() string {
@@ -109,7 +105,7 @@ func pruneDays(days map[string]dayCounts, now time.Time) {
 	}
 }
 
-// pruneExpiredEntries 清理各节点过期天键；days 已空则删除 proxy 条目，并清掉孤儿 lastFailureAt。
+// pruneExpiredEntries 清理各节点过期天键；days 已空则删除 proxy 条目。
 // 调用方须已持有 statsMu。
 func pruneExpiredEntries(now time.Time) (changed bool) {
 	if statsCache == nil {
@@ -118,7 +114,6 @@ func pruneExpiredEntries(now time.Time) (changed bool) {
 	for name, entry := range statsCache {
 		if entry.Days == nil {
 			delete(statsCache, name)
-			delete(lastFailureAt, name)
 			changed = true
 			continue
 		}
@@ -126,23 +121,11 @@ func pruneExpiredEntries(now time.Time) (changed bool) {
 		pruneDays(entry.Days, now)
 		if len(entry.Days) == 0 {
 			delete(statsCache, name)
-			delete(lastFailureAt, name)
 			changed = true
 			continue
 		}
 		if len(entry.Days) != before {
 			statsCache[name] = entry
-			changed = true
-		}
-	}
-	for name, at := range lastFailureAt {
-		if _, ok := statsCache[name]; !ok {
-			delete(lastFailureAt, name)
-			changed = true
-			continue
-		}
-		if now.Sub(at) >= failureMinInterval {
-			delete(lastFailureAt, name)
 			changed = true
 		}
 	}
@@ -269,8 +252,12 @@ func BuildScoreContext() ScoreContext {
 }
 
 func (ctx ScoreContext) ScoreFor(proxyName string) float64 {
-	stats := ctx.byProxy[proxyName]
-	return penalizedDelayScore(stats, ctx.priorDelayMs)
+	return connectivityScoreFromAvgDelay(ctx.EffectiveDelayFor(proxyName))
+}
+
+// EffectiveDelayFor exposes the same pooled cost shown in the score panel.
+func (ctx ScoreContext) EffectiveDelayFor(proxyName string) float64 {
+	return smoothedEffectiveAvgDelay(ctx.byProxy[proxyName], ctx.priorDelayMs)
 }
 
 func ensureStatsLoaded() {
@@ -416,7 +403,6 @@ func ReplaceRaw(raw string) bool {
 		return false
 	}
 	statsCache = candidate
-	lastFailureAt = make(map[string]time.Time)
 	statsLoaded = true
 	return true
 }
@@ -599,7 +585,6 @@ func MergeRaw(previousOthersRaw, remoteOthersRaw, resetWatermarksRaw string) str
 	statsLastOthers = remoteOthers
 	statsResets = activeResets
 	statsHasBaseline = true
-	lastFailureAt = make(map[string]time.Time)
 	statsLoaded = true
 	return encodeMergeResult(statsSyncMergeResult{
 		OK:     true,
@@ -609,65 +594,6 @@ func MergeRaw(previousOthersRaw, remoteOthersRaw, resetWatermarksRaw string) str
 	})
 }
 
-// RecordDelayTestResult 成功记真实 delay，失败记 timeout 惩罚延迟，最多保留 30 天。
-// 同一节点在 failureMinInterval 内的重复失败只记一次。
-func RecordDelayTestResult(proxyName string, delay int, timeoutMs int) {
-	if proxyName == "" || proxyName == "DIRECT" || proxyName == "REJECT" {
-		return
-	}
-	if delay == -2 || delay == -1 {
-		return
-	}
-
-	effectiveTimeout := timeoutMs
-	if effectiveTimeout <= 0 {
-		effectiveTimeout = defaultPenaltyDelayMs
-	}
-	isSuccess := delay > 0 && delay <= effectiveTimeout
-
-	now := time.Now()
-	day := todayKey(now)
-
-	statsMu.Lock()
-	defer statsMu.Unlock()
-	ensureStatsLoaded()
-
-	if !isSuccess {
-		if lastFailureAt == nil {
-			lastFailureAt = make(map[string]time.Time)
-		}
-		if last, ok := lastFailureAt[proxyName]; ok && now.Sub(last) < failureMinInterval {
-			return
-		}
-	}
-
-	entry := statsCache[proxyName]
-	if entry.Days == nil {
-		entry.Days = make(map[string]dayCounts)
-	}
-	counts := entry.Days[day]
-	if isSuccess {
-		counts.Success++
-		counts.DelaySum += int64(delay)
-		entry.LastSuccessAt = now.Unix()
-	} else {
-		counts.Failure++
-		counts.DelaySum += int64(effectiveTimeout)
-		lastFailureAt[proxyName] = now
-	}
-	entry.Days[day] = counts
-	pruneDays(entry.Days, now)
-	if len(entry.Days) == 0 {
-		delete(statsCache, proxyName)
-		delete(lastFailureAt, proxyName)
-	} else {
-		statsCache[proxyName] = entry
-	}
-	// 顺带清掉其他节点已过期的空条目，避免换订阅后历史节点名只增不减
-	_ = pruneExpiredEntries(now)
-	_ = persistConnectivityStats()
-}
-
 func ClearAll() {
 	statsMu.Lock()
 	defer statsMu.Unlock()
@@ -675,7 +601,6 @@ func ClearAll() {
 	statsLastOthers = nil
 	statsHasBaseline = false
 	statsResets = make(map[string]resetGeneration)
-	lastFailureAt = make(map[string]time.Time)
 	statsLoaded = true
 	_ = os.Remove(statsFilePath())
 }
@@ -702,7 +627,6 @@ func ClearAllWithResets(resetWatermarksRaw string) bool {
 	statsLastOthers = empty
 	statsHasBaseline = true
 	statsResets = activeResets
-	lastFailureAt = make(map[string]time.Time)
 	statsLoaded = true
 	return true
 }
@@ -722,7 +646,6 @@ func ClearProxy(proxyName string) {
 	if statsHasBaseline {
 		delete(statsLastOthers, proxyName)
 	}
-	delete(lastFailureAt, proxyName)
 	_ = persistConnectivityStats()
 }
 
@@ -754,7 +677,6 @@ func ClearProxyWithResets(proxyName, resetWatermarksRaw string) bool {
 	statsCache = current
 	statsLastOthers = baseline
 	statsResets = activeResets
-	delete(lastFailureAt, proxyName)
 	statsLoaded = true
 	return true
 }

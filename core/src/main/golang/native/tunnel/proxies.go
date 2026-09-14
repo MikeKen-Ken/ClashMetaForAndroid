@@ -127,10 +127,8 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 	case Score:
 		sortProxiesByConnectivity(proxies)
 	case Default:
-		// 仅 url-test / fallback 按联通评分重排；select 等手动组保持配置顺序
-		if g.Type() == C.URLTest || g.Type() == C.Fallback {
-			sortProxiesByConnectivity(proxies)
-		}
+		// Use the actual runtime order, including recent health and hysteresis.
+		// Explicit Score mode above remains the pooled numeric score view.
 	default:
 	}
 

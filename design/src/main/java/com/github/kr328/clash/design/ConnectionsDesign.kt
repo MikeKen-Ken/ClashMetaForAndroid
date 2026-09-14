@@ -11,6 +11,7 @@ import com.github.kr328.clash.core.model.TemporaryRule
 import com.github.kr328.clash.design.adapter.ClosedEntry
 import com.github.kr328.clash.design.adapter.ConnectionAdapter
 import com.github.kr328.clash.design.adapter.ConnectionDisplayItem
+import com.github.kr328.clash.design.connections.ActiveConnectionRows
 import com.github.kr328.clash.design.connections.compactRejectClosedEntries
 import com.github.kr328.clash.design.connections.rejectDedupeKey
 import com.github.kr328.clash.design.connections.upsertClosedEntry
@@ -25,7 +26,6 @@ import com.github.kr328.clash.design.util.patchDataSet
 import com.github.kr328.clash.design.util.root
 import com.github.kr328.clash.design.util.formatConnectionStartTime
 import com.github.kr328.clash.design.util.toBytesString
-import com.github.kr328.clash.design.util.toSpeedString
 import com.github.kr328.clash.design.ui.ToastDuration
 import com.github.kr328.clash.design.landevices.LanRemoteDeviceFilter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -108,9 +108,7 @@ class ConnectionsDesign(
     /** When true, newest connections first (descending by start time). */
     private var sortNewestFirst = true
     private var lastSnapshot: ConnectionsSnapshot? = null
-    /** id -> (upload, download) for speed calculation */
-    private var previousTraffic: Map<String, Pair<Long, Long>> = emptyMap()
-    private var previousTimeMs: Long = 0
+    private val activeRows = ActiveConnectionRows()
 
     /** 已关闭连接（带时间戳）；内存与 [ClosedConnectionsStorage] 同步，持久化保留 24 小时 */
     private val closedEntries = mutableListOf<ClosedEntry>()
@@ -186,30 +184,10 @@ class ConnectionsDesign(
         if (closedPersistChanged) schedulePersistClosedEntries()
 
         lastSnapshot = snapshot
-        // 不在每次 patch 时写盘，避免每秒一次大 JSON 写入；仅在离开连接页时由 Activity.onStop 调用 persistLastSnapshot()
-        val intervalSec = if (previousTimeMs > 0) (nowMs - previousTimeMs) / 1000.0 else 1.0
-        val intervalSecClamped = if (intervalSec < 0.5) 1.0 else intervalSec
-
-        val sorted = snapshot.connections.sortedBy { it.start }.let { list ->
-            if (sortNewestFirst) list.asReversed() else list
-        }
-        val displayItems = sorted.map { conn ->
-            val prev = previousTraffic[conn.id]
-            val downloadSpeedBps = if (prev != null) {
-                ((conn.download - prev.second) / intervalSecClamped).toLong().coerceAtLeast(0)
-            } else 0L
-            val trafficLine = "↓ ${conn.download.toBytesString()} (${downloadSpeedBps.toSpeedString()})"
-            ConnectionDisplayItem(conn, trafficLine, conn.start.formatConnectionStartTime(), isClosed = false)
-        }
-
-        previousTraffic = snapshot.connections.associate { it.id to (it.upload to it.download) }
-        previousTimeMs = nowMs
-
+        activeRows.update(snapshot.connections, nowMs)
         withContext(Dispatchers.Main) {
             updateTabLabels()
-            if (tabMode == TabMode.Active) {
-                adapter.patchDataSet(adapter::displayItems, displayItems, detectMove = true) { it.connection.id }
-            } else {
+            if (tabMode != TabMode.Closed || closedPersistChanged) {
                 refreshDisplayItems()
             }
         }
@@ -226,23 +204,8 @@ class ConnectionsDesign(
         }
     }
 
-    private fun buildActiveDisplayItems(): List<ConnectionDisplayItem> {
-        val snapshot = lastSnapshot ?: return emptyList()
-        val nowMs = System.currentTimeMillis()
-        val intervalSec = if (previousTimeMs > 0) (nowMs - previousTimeMs) / 1000.0 else 1.0
-        val intervalSecClamped = if (intervalSec < 0.5) 1.0 else intervalSec
-        val sorted = snapshot.connections.sortedBy { it.start }.let { list ->
-            if (sortNewestFirst) list.asReversed() else list
-        }
-        return sorted.map { conn ->
-            val prev = previousTraffic[conn.id]
-            val downloadSpeedBps = if (prev != null) {
-                ((conn.download - prev.second) / intervalSecClamped).toLong().coerceAtLeast(0)
-            } else 0L
-            val trafficLine = "↓ ${conn.download.toBytesString()} (${downloadSpeedBps.toSpeedString()})"
-            ConnectionDisplayItem(conn, trafficLine, conn.start.formatConnectionStartTime(), isClosed = false)
-        }
-    }
+    private fun buildActiveDisplayItems(): List<ConnectionDisplayItem> =
+        activeRows.build(sortNewestFirst)
 
     private fun buildClosedDisplayItems(): List<ConnectionDisplayItem> {
         var conns = closedEntries.map { it.connection }
@@ -575,9 +538,9 @@ class ConnectionsDesign(
 
     private fun toggleSortOrder() {
         sortNewestFirst = !sortNewestFirst
-        lastSnapshot?.let { snapshot ->
+        lastSnapshot?.let {
             launch {
-                patchConnections(snapshot)
+                refreshDisplayItems()
                 withContext(Dispatchers.Main) {
                     binding.recyclerList.scrollToPosition(0)
                 }
