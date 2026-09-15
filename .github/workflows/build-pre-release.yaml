@@ -122,6 +122,14 @@ jobs:
           # 清理项目级产物；勿删除 ~/.gradle/caches/，会与 setup-gradle 冲突
           rm -rf app/build .gradle
       
+      - name: Core and Android recovery regression gate
+        env:
+          CGO_ENABLED: '1'
+        run: |
+          (cd core/src/foss/golang/clash && go test -race ./networkrecovery ./adapter ./adapter/outboundgroup ./adapter/provider ./dns ./hub/route)
+          (cd core/src/foss/golang && go test -race cfa/native/connectivity cfa/native/tunnel)
+          ./gradlew --no-daemon :service:testAlphaDebugUnitTest :app:testAlphaDebugUnitTest :app:compileAlphaDebugKotlin
+
       - name: Pre-release Build
         if: success()
         run: ./gradlew --no-daemon --no-build-cache app:assembleAlphaRelease

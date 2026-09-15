@@ -1,0 +1,22 @@
+<resources>
+    <string name="network_health">连接健康</string>
+    <string name="network_health_loading">正在读取连接状态…</string>
+    <string name="network_health_unavailable">无法读取连接状态，请启动代理后重试。</string>
+    <string name="network_health_note">恢复事件仅代表尝试，不代表连接已经恢复。流量记录表示收到过应用回复，不保证所有目标均可访问。内核重启后计数归零。</string>
+    <string name="network_health_observed">采集时间：%1$s</string>
+    <string name="network_health_traffic">最近收到应用回复：%1$s</string>
+    <string name="network_health_none">暂无记录</string>
+    <string name="network_health_counts">切换：%1$d · 备用搜索失败：%2$d · 流量否决切换：%3$d</string>
+    <string name="network_health_exploration">可选探测已暂停：%1$s · 已开始：%2$d · 已完成：%3$d</string>
+    <string name="network_health_export">导出报告</string>
+    <string name="network_health_refresh">刷新</string>
+    <string name="network_health_close">关闭</string>
+    <string name="network_health_dns">已尝试重置 DNS</string>
+    <string name="network_health_route">已尝试恢复路由</string>
+    <string name="network_health_backup_failed">未找到可用备用节点</string>
+    <string name="network_health_backup_verified">备用节点探测成功</string>
+    <string name="network_health_switch">恢复流程已选择替代节点</string>
+    <string name="network_health_veto">因观测到流量而取消切换</string>
+    <string name="network_health_coalesced">重复恢复请求已合并</string>
+    <string name="network_health_ignored">恢复请求已忽略</string>
+</resources>

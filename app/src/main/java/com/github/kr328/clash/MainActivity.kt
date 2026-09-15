@@ -121,6 +121,11 @@ class MainActivity : BaseActivity<MainDesign>() {
                             startActivity(DebugActivity::class.intent)
                         MainDesign.Request.OpenNetwork ->
                             startActivity(NetworkSettingsActivity::class.intent)
+                        MainDesign.Request.OpenNetworkHealth -> launch {
+                            com.github.kr328.clash.diagnostics.showNetworkHealth(this@MainActivity) {
+                                withClash { queryNetworkDiagnostics() }
+                            }
+                        }
                         MainDesign.Request.OpenApp ->
                             startActivity(AppSettingsActivity::class.intent)
                         MainDesign.Request.OpenAbout ->

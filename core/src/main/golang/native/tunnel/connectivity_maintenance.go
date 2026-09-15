@@ -65,6 +65,7 @@ func StartConnectivityMaintenance() {
 				return
 			case now := <-ticker.C:
 				if connectivityProbesSuspended.Load() || coreTunnel.Status() != coreTunnel.Running {
+					explorationSkipped.Add(1)
 					continue
 				}
 				candidates := connectivityProbeCandidates()
@@ -176,6 +177,9 @@ func chooseConnectivityProbes(candidates []connectivityProbeCandidate, attempts 
 }
 
 func probeConnectivityCandidate(ctx context.Context, candidate connectivityProbeCandidate) {
+	if connectivityProbesSuspended.Load() || ctx.Err() != nil {
+		return
+	}
 	expected, err := utils.NewUnsignedRanges[uint16](candidate.expected)
 	if err != nil {
 		return
@@ -188,7 +192,7 @@ func probeConnectivityCandidate(ctx context.Context, candidate connectivityProbe
 		return
 	}
 	defer pvd.ReleaseHealthCheckWorker()
-	if ctx.Err() != nil {
+	if ctx.Err() != nil || connectivityProbesSuspended.Load() {
 		return
 	}
 	// Queueing time is not node latency. Give the probe its full deadline after
@@ -196,5 +200,7 @@ func probeConnectivityCandidate(ctx context.Context, candidate connectivityProbe
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(connectivityProbeTimeoutMs)*time.Millisecond)
 	defer cancel()
 	ctx = C.WithHealthCheckSourceName(ctx, candidate.group)
+	explorationStarted.Add(1)
+	defer explorationCompleted.Add(1)
 	_, _ = candidate.proxy.URLTest(ctx, candidate.url, expected)
 }

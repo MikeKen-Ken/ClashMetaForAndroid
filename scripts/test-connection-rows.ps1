@@ -1,4 +1,4 @@
-param([string]$Java = 'java')
+param([string]$Java = 'java', [switch]$Benchmark, [string]$ReportPath = '')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $gradleHome = if ($env:GRADLE_USER_HOME) { $env:GRADLE_USER_HOME } else { Join-Path $env:USERPROFILE '.gradle' }
@@ -51,8 +51,15 @@ $lib = $compiler.Directory.FullName
 $classpath = (Get-ChildItem $lib -File | Where-Object Name -Match '^(kotlin-stdlib|annotations-)' | ForEach-Object FullName) -join [IO.Path]::PathSeparator
 $source = Join-Path $root 'design/src/main/java/com/github/kr328/clash/design/connections/ActiveConnectionRows.kt'
 $sources = @(Get-ChildItem $output -Filter '*.kt' | ForEach-Object FullName) + $source
+if ($Benchmark) { $sources += Join-Path $PSScriptRoot 'ConnectionRowsBenchmark.kt' }
 & $Java -cp (Join-Path $lib '*') org.jetbrains.kotlin.cli.jvm.K2JVMCompiler -no-stdlib -no-reflect -classpath $classpath -d $output @sources
 if ($LASTEXITCODE -ne 0) { throw 'Isolated Kotlin compilation failed.' }
 & $Java -cp ($output + [IO.Path]::PathSeparator + $classpath) CheckKt
 if ($LASTEXITCODE -ne 0) { throw 'Connection row checks failed.' }
 Write-Host 'Source-isolated checks only; Android lifecycle, binding and device rendering remain unverified.'
+if ($Benchmark) {
+    $report = & $Java -cp ($output + [IO.Path]::PathSeparator + $classpath) ConnectionRowsBenchmarkKt
+    if ($LASTEXITCODE -ne 0) { throw 'Connection row benchmark failed.' }
+    if ($ReportPath) { $report | Set-Content -LiteralPath $ReportPath -Encoding utf8 }
+    $report
+}

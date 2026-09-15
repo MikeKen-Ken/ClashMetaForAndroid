@@ -1,0 +1,22 @@
+<resources>
+    <string name="network_health">Connection health</string>
+    <string name="network_health_loading">Reading connection health…</string>
+    <string name="network_health_unavailable">Connection health unavailable. Start the proxy and try again.</string>
+    <string name="network_health_note">Recovery events describe attempts, not restored connectivity. Traffic evidence is a received reply, not a guarantee that every destination works. Counters reset when the core restarts.</string>
+    <string name="network_health_observed">Observed: %1$s</string>
+    <string name="network_health_traffic">Last observed application reply: %1$s</string>
+    <string name="network_health_none">No observation yet</string>
+    <string name="network_health_counts">Switches: %1$d · Failed searches: %2$d · Traffic vetoes: %3$d</string>
+    <string name="network_health_exploration">Optional probes paused: %1$s · Started: %2$d · Completed: %3$d</string>
+    <string name="network_health_export">Export report</string>
+    <string name="network_health_refresh">Refresh</string>
+    <string name="network_health_close">Close</string>
+    <string name="network_health_dns">DNS reset attempted</string>
+    <string name="network_health_route">Route recovery attempted</string>
+    <string name="network_health_backup_failed">No working backup found</string>
+    <string name="network_health_backup_verified">Backup probe succeeded</string>
+    <string name="network_health_switch">Recovery selected a replacement</string>
+    <string name="network_health_veto">Observed traffic prevented failover</string>
+    <string name="network_health_coalesced">Repeated recovery request combined</string>
+    <string name="network_health_ignored">Recovery request ignored</string>
+</resources>

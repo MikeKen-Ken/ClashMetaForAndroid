@@ -274,6 +274,9 @@ class ClashManager(private val context: Context) : IClashManager,
         return Clash.mergeProxyConnectivityStats(previousOthers, remoteOthers, resetWatermarks)
     }
 
+    override fun queryNetworkDiagnostics(): String =
+        com.github.kr328.clash.core.bridge.Bridge.nativeQueryNetworkDiagnostics()
+
     override suspend fun healthCheck(group: String) {
         Clash.healthCheck(group).await()
     }

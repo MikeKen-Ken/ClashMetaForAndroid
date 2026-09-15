@@ -14,6 +14,7 @@ object Bridge {
     external fun nativeForceGc()
     external fun nativeSuspend(suspend: Boolean)
     external fun nativeQueryTunnelState(): String
+    external fun nativeQueryNetworkDiagnostics(): String
     external fun nativeQueryTrafficNow(): Long
     external fun nativeQueryTrafficTotal(): Long
     external fun nativeNotifyNetworkChanged(dnsList: String)
