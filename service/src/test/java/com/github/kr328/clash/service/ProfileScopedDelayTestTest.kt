@@ -8,6 +8,33 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ProfileScopedDelayTestTest {
+    @Test fun manualSelectionDuringTestSurvivesPersistedCleanup() {
+        val guard = DelayTestSelectionGuard()
+        var selected = "old-node"
+        val generation = guard.generation("Auto")
+        guard.mutate("Auto") { selected = "user-node" }
+        guard.ifUnchanged("Auto", generation) { selected = "" }
+        assertEquals("user-node", selected)
+    }
+
+    @Test fun reselectingSameNodeStillProtectsManualChoice() {
+        val guard = DelayTestSelectionGuard()
+        var selected = "node"
+        val generation = guard.generation("Auto")
+        guard.mutate("Auto") { selected = "node" }
+        guard.ifUnchanged("Auto", generation) { selected = "" }
+        assertEquals("node", selected)
+    }
+
+    @Test fun unchangedSelectionCanBeClearedDespiteChangesToOtherGroups() {
+        val guard = DelayTestSelectionGuard()
+        var selected = "test-node"
+        val generation = guard.generation("Auto")
+        guard.mutate("Other") {}
+        guard.ifUnchanged("Auto", generation) { selected = "" }
+        assertEquals("", selected)
+    }
+
     private fun runCompletion(initial: String?, after: String?, succeeded: Boolean): List<String> {
         var active = initial
         val deleted = mutableListOf<String>()

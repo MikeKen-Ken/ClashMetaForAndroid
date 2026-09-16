@@ -9,8 +9,9 @@ $output = Join-Path $env:TEMP ('clash-profile-delay-tests-' + [guid]::NewGuid().
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 $classpath = (Get-ChildItem $lib -File | Where-Object Name -Match '^(kotlin-stdlib|junit-|hamcrest-|annotations-)' | ForEach-Object FullName) -join [IO.Path]::PathSeparator
 $source = Join-Path $root 'service/src/main/java/com/github/kr328/clash/service/ProfileScopedDelayTest.kt'
+$guardSource = Join-Path $root 'service/src/main/java/com/github/kr328/clash/service/DelayTestSelectionGuard.kt'
 $test = Join-Path $root 'service/src/test/java/com/github/kr328/clash/service/ProfileScopedDelayTestTest.kt'
-& $Java -cp (Join-Path $lib '*') org.jetbrains.kotlin.cli.jvm.K2JVMCompiler -no-stdlib -no-reflect -classpath $classpath -d $output $source $test
+& $Java -cp (Join-Path $lib '*') org.jetbrains.kotlin.cli.jvm.K2JVMCompiler -no-stdlib -no-reflect -classpath $classpath -d $output $source $guardSource $test
 if ($LASTEXITCODE -ne 0) { throw 'Kotlin test compilation failed.' }
 & $Java -cp ($output + [IO.Path]::PathSeparator + $classpath) org.junit.runner.JUnitCore com.github.kr328.clash.service.ProfileScopedDelayTestTest
 if ($LASTEXITCODE -ne 0) { throw 'Profile delay-completion tests failed.' }

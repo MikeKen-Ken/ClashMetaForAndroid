@@ -125,6 +125,14 @@ func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) (result
 	}
 
 	testURL, expectedStatusText := delayTestSpec(g)
+	// Capture before suspending for probes, including a re-selection of the same
+	// node. Completion must never erase a newer user choice.
+	resetSelection := func() {}
+	if guarded, ok := g.(interface{ PrepareManualSelectionReset() func() }); ok {
+		resetSelection = guarded.PrepareManualSelectionReset()
+	} else if clearable, ok := g.(outboundgroup.ClearManualSelectionAble); ok {
+		resetSelection = clearable.ClearManualSelection
+	}
 	expectedStatus, err := utils.NewUnsignedRanges[uint16](expectedStatusText)
 	if err != nil {
 		log.Debugln("[delay-test] group=%s invalid expected status %q: %v", name, expectedStatusText, err)
@@ -180,11 +188,11 @@ func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) (result
 	}
 
 	// Routing state is changed only after at least one effective member passed.
-	if clearable, ok := p.Adapter().(outboundgroup.ClearManualSelectionAble); ok {
-		clearable.ClearManualSelection()
+	if tunnel.Proxies()[name] != p {
+		return result // The profile was replaced while its probes were running.
 	}
+	resetSelection()
 	ApplyRuntimeConnectivityOrderAll()
-	applyPostReorderAutoGroupSelection(p)
 	return result
 }
 
@@ -223,43 +231,15 @@ func isSkipLeafProxyName(name string) bool {
 	}
 }
 
-func firstAliveProxyName(proxies []C.Proxy, testURL string) string {
-	for _, px := range proxies {
-		if px == nil {
-			continue
-		}
-		name := px.Name()
-		if isSkipLeafProxyName(name) {
-			continue
-		}
-		if px.AliveForTestUrl(testURL) {
-			return name
-		}
-	}
-	return ""
-}
-
-// applyPostReorderAutoGroupSelection keeps url-test on the first currently
-// alive score-ordered node (a real pin). Fallback walks the reordered list,
-// so it only needs the pin cleared.
+// applyPostReorderAutoGroupSelection returns automatic groups to automatic
+// selection after startup reordering. It must never create a manual pin.
 func applyPostReorderAutoGroupSelection(p C.Proxy) {
 	if p == nil {
 		return
 	}
 	adapter := p.Adapter()
 	switch adapter.Type() {
-	case C.URLTest:
-		selectable, ok := adapter.(outboundgroup.SelectAble)
-		group, okGroup := adapter.(outboundgroup.ProxyGroup)
-		if !ok || !okGroup {
-			return
-		}
-		testURL, _ := delayTestSpec(group)
-		if name := firstAliveProxyName(group.Proxies(), testURL); name != "" {
-			selectable.ForceSet(name)
-			log.Infoln("[delay-test] %s pin first-score alive %s", p.Name(), name)
-		}
-	case C.Fallback:
+	case C.URLTest, C.Fallback:
 		if clearable, ok := adapter.(outboundgroup.ClearManualSelectionAble); ok {
 			clearable.ClearManualSelection()
 		}
@@ -416,7 +396,7 @@ func ShouldSkipPersistedAutoGroupSelection(name string) bool {
 }
 
 // ApplyStartupAutoGroupOrder 启动/重载后按积分重排自动选组。
-// url-test 钉在当前第一个可用节点；fallback 清钉后走重排列表。
+// url-test / fallback 均恢复自动选择，不创建手动固定。
 func ApplyStartupAutoGroupOrder() {
 	ApplyRuntimeConnectivityOrderAll()
 	for name, p := range tunnel.Proxies() {
