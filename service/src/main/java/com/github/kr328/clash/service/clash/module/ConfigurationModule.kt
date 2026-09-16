@@ -138,10 +138,9 @@ private const val UI_PREF_KEY_PROXY_MODE = "proxy_ui_mode"
 private const val UI_PREF_KEY_PROXY_DELAY_TEST_TIMEOUT_MS = "proxy_delay_test_timeout_ms"
 private const val UI_PREF_KEY_PROXY_DELAY_TEST_CONCURRENCY = "proxy_delay_test_concurrency"
 
-/** 与代理页安全档位一致：5 / 10 / 15 / 20 / 30；过大历史值迁入为 30。 */
+/** 与代理页安全档位一致：30 / 50 / 100 / 150 / 200；其他历史值迁入为 30。 */
 private fun normalizeProxyDelayTestConcurrency(raw: Int): Int = when (raw) {
-    5, 10, 15, 20, 30 -> raw
-    40, 50, 100, 150, 200 -> 30
+    30, 50, 100, 150, 200 -> raw
     else -> 30
 }
 

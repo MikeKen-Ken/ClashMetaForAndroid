@@ -113,10 +113,9 @@ class ProxyDesign(
         }
     }
 
-    /** 与核心安全档位一致：5 / 10 / 15 / 20 / 30 */
+    /** 与核心安全档位一致：30 / 50 / 100 / 150 / 200 */
     private fun normalizeConcurrency(value: Int): Int = when (value) {
-        5, 10, 15, 20, 30 -> value
-        40, 50, 100, 150, 200 -> 30
+        30, 50, 100, 150, 200 -> value
         else -> 30
     }
 
@@ -203,20 +202,20 @@ class ProxyDesign(
             uiStore.proxyDelayTestConcurrency = migratedConcurrency
         }
         when (migratedConcurrency) {
-            5 -> binding.concurrencyToggleGroup.check(R.id.concurrency_5_btn)
-            10 -> binding.concurrencyToggleGroup.check(R.id.concurrency_10_btn)
-            15 -> binding.concurrencyToggleGroup.check(R.id.concurrency_15_btn)
-            20 -> binding.concurrencyToggleGroup.check(R.id.concurrency_20_btn)
+            50 -> binding.concurrencyToggleGroup.check(R.id.concurrency_50_btn)
+            100 -> binding.concurrencyToggleGroup.check(R.id.concurrency_100_btn)
+            150 -> binding.concurrencyToggleGroup.check(R.id.concurrency_150_btn)
+            200 -> binding.concurrencyToggleGroup.check(R.id.concurrency_200_btn)
             else -> binding.concurrencyToggleGroup.check(R.id.concurrency_30_btn)
         }
         binding.concurrencyToggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
             val concurrency = when (checkedId) {
-                R.id.concurrency_5_btn -> 5
-                R.id.concurrency_10_btn -> 10
-                R.id.concurrency_15_btn -> 15
-                R.id.concurrency_20_btn -> 20
                 R.id.concurrency_30_btn -> 30
+                R.id.concurrency_50_btn -> 50
+                R.id.concurrency_100_btn -> 100
+                R.id.concurrency_150_btn -> 150
+                R.id.concurrency_200_btn -> 200
                 else -> return@addOnButtonCheckedListener
             }
             uiStore.proxyDelayTestConcurrency = concurrency
