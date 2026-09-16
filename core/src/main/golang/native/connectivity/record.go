@@ -13,28 +13,7 @@ func RecordDelayTestResult(proxyName string, delay int, timeoutMs int) {
 	if timeoutMs <= 0 {
 		timeoutMs = defaultPenaltyDelayMs
 	}
-	now := time.Now()
-	statsMu.Lock()
-	defer statsMu.Unlock()
-	ensureStatsLoaded()
-	entry := statsCache[proxyName]
-	if entry.Days == nil {
-		entry.Days = make(map[string]dayCounts)
-	}
-	day := todayKey(now)
-	counts := entry.Days[day]
-	if delay > 0 && delay < timeoutMs {
-		counts.Success = safeAddCount(counts.Success, 1)
-		counts.DelaySum = safeAddCount(counts.DelaySum, int64(delay))
-		entry.LastSuccessAt = now.Unix()
-	} else {
-		counts.Failure = safeAddCount(counts.Failure, 1)
-		// A configurable test deadline must not change the ranking penalty for
-		// an otherwise identical failed observation.
-		counts.DelaySum = safeAddCount(counts.DelaySum, defaultPenaltyDelayMs)
-	}
-	entry.Days[day] = counts
-	statsCache[proxyName] = entry
-	pruneExpiredEntries(now)
-	_ = persistConnectivityStats()
+	statsRecordWriter.record(statsRecordSample{
+		name: proxyName, delay: delay, timeout: timeoutMs, at: time.Now(),
+	})
 }
