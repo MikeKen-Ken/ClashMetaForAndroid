@@ -41,6 +41,7 @@ internal data class DeviceSnapshot(
     val resets: ResetWatermarks = emptyMap(),
     val generations: ResetWatermarks = emptyMap(),
     val data: StatsData = emptyMap(),
+    val clearAll: ResetGeneration = ResetGeneration(),
 )
 
 @Serializable
@@ -51,12 +52,14 @@ internal data class SyncState(
     val lastOthers: StatsData = emptyMap(),
     val resets: ResetWatermarks = emptyMap(),
     val lastSyncAt: Long = 0,
+    val clearAll: ResetGeneration = ResetGeneration(),
 )
 
 @Serializable
 internal data class ResetWatermarksPayload(
     val v: Int = 2,
     val resets: ResetWatermarks = emptyMap(),
+    val clearAll: ResetGeneration = ResetGeneration(),
 )
 
 @Serializable
@@ -66,6 +69,7 @@ internal data class CoreConnectivityMergeResult(
     val own: StatsData = emptyMap(),
     val merged: StatsData = emptyMap(),
     val resets: ResetWatermarks = emptyMap(),
+    val clearAll: ResetGeneration = ResetGeneration(),
 )
 
 internal data class RemoteSnapshotRef(

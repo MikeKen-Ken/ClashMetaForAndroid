@@ -43,14 +43,16 @@ type statsFileV2 struct {
 type statsSyncState struct {
 	LastOthers      map[string]proxyConnectivityEntry `json:"lastOthers"`
 	ResetWatermarks map[string]resetGeneration        `json:"resetWatermarks,omitempty"`
+	ClearAll        resetGeneration                   `json:"clearAll,omitempty"`
 }
 
 type statsSyncMergeResult struct {
 	OK     bool                              `json:"ok"`
 	Error  string                            `json:"error,omitempty"`
-	Own    map[string]proxyConnectivityEntry `json:"own,omitempty"`
-	Merged map[string]proxyConnectivityEntry `json:"merged,omitempty"`
-	Resets map[string]resetGeneration        `json:"resets,omitempty"`
+	Own      map[string]proxyConnectivityEntry `json:"own,omitempty"`
+	Merged   map[string]proxyConnectivityEntry `json:"merged,omitempty"`
+	Resets   map[string]resetGeneration        `json:"resets,omitempty"`
+	ClearAll resetGeneration                   `json:"clearAll,omitempty"`
 }
 
 type legacyEntry struct {
@@ -78,6 +80,7 @@ var (
 	statsLastOthers  map[string]proxyConnectivityEntry
 	statsHasBaseline bool
 	statsResets      map[string]resetGeneration
+	statsClearAll    resetGeneration
 	statsLoaded      bool
 )
 
@@ -268,6 +271,7 @@ func ensureStatsLoaded() {
 	statsLastOthers = nil
 	statsHasBaseline = false
 	statsResets = make(map[string]resetGeneration)
+	statsClearAll = resetGeneration{}
 
 	raw, err := os.ReadFile(statsFilePath())
 	if err == nil && len(raw) > 0 {
@@ -284,6 +288,11 @@ func ensureStatsLoaded() {
 					// Preserve invalid/oversized state so later merge/reset operations fail
 					// closed instead of silently forgetting every reset watermark.
 					statsResets = file.Sync.ResetWatermarks
+				}
+				if sanitized, sanitizeErr := sanitizeClearAll(file.Sync.ClearAll); sanitizeErr == nil {
+					statsClearAll = sanitized
+				} else {
+					statsClearAll = file.Sync.ClearAll
 				}
 				statsHasBaseline = true
 			}
@@ -318,13 +327,15 @@ func persistConnectivityStatsData(
 	data map[string]proxyConnectivityEntry,
 	lastOthers map[string]proxyConnectivityEntry,
 	resetWatermarks map[string]resetGeneration,
+	clearAll resetGeneration,
 	hasBaseline bool,
 ) error {
 	payload := statsFileV2{V: 2, Data: data}
-	if hasBaseline || len(resetWatermarks) > 0 {
+	if hasBaseline || len(resetWatermarks) > 0 || clearAll.Counter > 0 {
 		payload.Sync = &statsSyncState{
 			LastOthers:      lastOthers,
 			ResetWatermarks: resetWatermarks,
+			ClearAll:        clearAll,
 		}
 	}
 	encoded, err := json.Marshal(payload)
@@ -362,7 +373,7 @@ func persistConnectivityStats() error {
 	if statsCache == nil {
 		return nil
 	}
-	return persistConnectivityStatsData(statsCache, statsLastOthers, statsResets, statsHasBaseline)
+	return persistConnectivityStatsData(statsCache, statsLastOthers, statsResets, statsClearAll, statsHasBaseline)
 }
 
 // ExportRaw returns the authoritative version-2 per-day counters for WebDAV sync.
@@ -399,7 +410,7 @@ func ReplaceRaw(raw string) bool {
 	defer statsMu.Unlock()
 	ensureStatsLoaded()
 	candidate := pruneStatsData(payload.Data, time.Now())
-	if persistConnectivityStatsData(candidate, statsLastOthers, statsResets, statsHasBaseline) != nil {
+	if persistConnectivityStatsData(candidate, statsLastOthers, statsResets, statsClearAll, statsHasBaseline) != nil {
 		return false
 	}
 	statsCache = candidate
@@ -556,7 +567,7 @@ func MergeRaw(previousOthersRaw, remoteOthersRaw, resetWatermarksRaw string) str
 	if err != nil {
 		return encodeMergeResult(statsSyncMergeResult{OK: false, Error: err.Error()})
 	}
-	incomingResets, err := decodeResetWatermarks(resetWatermarksRaw)
+	incomingResets, incomingClearAll, err := decodeResetWatermarks(resetWatermarksRaw)
 	if err != nil {
 		return encodeMergeResult(statsSyncMergeResult{OK: false, Error: err.Error()})
 	}
@@ -574,23 +585,42 @@ func MergeRaw(previousOthersRaw, remoteOthersRaw, resetWatermarksRaw string) str
 	if err != nil {
 		return encodeMergeResult(statsSyncMergeResult{OK: false, Error: err.Error()})
 	}
+	activeClearAll, err := mergeClearAll(statsClearAll, incomingClearAll)
+	if err != nil {
+		return encodeMergeResult(statsSyncMergeResult{OK: false, Error: err.Error()})
+	}
+	imported := remoteOthers
+	if compareResetGeneration(statsClearAll, incomingClearAll) > 0 {
+		// The caller filtered snapshots with a stale clear-all generation.
+		imported = map[string]proxyConnectivityEntry{}
+	}
+	if compareResetGeneration(activeClearAll, statsClearAll) > 0 {
+		current = map[string]proxyConnectivityEntry{}
+		baseline = map[string]proxyConnectivityEntry{}
+	}
 	removeAdvancedResetData(current, baseline, statsResets, activeResets)
 	own := pruneStatsData(subtractStats(current, baseline), time.Now())
-	merged := sumStats(own, remoteOthers)
-	if err := persistConnectivityStatsData(merged, remoteOthers, activeResets, true); err != nil {
+	merged := sumStats(own, imported)
+	persistedBaseline := imported
+	if compareResetGeneration(statsClearAll, incomingClearAll) > 0 {
+		persistedBaseline = baseline
+	}
+	if err := persistConnectivityStatsData(merged, persistedBaseline, activeResets, activeClearAll, true); err != nil {
 		return encodeMergeResult(statsSyncMergeResult{OK: false, Error: err.Error()})
 	}
 
 	statsCache = merged
-	statsLastOthers = remoteOthers
+	statsLastOthers = persistedBaseline
 	statsResets = activeResets
+	statsClearAll = activeClearAll
 	statsHasBaseline = true
 	statsLoaded = true
 	return encodeMergeResult(statsSyncMergeResult{
-		OK:     true,
-		Own:    own,
-		Merged: merged,
-		Resets: activeResets,
+		OK:       true,
+		Own:      own,
+		Merged:   merged,
+		Resets:   activeResets,
+		ClearAll: activeClearAll,
 	})
 }
 
@@ -601,14 +631,15 @@ func ClearAll() {
 	statsLastOthers = nil
 	statsHasBaseline = false
 	statsResets = make(map[string]resetGeneration)
+	statsClearAll = resetGeneration{}
 	statsLoaded = true
 	_ = os.Remove(statsFilePath())
 }
 
-// ClearAllWithResets clears the aggregate while atomically preserving the
-// reset generations that make the deletion win over older remote snapshots.
+// ClearAllWithResets clears the aggregate and stores the clear-all generation
+// in the same file replacement, so older snapshots lose to the wipe.
 func ClearAllWithResets(resetWatermarksRaw string) bool {
-	incomingResets, err := decodeResetWatermarks(resetWatermarksRaw)
+	incomingResets, incomingClearAll, err := decodeResetWatermarks(resetWatermarksRaw)
 	if err != nil {
 		return false
 	}
@@ -619,14 +650,19 @@ func ClearAllWithResets(resetWatermarksRaw string) bool {
 	if err != nil {
 		return false
 	}
+	activeClearAll, err := mergeClearAll(statsClearAll, incomingClearAll)
+	if err != nil {
+		return false
+	}
 	empty := make(map[string]proxyConnectivityEntry)
-	if err := persistConnectivityStatsData(empty, empty, activeResets, true); err != nil {
+	if err := persistConnectivityStatsData(empty, empty, activeResets, activeClearAll, true); err != nil {
 		return false
 	}
 	statsCache = empty
 	statsLastOthers = empty
 	statsHasBaseline = true
 	statsResets = activeResets
+	statsClearAll = activeClearAll
 	statsLoaded = true
 	return true
 }
@@ -656,7 +692,7 @@ func ClearProxyWithResets(proxyName, resetWatermarksRaw string) bool {
 	if proxyName == "" {
 		return false
 	}
-	incomingResets, err := decodeResetWatermarks(resetWatermarksRaw)
+	incomingResets, incomingClearAll, err := decodeResetWatermarks(resetWatermarksRaw)
 	if err != nil {
 		return false
 	}
@@ -665,18 +701,31 @@ func ClearProxyWithResets(proxyName, resetWatermarksRaw string) bool {
 	ensureStatsLoaded()
 	current := pruneStatsData(statsCache, time.Now())
 	baseline := pruneStatsData(statsLastOthers, time.Now())
+	activeClearAll, err := mergeClearAll(statsClearAll, incomingClearAll)
+	if err != nil {
+		return false
+	}
+	if compareResetGeneration(activeClearAll, statsClearAll) > 0 {
+		current = map[string]proxyConnectivityEntry{}
+		baseline = map[string]proxyConnectivityEntry{}
+	}
 	delete(current, proxyName)
 	delete(baseline, proxyName)
 	activeResets, err := mergeResetWatermarks(statsResets, incomingResets)
 	if err != nil {
 		return false
 	}
-	if err := persistConnectivityStatsData(current, baseline, activeResets, statsHasBaseline); err != nil {
+	keepSync := statsHasBaseline || len(activeResets) > 0 || activeClearAll.Counter > 0
+	if err := persistConnectivityStatsData(current, baseline, activeResets, activeClearAll, keepSync); err != nil {
 		return false
 	}
 	statsCache = current
 	statsLastOthers = baseline
 	statsResets = activeResets
+	statsClearAll = activeClearAll
+	if keepSync {
+		statsHasBaseline = true
+	}
 	statsLoaded = true
 	return true
 }

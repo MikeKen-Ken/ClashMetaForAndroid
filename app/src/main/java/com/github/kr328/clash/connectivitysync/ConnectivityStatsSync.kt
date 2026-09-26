@@ -79,9 +79,16 @@ object ConnectivityStatsSync {
             val activeResets = ConnectivityStatsProtocol.mergeResets(
                 listOf(state.resets) + snapshots.values.map { it.resets },
             )
+            val activeClearAll = ConnectivityStatsProtocol.mergeClearAll(
+                listOf(state.clearAll) + snapshots.values.map { it.clearAll },
+            )
             val remoteOthers = ConnectivityStatsMerge.sum(
                 snapshots.filterKeys { it != state.deviceId }.values.map { snapshot ->
-                    ConnectivityStatsProtocol.filterSnapshotData(snapshot, activeResets)
+                    ConnectivityStatsProtocol.filterSnapshotData(
+                        snapshot,
+                        activeResets,
+                        activeClearAll,
+                    )
                 },
             )
             val previousOthersPayload = json.encodeToString(
@@ -94,7 +101,7 @@ object ConnectivityStatsSync {
             )
             val resetWatermarksPayload = json.encodeToString(
                 ResetWatermarksPayload.serializer(),
-                ResetWatermarksPayload(resets = activeResets),
+                ResetWatermarksPayload(resets = activeResets, clearAll = activeClearAll),
             )
             val localResult = json.decodeFromString(
                 CoreConnectivityMergeResult.serializer(),
@@ -106,9 +113,15 @@ object ConnectivityStatsSync {
             val mergedResets = ConnectivityStatsProtocol.mergeResets(
                 listOf(activeResets, localResult.resets),
             )
+            val mergedClearAll = ConnectivityStatsProtocol.mergeClearAll(
+                listOf(activeClearAll, localResult.clearAll),
+            )
             // Preserve adopted reset knowledge even when the following upload fails. This does
             // not advance revision, baseline, or lastSyncAt, so the merge is still not successful.
-            saveState(context, state.copy(v = PROTOCOL_VERSION, resets = mergedResets))
+            saveState(
+                context,
+                state.copy(v = PROTOCOL_VERSION, resets = mergedResets, clearAll = mergedClearAll),
+            )
             val remoteOwnRevision = snapshots[state.deviceId]?.revision ?: 0
             val currentRevision = maxOf(state.revision, remoteOwnRevision)
             check(currentRevision < ConnectivityStatsProtocol.MAX_SAFE_COUNTER) {
@@ -124,6 +137,7 @@ object ConnectivityStatsSync {
                 resets = mergedResets,
                 generations = ConnectivityStatsProtocol.generationsFor(localResult.own, mergedResets),
                 data = localResult.own,
+                clearAll = mergedClearAll,
             )
             webDav.upload(
                 RemoteSnapshotRef(state.deviceId, slot),
@@ -136,6 +150,7 @@ object ConnectivityStatsSync {
                     revision = nextRevision,
                     lastOthers = remoteOthers,
                     resets = mergedResets,
+                    clearAll = mergedClearAll,
                     lastSyncAt = now,
                 ),
             )
@@ -170,7 +185,10 @@ object ConnectivityStatsSync {
             )
             val resetPayload = json.encodeToString(
                 ResetWatermarksPayload.serializer(),
-                ResetWatermarksPayload(resets = resets.filterKeys { it in names }),
+                ResetWatermarksPayload(
+                    resets = resets.filterKeys { it in names },
+                    clearAll = state.clearAll,
+                ),
             )
             saveState(
                 context,
@@ -184,9 +202,28 @@ object ConnectivityStatsSync {
         }
     }
 
-    internal fun namesFromStatsPayload(raw: String): Set<String> = runCatching {
-        json.decodeFromString(StatsFile.serializer(), raw).data.keys
-    }.getOrDefault(emptySet())
+    suspend fun clearAll(
+        context: Context,
+        clearLocal: suspend (resetWatermarks: String) -> Boolean,
+    ) = mutex.withLock {
+        withContext(Dispatchers.IO) {
+            val state = loadState(context)
+            val clearAll = ConnectivityStatsProtocol.advanceClearAll(state.clearAll, state.deviceId)
+            val resetPayload = json.encodeToString(
+                ResetWatermarksPayload.serializer(),
+                ResetWatermarksPayload(resets = state.resets, clearAll = clearAll),
+            )
+            saveState(
+                context,
+                state.copy(
+                    v = PROTOCOL_VERSION,
+                    lastOthers = emptyMap(),
+                    clearAll = clearAll,
+                ),
+            )
+            check(clearLocal(resetPayload)) { "Core failed to persist connectivity reset" }
+        }
+    }
 
     private fun loadState(context: Context): SyncState {
         val file = context.filesDir.resolve(STATE_FILE)
@@ -200,6 +237,7 @@ object ConnectivityStatsSync {
                 v = PROTOCOL_VERSION,
                 lastOthers = ConnectivityStatsMerge.prune(loaded.lastOthers),
                 resets = ConnectivityStatsProtocol.sanitizeResets(loaded.resets),
+                clearAll = ConnectivityStatsProtocol.sanitizeClearAll(loaded.clearAll),
             )
         }
         return SyncState(deviceId = UUID.randomUUID().toString())

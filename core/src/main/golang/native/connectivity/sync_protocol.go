@@ -13,8 +13,9 @@ type resetGeneration struct {
 }
 
 type resetWatermarksPayload struct {
-	V      int                        `json:"v"`
-	Resets map[string]resetGeneration `json:"resets"`
+	V        int                        `json:"v"`
+	Resets   map[string]resetGeneration `json:"resets"`
+	ClearAll resetGeneration            `json:"clearAll,omitempty"`
 }
 
 func validResetDeviceID(value string) bool {
@@ -81,15 +82,47 @@ func mergeResetWatermarks(parts ...map[string]resetGeneration) (map[string]reset
 	return merged, nil
 }
 
-func decodeResetWatermarks(raw string) (map[string]resetGeneration, error) {
+func sanitizeClearAll(value resetGeneration) (resetGeneration, error) {
+	if value.Counter == 0 && value.DeviceID == "" {
+		return resetGeneration{}, nil
+	}
+	if value.Counter < 1 || value.Counter > maxSafeCount || !validResetDeviceID(value.DeviceID) {
+		return resetGeneration{}, errors.New("invalid connectivity clear-all generation")
+	}
+	return value, nil
+}
+
+func mergeClearAll(parts ...resetGeneration) (resetGeneration, error) {
+	var best resetGeneration
+	for _, part := range parts {
+		generation, err := sanitizeClearAll(part)
+		if err != nil {
+			return resetGeneration{}, err
+		}
+		if compareResetGeneration(generation, best) > 0 {
+			best = generation
+		}
+	}
+	return best, nil
+}
+
+func decodeResetWatermarks(raw string) (map[string]resetGeneration, resetGeneration, error) {
 	var payload resetWatermarksPayload
 	if err := json.Unmarshal([]byte(raw), &payload); err != nil {
-		return nil, err
+		return nil, resetGeneration{}, err
 	}
 	if payload.V != 2 || payload.Resets == nil || len(payload.Resets) > maxResetEntries {
-		return nil, errors.New("unsupported connectivity reset watermarks")
+		return nil, resetGeneration{}, errors.New("unsupported connectivity reset watermarks")
 	}
-	return sanitizeResetWatermarks(payload.Resets)
+	resets, err := sanitizeResetWatermarks(payload.Resets)
+	if err != nil {
+		return nil, resetGeneration{}, err
+	}
+	clearAll, err := sanitizeClearAll(payload.ClearAll)
+	if err != nil {
+		return nil, resetGeneration{}, err
+	}
+	return resets, clearAll, nil
 }
 
 func removeAdvancedResetData(

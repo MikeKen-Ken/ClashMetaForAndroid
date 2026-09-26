@@ -58,7 +58,38 @@ internal object ConnectivityStatsProtocol {
         return updated
     }
 
-    fun filterSnapshotData(snapshot: DeviceSnapshot, active: ResetWatermarks): StatsData {
+    fun sanitizeClearAll(value: ResetGeneration): ResetGeneration {
+        if (value.counter == 0L && value.deviceId.isEmpty()) return ResetGeneration()
+        require(isValidGeneration(value)) { "Invalid connectivity clear-all generation" }
+        return value
+    }
+
+    fun mergeClearAll(parts: Iterable<ResetGeneration>): ResetGeneration {
+        var best = ResetGeneration()
+        parts.forEach { candidate ->
+            val generation = sanitizeClearAll(candidate)
+            if (compare(generation, best) > 0) best = generation
+        }
+        return best
+    }
+
+    fun advanceClearAll(current: ResetGeneration, deviceId: String): ResetGeneration {
+        require(ConnectivityStatsWebDav.isValidDeviceId(deviceId)) {
+            "Invalid connectivity device ID"
+        }
+        val sanitized = sanitizeClearAll(current)
+        check(sanitized.counter < MAX_SAFE_COUNTER) {
+            "Connectivity clear-all generation exhausted"
+        }
+        return ResetGeneration(sanitized.counter + 1, deviceId)
+    }
+
+    fun filterSnapshotData(
+        snapshot: DeviceSnapshot,
+        active: ResetWatermarks,
+        activeClearAll: ResetGeneration,
+    ): StatsData {
+        if (snapshot.clearAll != activeClearAll) return emptyMap()
         return ConnectivityStatsMerge.prune(snapshot.data).filter { (name, _) ->
             val generation = snapshot.generations[name] ?: zeroGeneration
             val expected = active[name] ?: zeroGeneration
@@ -82,6 +113,8 @@ internal object ConnectivityStatsProtocol {
         }
         val resets = runCatching { sanitizeResets(snapshot.resets) }.getOrNull() ?: return false
         if (resets.size != snapshot.resets.size) return false
+        val clearAll = runCatching { sanitizeClearAll(snapshot.clearAll) }.getOrNull() ?: return false
+        if (clearAll != snapshot.clearAll) return false
         if (snapshot.generations.size > MAX_RESET_ENTRIES || snapshot.generations.keys.any { it !in snapshot.data }) {
             return false
         }

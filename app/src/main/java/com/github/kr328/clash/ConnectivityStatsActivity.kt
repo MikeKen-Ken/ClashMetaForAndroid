@@ -52,12 +52,8 @@ class ConnectivityStatsActivity : BaseActivity<ConnectivityStatsDesign>() {
                                 .setMessage(R.string.connectivity_stats_clear_all_message)
                                 .setPositiveButton(R.string.connectivity_stats_clear) { _, _ ->
                                     launch {
-                                        val raw = withClash { exportProxyConnectivityStats() }
-                                        val names = ConnectivityStatsSync.namesFromStatsPayload(raw)
-                                        ConnectivityStatsSync.reset(
+                                        ConnectivityStatsSync.clearAll(
                                             this@ConnectivityStatsActivity,
-                                            names,
-                                            includeKnownResets = true,
                                         ) { resetWatermarks ->
                                             withClash {
                                                 clearProxyConnectivityStats(resetWatermarks)

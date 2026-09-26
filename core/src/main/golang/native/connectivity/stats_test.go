@@ -1,6 +1,7 @@
 package connectivity
 
 import (
+	"encoding/json"
 	"strconv"
 	"testing"
 	"time"
@@ -233,6 +234,52 @@ func TestSyncMergePreservesCountersRecordedDuringWebDav(t *testing.T) {
 	}
 	if counts := syncTestCounts(merged); counts.Success != 9 || counts.Failure != 3 {
 		t.Fatalf("merged=%+v, want s=9 f=3", counts)
+	}
+}
+
+func TestNewerClearAllDropsLocalHistory(t *testing.T) {
+	ClearAll()
+	t.Cleanup(ClearAll)
+
+	statsMu.Lock()
+	statsCache = syncTestData(8, 1)
+	statsLoaded = true
+	statsMu.Unlock()
+
+	raw := MergeRaw(
+		`{"v":2,"data":{}}`,
+		`{"v":2,"data":{}}`,
+		`{"v":2,"resets":{},"clearAll":{"counter":1,"deviceId":"device-a"}}`,
+	)
+	var result statsSyncMergeResult
+	if err := json.Unmarshal([]byte(raw), &result); err != nil {
+		t.Fatal(err)
+	}
+	if !result.OK {
+		t.Fatalf("merge failed: %s", result.Error)
+	}
+	if len(result.Merged) != 0 || result.ClearAll.Counter != 1 || result.ClearAll.DeviceID != "device-a" {
+		t.Fatalf("result=%+v, want an empty aggregate at clear-all generation 1", result)
+	}
+
+	day := todayKey(time.Now())
+	remote := `{"v":2,"data":{"fresh":{"days":{"` + day + `":{"s":2}}}}}`
+	raw = MergeRaw(
+		`{"v":2,"data":{}}`,
+		remote,
+		`{"v":2,"resets":{},"clearAll":{"counter":1,"deviceId":"device-a"}}`,
+	)
+	if err := json.Unmarshal([]byte(raw), &result); err != nil {
+		t.Fatal(err)
+	}
+	if !result.OK {
+		t.Fatalf("post-clear merge failed: %s", result.Error)
+	}
+	if _, restored := result.Merged["node"]; restored {
+		t.Fatal("clear-all should not restore the wiped node")
+	}
+	if result.Merged["fresh"].Days[day].Success != 2 {
+		t.Fatalf("fresh=%+v, want the post-clear sample", result.Merged["fresh"])
 	}
 }
 
