@@ -36,6 +36,8 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
 
         var loaded: UUID? = null
         var hasLoadedSuccessfully = false
+        var appliedLanPort: Int? = null
+        var lanPortSeen = false
 
         reload.trySend(Unit)
 
@@ -91,7 +93,13 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
 
                 Clash.setHealthCheckWorkerLimit(session.proxyDelayTestConcurrency ?: 30)
 
+                val nextLanPort = override.cfaLanPort?.takeIf { it in 1..65535 }
                 Clash.load(service.importedDir.resolve(active.uuid.toString())).await()
+                if (lanPortSeen && nextLanPort != appliedLanPort) {
+                    Clash.closeLanConnections()
+                }
+                appliedLanPort = nextLanPort
+                lanPortSeen = true
 
                 OverrideRuntimeApplier.applyPersistRuntimeLightFieldsAfterFullLoad()
 

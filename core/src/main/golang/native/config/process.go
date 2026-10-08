@@ -91,13 +91,20 @@ func decodeFilteredOverride(content string, cfg *config.RawConfig) error {
 	for key := range legacyHiddenOverrideKeys {
 		delete(payload, key)
 	}
+	lanPort, hasLanPort := consumeLanPortOverride(payload)
 
 	filtered, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}
 
-	return json.NewDecoder(strings.NewReader(string(filtered))).Decode(cfg)
+	if err := json.NewDecoder(strings.NewReader(string(filtered))).Decode(cfg); err != nil {
+		return err
+	}
+	if hasLanPort {
+		cfg.MixedPort = lanPort
+	}
+	return nil
 }
 
 func patchOverride(cfg *config.RawConfig, _ string) error {

@@ -91,6 +91,7 @@ internal object ConfigurationOverrideClassifier {
             addIf(prev.redirectPort != next.redirectPort, Kind.PORT_FAMILY)
             addIf(prev.tproxyPort != next.tproxyPort, Kind.PORT_FAMILY)
             addIf(prev.mixedPort != next.mixedPort, Kind.PORT_FAMILY)
+            addIf(prev.cfaLanPort != next.cfaLanPort, Kind.PORT_FAMILY)
 
             addIf(prev.authentication != next.authentication, Kind.AUTH)
 

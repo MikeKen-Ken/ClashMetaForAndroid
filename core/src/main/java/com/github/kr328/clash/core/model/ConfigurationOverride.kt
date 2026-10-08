@@ -23,6 +23,10 @@ data class ConfigurationOverride(
     @SerialName("mixed-port")
     var mixedPort: Int? = null,
 
+    /** LAN share port. `mixed-port` overrides are ignored, so this key is applied on its own. */
+    @SerialName("cfa-lan-port")
+    var cfaLanPort: Int? = null,
+
     @SerialName("authentication")
     var authentication: List<String>? = null,
 

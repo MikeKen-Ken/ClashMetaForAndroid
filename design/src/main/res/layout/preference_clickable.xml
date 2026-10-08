@@ -19,8 +19,9 @@
             android:layout_marginHorizontal="@dimen/item_header_margin" />
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:orientation="vertical">
 
             <TextView
@@ -36,5 +37,15 @@
                 android:layout_marginTop="@dimen/item_text_margin"
                 android:textAppearance="@style/TextAppearance.MaterialComponents.Body2" />
         </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/action_view"
+            android:layout_width="@dimen/item_header_component_size"
+            android:layout_height="@dimen/item_header_component_size"
+            android:layout_marginStart="@dimen/item_midden_margin"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/refresh_lan_port"
+            android:scaleType="centerInside"
+            android:visibility="gone" />
     </LinearLayout>
 </layout>

@@ -11,11 +11,16 @@ import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.core.model.ConfigurationOverride
 import com.github.kr328.clash.design.NetworkSettingsDesign
+import com.github.kr328.clash.design.R
+import com.github.kr328.clash.design.ui.ToastDuration
 import com.github.kr328.clash.service.store.ServiceStore
+import com.github.kr328.clash.util.LanPort
 import com.github.kr328.clash.util.scheduleClashMutation
 import com.github.kr328.clash.util.withClash
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.selects.select
+import kotlinx.coroutines.withContext
 import java.net.Inet4Address
 import java.io.File
 
@@ -99,11 +104,39 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
                         }
                         is NetworkSettingsDesign.Request.CopyLanAddress ->
                             copyTextToClipboard(it.address)
+                        NetworkSettingsDesign.Request.RefreshLanPort ->
+                            refreshLanPort(design, persistOverride, sessionOverride, serviceStore)
                     }
                 }
             }
         }
     }
+
+    private suspend fun refreshLanPort(
+        design: NetworkSettingsDesign,
+        persistOverride: ConfigurationOverride,
+        sessionOverride: ConfigurationOverride,
+        serviceStore: ServiceStore,
+    ) {
+        val current = resolveLanPort(serviceStore, sessionOverride, persistOverride)
+        val next = withContext(Dispatchers.IO) { LanPort.pickRandom(current) }
+        if (next == null) {
+            launch {
+                design.showToast(R.string.lan_port_refresh_failed, ToastDuration.Short)
+            }
+            return
+        }
+        persistOverride.cfaLanPort = next
+        design.replaceLanPort(next)
+        scheduleClashMutation("网络设置-刷新局域网端口") {
+            patchOverride(Clash.OverrideSlot.Persist, persistOverride)
+        }
+        launch {
+            design.showToast(R.string.lan_port_refreshed, ToastDuration.Short)
+        }
+    }
+
+    private fun explicitLanPort(port: Int?): Int? = port?.takeIf { it in 1..65535 }
 
     private fun copyTextToClipboard(text: String) {
         getSystemService<ClipboardManager>()?.setPrimaryClip(
@@ -218,7 +251,9 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
         persistOverride: ConfigurationOverride,
     ): Int {
         val profileMixedPort = resolveProfileMixedPort(serviceStore)
-        return sessionOverride.mixedPort
+        return explicitLanPort(sessionOverride.cfaLanPort)
+            ?: explicitLanPort(persistOverride.cfaLanPort)
+            ?: sessionOverride.mixedPort
             ?: persistOverride.mixedPort
             ?: sessionOverride.httpPort
             ?: persistOverride.httpPort

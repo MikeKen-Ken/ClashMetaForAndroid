@@ -35,9 +35,25 @@ class NetworkSettingsDesign(
     sealed class Request {
         object StartAccessControlList : Request()
         object StartLanDevices : Request()
+        object RefreshLanPort : Request()
         data class UpdateAllowLan(val enabled: Boolean) : Request()
         data class UpdateStrictRoute(val enabled: Boolean) : Request()
         data class CopyLanAddress(val address: String) : Request()
+    }
+
+    private val shownLanAddresses = lanAddresses.toMutableList()
+    private var lanAddressPreference: ClickablePreference? = null
+
+    fun replaceLanPort(port: Int) {
+        if (port !in 1..65535) return
+        for (index in shownLanAddresses.indices) {
+            val host = shownLanAddresses[index].substringBeforeLast(':')
+            shownLanAddresses[index] = "$host:$port"
+        }
+        val preference = lanAddressPreference ?: return
+        val first = shownLanAddresses.firstOrNull() ?: return
+        preference.summary = first
+        preference.enabled = true
     }
 
     private val binding = DesignSettingsCommonBinding
@@ -95,9 +111,17 @@ class NetworkSettingsDesign(
                 title = R.string.lan_address,
                 summary = if (allowLanState.enabled) R.string.tap_to_copy else R.string.lan_address_disabled,
             ) {
-                enabled = allowLanState.enabled && lanAddresses.isNotEmpty()
+                lanAddressPreference = this
+                enabled = allowLanState.enabled && shownLanAddresses.isNotEmpty()
+                trailingAction(
+                    icon = R.drawable.ic_baseline_sync,
+                    contentDescription = context.getString(R.string.refresh_lan_port),
+                ) {
+                    requests.trySend(Request.RefreshLanPort)
+                }
+                trailingVisible = allowLanState.enabled
                 clicked {
-                    val firstAddress = lanAddresses.firstOrNull() ?: return@clicked
+                    val firstAddress = shownLanAddresses.firstOrNull() ?: return@clicked
                     requests.trySend(Request.CopyLanAddress(firstAddress))
                     this@NetworkSettingsDesign.launch {
                         showToast(R.string.copied, ToastDuration.Short)
@@ -115,8 +139,8 @@ class NetworkSettingsDesign(
                 }
             }
 
-            if (allowLanState.enabled && lanAddresses.isNotEmpty()) {
-                lanAddress.summary = lanAddresses.first()
+            if (allowLanState.enabled && shownLanAddresses.isNotEmpty()) {
+                lanAddress.summary = shownLanAddresses.first()
             } else if (allowLanState.enabled) {
                 lanAddress.summary = context.getString(R.string.lan_address_unavailable)
                 lanAddress.enabled = false
@@ -127,6 +151,7 @@ class NetworkSettingsDesign(
                 if (!allowLanState.enabled) {
                     lanAddress.summary = context.getString(R.string.lan_address_disabled)
                     lanAddress.enabled = false
+                    lanAddress.trailingVisible = false
                     lanDevices.enabled = false
                     strictRouteState.enabled = true
                     strictRouteSwitch.checked = true
@@ -134,7 +159,8 @@ class NetworkSettingsDesign(
                     strictRouteSwitch.summary = context.getString(R.string.strict_route_summary)
                 } else {
                     lanDevices.enabled = true
-                    val firstAddress = lanAddresses.firstOrNull()
+                    lanAddress.trailingVisible = true
+                    val firstAddress = shownLanAddresses.firstOrNull()
                     if (firstAddress == null) {
                         lanAddress.summary = context.getString(R.string.lan_address_unavailable)
                         lanAddress.enabled = false

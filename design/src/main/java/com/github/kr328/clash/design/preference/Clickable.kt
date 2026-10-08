@@ -13,8 +13,15 @@ interface ClickablePreference : Preference {
 
     var icon: Drawable?
     var summary: CharSequence?
+    var trailingVisible: Boolean
 
     fun clicked(clicked: () -> Unit)
+
+    fun trailingAction(
+        @DrawableRes icon: Int,
+        contentDescription: CharSequence,
+        clicked: () -> Unit,
+    )
 }
 
 fun PreferenceScreen.clickable(
@@ -45,11 +52,41 @@ fun PreferenceScreen.clickable(
             }
         override val view: View
             get() = binding.root
+        override var trailingVisible: Boolean
+            get() = binding.actionView.visibility == View.VISIBLE
+            set(value) {
+                binding.actionView.visibility = if (value) View.VISIBLE else View.GONE
+                if (value) {
+                    binding.actionView.isEnabled = true
+                }
+            }
+        override var enabled: Boolean
+            get() = binding.root.isEnabled
+            set(value) {
+                binding.root.isEnabled = value
+                binding.root.isClickable = value
+                binding.root.isFocusable = value
+                binding.root.alpha = if (value) 1.0f else 0.33f
+                if (trailingVisible) {
+                    binding.actionView.isEnabled = true
+                }
+            }
 
         override fun clicked(clicked: () -> Unit) {
             binding.root.setOnClickListener {
                 clicked()
             }
+        }
+
+        override fun trailingAction(
+            @DrawableRes icon: Int,
+            contentDescription: CharSequence,
+            clicked: () -> Unit,
+        ) {
+            binding.actionView.setImageDrawable(context.getDrawableCompat(icon))
+            binding.actionView.contentDescription = contentDescription
+            binding.actionView.setOnClickListener { clicked() }
+            trailingVisible = true
         }
     }
 
