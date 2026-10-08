@@ -121,9 +121,7 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
         val current = resolveLanPort(serviceStore, sessionOverride, persistOverride)
         val next = withContext(Dispatchers.IO) { LanPort.pickRandom(current) }
         if (next == null) {
-            launch {
-                design.showToast(R.string.lan_port_refresh_failed, ToastDuration.Short)
-            }
+            design.showToast(R.string.lan_port_refresh_failed, ToastDuration.Short)
             return
         }
         persistOverride.cfaLanPort = next
@@ -131,9 +129,7 @@ class NetworkSettingsActivity : BaseActivity<NetworkSettingsDesign>() {
         scheduleClashMutation("网络设置-刷新局域网端口") {
             patchOverride(Clash.OverrideSlot.Persist, persistOverride)
         }
-        launch {
-            design.showToast(R.string.lan_port_refreshed, ToastDuration.Short)
-        }
+        design.showToast(R.string.lan_port_refreshed, ToastDuration.Short)
     }
 
     private fun explicitLanPort(port: Int?): Int? = port?.takeIf { it in 1..65535 }
