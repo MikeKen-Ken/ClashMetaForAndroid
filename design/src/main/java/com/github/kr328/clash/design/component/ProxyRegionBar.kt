@@ -15,7 +15,6 @@ import com.google.android.material.button.MaterialButton
  * One button on the proxy page. Tapping it opens a bottom drawer of countries.
  */
 class ProxyRegionBar(
-    private val bar: View,
     private val button: MaterialButton,
     private val allLabel: String,
     private val onSelected: (String) -> Unit,
@@ -38,7 +37,7 @@ class ProxyRegionBar(
         this.regions = shown
         this.selectedFlag = if (shown.any { it.flag == selectedFlag }) selectedFlag else ""
         button.text = button.context.getString(R.string.proxy_region_button, labelOf(this.selectedFlag))
-        bar.visibility = if (shown.isEmpty()) View.GONE else View.VISIBLE
+        button.visibility = if (shown.isEmpty()) View.GONE else View.VISIBLE
     }
 
     private fun labelOf(flag: String): String {

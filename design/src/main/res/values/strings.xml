@@ -385,6 +385,8 @@
     <string name="delay_test">Delay Test</string>
     <string name="hide_unavailable_proxies">Hide unavailable proxies</string>
     <string name="show_unavailable_proxies">Show unavailable proxies</string>
+    <string name="proxy_tools">Tools</string>
+    <string name="proxy_tools_timeout">Delay timeout</string>
     <string name="proxy_region_filter">Filter nodes by country</string>
     <string name="proxy_region_all">All</string>
     <string name="proxy_region_button">Country: %1$s</string>

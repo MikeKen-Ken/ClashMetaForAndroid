@@ -7,4 +7,15 @@
         <item name="colorControlNormal">@color/color_error</item>
         <item name="android:textColor">@color/color_error</item>
     </style>
+
+    <style name="ProxyToolChip" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">32dp</item>
+        <item name="android:paddingStart">10dp</item>
+        <item name="android:paddingEnd">10dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">12sp</item>
+    </style>
 </resources>

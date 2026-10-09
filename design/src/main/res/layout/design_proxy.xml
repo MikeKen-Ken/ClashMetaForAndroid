@@ -147,327 +147,44 @@
             </com.github.kr328.clash.design.view.ActivityBarLayout>
 
             <HorizontalScrollView
-                android:id="@+id/mode_scroll_view"
+                android:id="@+id/controls_bar_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingStart="12dp"
-                android:paddingEnd="12dp"
                 android:paddingTop="4dp"
+                android:paddingEnd="12dp"
                 android:paddingBottom="4dp"
                 android:scrollbars="none">
 
-                <com.google.android.material.button.MaterialButtonToggleGroup
-                    android:id="@+id/mode_toggle_group"
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    app:singleSelection="true"
-                    app:selectionRequired="false">
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/rule_mode_btn"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="0dp"
-                        android:minHeight="32dp"
-                        android:paddingStart="10dp"
-                        android:paddingEnd="10dp"
-                        android:text="@string/proxy_rule"
-                        android:textSize="12sp" />
+                        android:id="@+id/tools_button"
+                        style="@style/ProxyToolChip"
+                        android:layout_marginEnd="8dp"
+                        android:contentDescription="@string/proxy_tools"
+                        android:text="@string/proxy_tools"
+                        app:icon="@drawable/ic_baseline_tune"
+                        app:iconGravity="textStart"
+                        app:iconPadding="6dp"
+                        app:iconSize="16dp" />
 
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/global_mode_btn"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="0dp"
-                        android:minHeight="32dp"
-                        android:paddingStart="10dp"
-                        android:paddingEnd="10dp"
-                        android:text="@string/proxy_global"
-                        android:textSize="12sp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/direct_mode_btn"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="0dp"
-                        android:minHeight="32dp"
-                        android:paddingStart="10dp"
-                        android:paddingEnd="10dp"
-                        android:text="@string/proxy_direct"
-                        android:textSize="12sp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/offline_mode_btn"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="0dp"
-                        android:minHeight="32dp"
-                        android:paddingStart="10dp"
-                        android:paddingEnd="10dp"
-                        android:text="@string/proxy_offline"
-                        android:textSize="12sp" />
-                </com.google.android.material.button.MaterialButtonToggleGroup>
-
+                        android:id="@+id/region_filter_button"
+                        style="@style/ProxyToolChip"
+                        android:contentDescription="@string/proxy_region_filter"
+                        android:text="@string/proxy_region_all"
+                        android:visibility="gone"
+                        app:icon="@drawable/ic_baseline_public"
+                        app:iconGravity="textStart"
+                        app:iconPadding="6dp"
+                        app:iconSize="16dp" />
+                </LinearLayout>
             </HorizontalScrollView>
-
-            <HorizontalScrollView
-                android:id="@+id/timeout_scroll_view"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp"
-                android:scrollbars="none">
-
-                <com.google.android.material.button.MaterialButtonToggleGroup
-                    android:id="@+id/timeout_toggle_group"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:singleSelection="true"
-                    app:selectionRequired="true">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/timeout_250_btn"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="0dp"
-                        android:minHeight="32dp"
-                        android:paddingStart="10dp"
-                        android:paddingEnd="10dp"
-                        android:text="@string/timeout_250ms"
-                        android:textSize="12sp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/timeout_500_btn"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="0dp"
-                        android:minHeight="32dp"
-                        android:paddingStart="10dp"
-                        android:paddingEnd="10dp"
-                        android:text="@string/timeout_500ms"
-                        android:textSize="12sp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/timeout_1000_btn"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="0dp"
-                        android:minHeight="32dp"
-                        android:paddingStart="10dp"
-                        android:paddingEnd="10dp"
-                        android:text="@string/timeout_1000ms"
-                        android:textSize="12sp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/timeout_3000_btn"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="0dp"
-                        android:minHeight="32dp"
-                        android:paddingStart="10dp"
-                        android:paddingEnd="10dp"
-                        android:text="@string/timeout_3000ms"
-                        android:textSize="12sp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/timeout_5000_btn"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="0dp"
-                        android:minHeight="32dp"
-                        android:paddingStart="10dp"
-                        android:paddingEnd="10dp"
-                        android:text="@string/timeout_5000ms"
-                        android:textSize="12sp" />
-
-                </com.google.android.material.button.MaterialButtonToggleGroup>
-
-            </HorizontalScrollView>
-
-            <HorizontalScrollView
-                android:id="@+id/ads_scroll_view"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp"
-                android:scrollbars="none">
-
-                <com.google.android.material.button.MaterialButtonToggleGroup
-                    android:id="@+id/ads_toggle_group"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:singleSelection="true"
-                    app:selectionRequired="true">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/ads_on_btn"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="0dp"
-                        android:minHeight="32dp"
-                        android:paddingStart="10dp"
-                        android:paddingEnd="10dp"
-                        android:text="@string/proxy_ads_on"
-                        android:textSize="12sp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/ads_off_btn"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="0dp"
-                        android:minHeight="32dp"
-                        android:paddingStart="10dp"
-                        android:paddingEnd="10dp"
-                        android:text="@string/proxy_ads_off"
-                        android:textSize="12sp" />
-
-                </com.google.android.material.button.MaterialButtonToggleGroup>
-
-            </HorizontalScrollView>
-
-            <LinearLayout
-                android:id="@+id/concurrency_bar_layout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="12dp"
-                android:paddingTop="4dp"
-                android:paddingEnd="12dp"
-                android:paddingBottom="4dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingEnd="8dp"
-                    android:text="@string/concurrency_step"
-                    android:textSize="11sp" />
-
-                <HorizontalScrollView
-                    android:id="@+id/concurrency_scroll_view"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:scrollbars="none">
-
-                    <com.google.android.material.button.MaterialButtonToggleGroup
-                        android:id="@+id/concurrency_toggle_group"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        app:singleSelection="true"
-                        app:selectionRequired="true">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/concurrency_30_btn"
-                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:minWidth="0dp"
-                            android:minHeight="32dp"
-                            android:paddingStart="10dp"
-                            android:paddingEnd="10dp"
-                            android:text="@string/concurrency_30"
-                            android:textSize="12sp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/concurrency_50_btn"
-                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:minWidth="0dp"
-                            android:minHeight="32dp"
-                            android:paddingStart="10dp"
-                            android:paddingEnd="10dp"
-                            android:text="@string/concurrency_50"
-                            android:textSize="12sp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/concurrency_100_btn"
-                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:minWidth="0dp"
-                            android:minHeight="32dp"
-                            android:paddingStart="10dp"
-                            android:paddingEnd="10dp"
-                            android:text="@string/concurrency_100"
-                            android:textSize="12sp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/concurrency_150_btn"
-                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:minWidth="0dp"
-                            android:minHeight="32dp"
-                            android:paddingStart="10dp"
-                            android:paddingEnd="10dp"
-                            android:text="@string/concurrency_150"
-                            android:textSize="12sp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/concurrency_200_btn"
-                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:minWidth="0dp"
-                            android:minHeight="32dp"
-                            android:paddingStart="10dp"
-                            android:paddingEnd="10dp"
-                            android:text="@string/concurrency_200"
-                            android:textSize="12sp" />
-
-                    </com.google.android.material.button.MaterialButtonToggleGroup>
-
-                </HorizontalScrollView>
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/region_bar_layout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="12dp"
-                android:paddingTop="4dp"
-                android:paddingEnd="12dp"
-                android:paddingBottom="4dp"
-                android:visibility="gone">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/region_filter_button"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:contentDescription="@string/proxy_region_filter"
-                    android:minWidth="0dp"
-                    android:minHeight="32dp"
-                    android:paddingStart="10dp"
-                    android:paddingEnd="10dp"
-                    android:text="@string/proxy_region_all"
-                    android:textAllCaps="false"
-                    android:textSize="12sp"
-                    app:icon="@drawable/ic_baseline_public"
-                    app:iconGravity="textStart"
-                    app:iconPadding="6dp"
-                    app:iconSize="16dp" />
-            </LinearLayout>
 
             <com.google.android.material.tabs.TabLayout
                 android:id="@+id/tab_layout_view"

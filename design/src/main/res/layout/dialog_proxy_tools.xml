@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="12dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="4dp"
+            android:paddingBottom="4dp"
+            android:text="@string/mode"
+            android:textSize="11sp" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/mode_toggle_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:selectionRequired="false"
+                app:singleSelection="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/rule_mode_btn"
+                    style="@style/ProxyToolChip"
+                    android:text="@string/proxy_rule" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/global_mode_btn"
+                    style="@style/ProxyToolChip"
+                    android:text="@string/proxy_global" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/direct_mode_btn"
+                    style="@style/ProxyToolChip"
+                    android:text="@string/proxy_direct" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/offline_mode_btn"
+                    style="@style/ProxyToolChip"
+                    android:text="@string/proxy_offline" />
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+        </HorizontalScrollView>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="4dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="4dp"
+            android:text="@string/proxy_tools_timeout"
+            android:textSize="11sp" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/timeout_toggle_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:selectionRequired="true"
+                app:singleSelection="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/timeout_250_btn"
+                    style="@style/ProxyToolChip"
+                    android:text="@string/timeout_250ms" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/timeout_500_btn"
+                    style="@style/ProxyToolChip"
+                    android:text="@string/timeout_500ms" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/timeout_1000_btn"
+                    style="@style/ProxyToolChip"
+                    android:text="@string/timeout_1000ms" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/timeout_3000_btn"
+                    style="@style/ProxyToolChip"
+                    android:text="@string/timeout_3000ms" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/timeout_5000_btn"
+                    style="@style/ProxyToolChip"
+                    android:text="@string/timeout_5000ms" />
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+        </HorizontalScrollView>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="4dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="4dp"
+            android:text="@string/proxy_ads_on"
+            android:textSize="11sp" />
+
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/ads_toggle_group"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/ads_on_btn"
+                style="@style/ProxyToolChip"
+                android:text="@string/proxy_ads_on" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/ads_off_btn"
+                style="@style/ProxyToolChip"
+                android:text="@string/proxy_ads_off" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="4dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="4dp"
+            android:text="@string/concurrency_step"
+            android:textSize="11sp" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/concurrency_toggle_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:selectionRequired="true"
+                app:singleSelection="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/concurrency_30_btn"
+                    style="@style/ProxyToolChip"
+                    android:text="@string/concurrency_30" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/concurrency_50_btn"
+                    style="@style/ProxyToolChip"
+                    android:text="@string/concurrency_50" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/concurrency_100_btn"
+                    style="@style/ProxyToolChip"
+                    android:text="@string/concurrency_100" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/concurrency_150_btn"
+                    style="@style/ProxyToolChip"
+                    android:text="@string/concurrency_150" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/concurrency_200_btn"
+                    style="@style/ProxyToolChip"
+                    android:text="@string/concurrency_200" />
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+        </HorizontalScrollView>
+    </LinearLayout>
+</layout>
