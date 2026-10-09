@@ -53,7 +53,9 @@ class ProxyDesign(
     private val binding = DesignProxyBinding
         .inflate(context.layoutInflater, context.root, false)
 
-    private var config = ProxyViewConfig(context, uiStore.proxyLine)
+    private var config = ProxyViewConfig(context, uiStore.proxyLine).also {
+        it.showDetail = uiStore.proxyShowDetail
+    }
 
     private val adapter: ProxyPageAdapter
         get() = binding.pagesView.adapter!! as ProxyPageAdapter
@@ -130,6 +132,7 @@ class ProxyDesign(
                 else R.string.hide_unavailable_proxies
             )
         }
+        applyShowDetailButton()
 
         binding.activityBarLayout.applyFrom(context)
         LiquidGlass.attach(binding.modeScrollView)
@@ -227,6 +230,7 @@ class ProxyDesign(
             binding.scrollToCurrentFab.visibility = View.GONE
             binding.urlTestView.visibility = View.GONE
             binding.hideUnavailableView.visibility = View.GONE
+            binding.showDetailView.visibility = View.GONE
             binding.modeScrollView.visibility = View.GONE
             binding.timeoutScrollView.visibility = View.GONE
             binding.adsScrollView.visibility = View.GONE
@@ -303,6 +307,14 @@ class ProxyDesign(
         requests.trySend(Request.ClearConnectivityStats)
     }
 
+    fun toggleShowDetail() {
+        val showDetail = !uiStore.proxyShowDetail
+        uiStore.proxyShowDetail = showDetail
+        config.showDetail = showDetail
+        applyShowDetailButton()
+        adapter.redrawAllProxies()
+    }
+
     fun toggleHideUnavailable() {
         val hideUnavailable = !uiStore.proxyHideUnavailable
         uiStore.proxyHideUnavailable = hideUnavailable
@@ -330,6 +342,21 @@ class ProxyDesign(
         val innerRv = binding.pagesView.getChildAt(0) as? RecyclerView ?: return
         val pageHolder = innerRv.findViewHolderForAdapterPosition(position) as? ProxyPageFactory.Holder ?: return
         pageHolder.recyclerView.smoothScrollToPosition(index)
+    }
+
+    private fun applyShowDetailButton() {
+        val showDetail = uiStore.proxyShowDetail
+        binding.showDetailView.apply {
+            setImageResource(
+                if (showDetail) R.drawable.ic_baseline_visibility
+                else R.drawable.ic_baseline_hide
+            )
+            alpha = if (showDetail) 1f else 0.55f
+            contentDescription = context.getString(
+                if (showDetail) R.string.hide_proxy_detail
+                else R.string.show_proxy_detail
+            )
+        }
     }
 
     private fun updateUrlTestButtonStatus() {

@@ -18,6 +18,8 @@ data class Proxy(
     val subtitle: String,
     val type: Type,
     val delay: Int,
+    /** Smoothed connectivity delay in ms. -1 when this node has no samples. */
+    val effectiveDelay: Int = -1,
 ) : Parcelable {
     /**
      * Wire format uses stable type names (not ordinals) so unknown core types map to [Unknown]

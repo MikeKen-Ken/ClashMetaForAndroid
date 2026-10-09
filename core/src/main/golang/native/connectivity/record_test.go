@@ -65,3 +65,15 @@ func TestSkippedObservationsDoNotChangeStats(t *testing.T) {
 		t.Fatal("skipped tests became observations")
 	}
 }
+
+func TestDisplayedEffectiveDelayRequiresOwnSamples(t *testing.T) {
+	ClearAll()
+	t.Cleanup(ClearAll)
+	if got := BuildScoreContext().DisplayedEffectiveDelayMs("missing"); got != -1 {
+		t.Fatalf("missing node = %d; want -1", got)
+	}
+	RecordDelayTestResult("node", 180, 5000)
+	if got := BuildScoreContext().DisplayedEffectiveDelayMs("node"); got <= 0 {
+		t.Fatalf("node with samples = %d; want a positive delay", got)
+	}
+}

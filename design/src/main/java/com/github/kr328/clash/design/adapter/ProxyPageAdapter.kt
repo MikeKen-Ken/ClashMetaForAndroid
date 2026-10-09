@@ -106,6 +106,10 @@ class ProxyPageAdapter(
         adapters.forEach { it.setHideUnavailable(enabled) }
     }
 
+    fun redrawAllProxies() {
+        adapters.forEach { it.redraw() }
+    }
+
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         this.parent = recyclerView
 

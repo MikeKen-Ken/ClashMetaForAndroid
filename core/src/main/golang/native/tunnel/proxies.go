@@ -4,8 +4,8 @@ import (
 	"sort"
 	"strings"
 
+	"cfa/native/connectivity"
 	"github.com/dlclark/regexp2"
-
 	"github.com/metacubex/mihomo/adapter/outboundgroup"
 	C "github.com/metacubex/mihomo/constant"
 	"github.com/metacubex/mihomo/constant/provider"
@@ -23,11 +23,12 @@ const (
 )
 
 type Proxy struct {
-	Name     string `json:"name"`
-	Title    string `json:"title"`
-	Subtitle string `json:"subtitle"`
-	Type     string `json:"type"`
-	Delay    int    `json:"delay"`
+	Name           string `json:"name"`
+	Title          string `json:"title"`
+	Subtitle       string `json:"subtitle"`
+	Type           string `json:"type"`
+	Delay          int    `json:"delay"`
+	EffectiveDelay int    `json:"effectiveDelay"`
 }
 
 type ProxyGroup struct {
@@ -102,7 +103,8 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 	}
 
 	testURL, _ := delayTestSpec(g)
-	proxies := convertProxies(g.Proxies(), testURL, uiSubtitlePattern)
+	scoreCtx := connectivity.BuildScoreContext()
+	proxies := convertProxies(g.Proxies(), testURL, uiSubtitlePattern, scoreCtx)
 	// 	proxies := collectProviders(g.Providers(), uiSubtitlePattern)
 
 	switch sortMode {
@@ -188,7 +190,7 @@ func PatchSelector(selector, name string) bool {
 	return true
 }
 
-func convertProxies(proxies []C.Proxy, testURL string, uiSubtitlePattern *regexp2.Regexp) []*Proxy {
+func convertProxies(proxies []C.Proxy, testURL string, uiSubtitlePattern *regexp2.Regexp, scoreCtx connectivity.ScoreContext) []*Proxy {
 	result := make([]*Proxy, 0, 128)
 
 	for _, p := range proxies {
@@ -207,11 +209,12 @@ func convertProxies(proxies []C.Proxy, testURL string, uiSubtitlePattern *regexp
 			}
 		}
 		result = append(result, &Proxy{
-			Name:     name,
-			Title:    strings.TrimSpace(title),
-			Subtitle: strings.TrimSpace(subtitle),
-			Type:     p.Type().String(),
-			Delay:    int(latestProxyDelayForURL(p, testURL)),
+			Name:           name,
+			Title:          strings.TrimSpace(title),
+			Subtitle:       strings.TrimSpace(subtitle),
+			Type:           p.Type().String(),
+			Delay:          int(latestProxyDelayForURL(p, testURL)),
+			EffectiveDelay: scoreCtx.DisplayedEffectiveDelayMs(name),
 		})
 	}
 	return result
@@ -219,6 +222,7 @@ func convertProxies(proxies []C.Proxy, testURL string, uiSubtitlePattern *regexp
 
 func collectProviders(providers []provider.ProxyProvider, uiSubtitlePattern *regexp2.Regexp) []*Proxy {
 	result := make([]*Proxy, 0, 128)
+	scoreCtx := connectivity.BuildScoreContext()
 
 	for _, p := range providers {
 		testURL := p.HealthCheckURL()
@@ -242,11 +246,12 @@ func collectProviders(providers []provider.ProxyProvider, uiSubtitlePattern *reg
 			}
 
 			result = append(result, &Proxy{
-				Name:     name,
-				Title:    strings.TrimSpace(title),
-				Subtitle: strings.TrimSpace(subtitle),
-				Type:     px.Type().String(),
-				Delay:    int(latestProxyDelayForURL(px, testURL)),
+				Name:           name,
+				Title:          strings.TrimSpace(title),
+				Subtitle:       strings.TrimSpace(subtitle),
+				Type:           px.Type().String(),
+				Delay:          int(latestProxyDelayForURL(px, testURL)),
+				EffectiveDelay: scoreCtx.DisplayedEffectiveDelayMs(name),
 			})
 		}
 	}

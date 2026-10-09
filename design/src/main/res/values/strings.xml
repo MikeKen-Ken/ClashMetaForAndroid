@@ -385,6 +385,8 @@
     <string name="delay_test">Delay Test</string>
     <string name="hide_unavailable_proxies">Hide unavailable proxies</string>
     <string name="show_unavailable_proxies">Show unavailable proxies</string>
+    <string name="hide_proxy_detail">Hide proxy detail</string>
+    <string name="show_proxy_detail">Show proxy detail</string>
     <string name="proxy_scroll_to_current_node">Jump to current node</string>
     <string name="timeout_250ms">250ms</string>
     <string name="timeout_500ms">500ms</string>

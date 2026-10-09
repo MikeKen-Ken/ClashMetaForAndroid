@@ -116,6 +116,19 @@
                             android:src="@drawable/ic_baseline_clear_all" />
 
                         <ImageView
+                            android:id="@+id/show_detail_view"
+                            android:layout_width="@dimen/item_tailing_component_size"
+                            android:layout_height="@dimen/item_tailing_component_size"
+                            android:layout_marginStart="@dimen/item_tailing_margin"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:contentDescription="@string/hide_proxy_detail"
+                            android:focusable="true"
+                            android:onClick="@{() -> self.toggleShowDetail()}"
+                            android:padding="@dimen/toolbar_image_action_padding"
+                            android:src="@drawable/ic_baseline_visibility" />
+
+                        <ImageView
                             android:id="@+id/clear_connectivity_stats_view"
                             android:layout_width="@dimen/item_tailing_component_size"
                             android:layout_height="@dimen/item_tailing_component_size"

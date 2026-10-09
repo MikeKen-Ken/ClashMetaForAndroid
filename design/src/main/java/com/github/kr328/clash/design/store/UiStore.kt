@@ -91,6 +91,12 @@ class UiStore(context: Context) {
         defaultValue = false,
     )
 
+    /** When false, node cards hide the type/UDP subtitle. Effective delay stays. */
+    var proxyShowDetail by store.boolean(
+        key = "proxy_show_detail",
+        defaultValue = true,
+    )
+
     var proxyLine: Int by store.int(
         key = "proxy_line",
         defaultValue = 3

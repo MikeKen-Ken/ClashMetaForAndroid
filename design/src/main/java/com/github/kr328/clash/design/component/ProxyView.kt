@@ -2,6 +2,7 @@ package com.github.kr328.clash.design.component
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.view.View
@@ -11,6 +12,7 @@ import com.github.kr328.clash.design.R
 import com.github.kr328.clash.design.util.LiquidGlass
 import com.github.kr328.clash.design.util.UiBackground
 import com.github.kr328.clash.design.util.WallpaperReadability
+import kotlin.math.max
 
 /**
  * Ensures [breakCount] does not cut in the middle of a UTF-16 surrogate pair (e.g. emoji).
@@ -146,26 +148,43 @@ class ProxyView(
 
         paint.textSize = state.config.textSize
 
+        val delayMaxWidth = (width - state.config.layoutPadding * 2 - state.config.contentPadding * 2)
+            .coerceAtLeast(0f)
+
         // measure delay text bounds
         val delayCount = safeBreakCount(
             state.delayText,
             paint.breakText(
                 state.delayText,
                 false,
-                (width - state.config.layoutPadding * 2 - state.config.contentPadding * 2)
-                    .coerceAtLeast(0f),
+                delayMaxWidth,
                 null
             )
         )
 
         state.paint.getTextBounds(state.delayText, 0, delayCount, state.rect)
 
-        val delayWidth = state.rect.width()
+        val delayWidth = state.rect.width().toFloat()
+        val effectiveText = state.effectiveDelayText
+        val effectiveSize = state.config.textSize * 0.72f
+        var effectiveCount = 0
+        var effectiveWidth = 0f
+        if (effectiveText.isNotEmpty()) {
+            paint.textSize = effectiveSize
+            effectiveCount = safeBreakCount(
+                effectiveText,
+                paint.breakText(effectiveText, false, delayMaxWidth, null),
+            )
+            state.paint.getTextBounds(effectiveText, 0, effectiveCount, state.rect)
+            effectiveWidth = state.rect.width().toFloat()
+            paint.textSize = state.config.textSize
+        }
+        val delayColumnWidth = max(delayWidth, effectiveWidth)
 
         val mainTextWidth = (width -
                 state.config.layoutPadding * 2 -
                 state.config.contentPadding * 2 -
-                delayWidth -
+                delayColumnWidth -
                 state.config.textMargin * 2
                 )
             .coerceAtLeast(0f)
@@ -205,21 +224,29 @@ class ProxyView(
         paint.isAntiAlias = true
         WallpaperReadability.applyCanvasTextContrast(context, paint, state.controls)
 
+        val titleY = state.config.layoutPadding +
+                (height - state.config.layoutPadding * 2) / 3f - textOffset
+        val subtitleY = state.config.layoutPadding +
+                (height - state.config.layoutPadding * 2) / 3f * 2 - textOffset
+
         // draw delay (red "T" when timeout, otherwise normal color)
         canvas.apply {
             paint.color = if (state.delayTimeout) state.config.delayTimeoutColor else state.controls
             val x = width - state.config.layoutPadding - state.config.contentPadding - delayWidth
-            val y = height / 2f - textOffset
-
-            drawText(state.delayText, 0, delayCount, x, y, paint)
+            drawText(state.delayText, 0, delayCount, x, titleY, paint)
+        }
+        if (effectiveText.isNotEmpty() && effectiveCount > 0) {
+            paint.textSize = effectiveSize
+            paint.color = Color.BLACK
+            val x = width - state.config.layoutPadding - state.config.contentPadding - effectiveWidth
+            canvas.drawText(effectiveText, 0, effectiveCount, x, subtitleY, paint)
+            paint.textSize = state.config.textSize
         }
         paint.color = state.controls
 
         // draw title (with optional manual-selection indicator)
         canvas.apply {
             var titleX = state.config.layoutPadding + state.config.contentPadding
-            val titleY = state.config.layoutPadding +
-                    (height - state.config.layoutPadding * 2) / 3f - textOffset
 
             if (state.isManualSelection) {
                 val iconSize = (state.config.textSize * 1.5f).toInt().coerceIn(18, 28)
@@ -236,13 +263,11 @@ class ProxyView(
             drawText(state.title, 0, titleCount, titleX, titleY, paint)
         }
 
-        // draw subtitle
-        canvas.apply {
-            val x = state.config.layoutPadding + state.config.contentPadding
-            val y = state.config.layoutPadding +
-                    (height - state.config.layoutPadding * 2) / 3f * 2 - textOffset
-
-            drawText(state.subtitle, 0, subtitleCount, x, y, paint)
+        if (state.config.showDetail) {
+            canvas.apply {
+                val x = state.config.layoutPadding + state.config.contentPadding
+                drawText(state.subtitle, 0, subtitleCount, x, subtitleY, paint)
+            }
         }
     }
 }

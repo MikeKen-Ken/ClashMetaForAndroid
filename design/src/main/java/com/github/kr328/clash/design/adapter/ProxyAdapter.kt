@@ -23,6 +23,10 @@ class ProxyAdapter(
         updateVisibleStates()
     }
 
+    fun redraw() {
+        if (states.isNotEmpty()) notifyItemRangeChanged(0, states.size)
+    }
+
     fun setHideUnavailable(enabled: Boolean) {
         if (hideUnavailable == enabled) return
 

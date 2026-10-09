@@ -22,12 +22,14 @@ class ProxyViewState(
     var title: String = ""
     var subtitle: String = ""
     var delayText: String = ""
+    var effectiveDelayText: String = ""
     var delayTimeout: Boolean = false
     var background: Int = config.unselectedBackground
     var controls: Int = config.unselectedControl
     val isSelected: Boolean get() = selected
 
     private var delay: Int = Int.MIN_VALUE  // 使用不可能的值确保第一次 update() 时 delayText 被设置
+    private var effectiveDelay: Int = Int.MIN_VALUE
     private var selected: Boolean = false
     /** True when this node is the current one AND was manually selected (show manual icon). */
     val isManualSelection: Boolean get() = selected && parent.nowIsManual
@@ -72,6 +74,15 @@ class ProxyViewState(
             } else {
                 delayText = "T"
                 delayTimeout = true
+            }
+        }
+
+        if (effectiveDelay != proxy.effectiveDelay) {
+            effectiveDelay = proxy.effectiveDelay
+            effectiveDelayText = if (proxy.effectiveDelay >= 0) {
+                proxy.effectiveDelay.toString()
+            } else {
+                ""
             }
         }
 

@@ -47,8 +47,8 @@ type statsSyncState struct {
 }
 
 type statsSyncMergeResult struct {
-	OK     bool                              `json:"ok"`
-	Error  string                            `json:"error,omitempty"`
+	OK       bool                              `json:"ok"`
+	Error    string                            `json:"error,omitempty"`
 	Own      map[string]proxyConnectivityEntry `json:"own,omitempty"`
 	Merged   map[string]proxyConnectivityEntry `json:"merged,omitempty"`
 	Resets   map[string]resetGeneration        `json:"resets,omitempty"`
@@ -261,6 +261,20 @@ func (ctx ScoreContext) ScoreFor(proxyName string) float64 {
 // EffectiveDelayFor exposes the same pooled cost shown in the score panel.
 func (ctx ScoreContext) EffectiveDelayFor(proxyName string) float64 {
 	return smoothedEffectiveAvgDelay(ctx.byProxy[proxyName], ctx.priorDelayMs)
+}
+
+// DisplayedEffectiveDelayMs is the card number. -1 means this node has no
+// samples of its own, so the global prior must not be shown as its delay.
+func (ctx ScoreContext) DisplayedEffectiveDelayMs(proxyName string) int {
+	stats, ok := ctx.byProxy[proxyName]
+	if !ok || (stats.Success <= 0 && stats.Failure <= 0) {
+		return -1
+	}
+	ms := ctx.EffectiveDelayFor(proxyName)
+	if math.IsNaN(ms) || math.IsInf(ms, 0) || ms < 0 {
+		return -1
+	}
+	return int(math.Round(ms))
 }
 
 func ensureStatsLoaded() {

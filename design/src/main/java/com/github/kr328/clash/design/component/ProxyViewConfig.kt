@@ -10,6 +10,7 @@ import com.github.kr328.clash.design.util.resolveThemedColor
 import com.github.kr328.clash.design.util.resolveThemedResourceId
 
 class ProxyViewConfig(val context: Context, var proxyLine: Int) {
+    var showDetail: Boolean = true
     private val colorSurface = context.resolveThemedColor(com.google.android.material.R.attr.colorSurface)
     private val glass = UiBackground.exists(context)
 
