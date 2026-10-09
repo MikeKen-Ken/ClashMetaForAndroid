@@ -34,6 +34,7 @@ class ProxyRegionBar(
                 shown.add(ProxyRegion.Option(selectedFlag, label))
             }
         }
+        shown.sortWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.label })
         this.regions = shown
         this.selectedFlag = if (shown.any { it.flag == selectedFlag }) selectedFlag else ""
         button.text = button.context.getString(R.string.proxy_region_button, labelOf(this.selectedFlag))

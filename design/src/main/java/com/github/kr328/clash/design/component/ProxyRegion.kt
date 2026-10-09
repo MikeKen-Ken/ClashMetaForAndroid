@@ -10,8 +10,6 @@ object ProxyRegion {
 
     private data class Rule(val flag: String, val keywords: List<String>)
 
-    private val PRIORITY = listOf("🇭🇰", "🇯🇵", "🇸🇬", "🇹🇼", "🇺🇸")
-
     private val RULES = listOf(
         Rule("🇭🇰", listOf("香港")),
         Rule("🇲🇴", listOf("澳门")),
@@ -180,7 +178,7 @@ object ProxyRegion {
         return ""
     }
 
-    /** Countries present in [names], common regions first, then English label. */
+    /** Countries present in [names], A-Z by the English name shown in the drawer. */
     fun listAvailable(names: Iterable<String>): List<Option> {
         val flags = LinkedHashSet<String>()
         for (name in names) {
@@ -189,9 +187,6 @@ object ProxyRegion {
         }
         return flags
             .map { flag -> Option(flag, LABELS[flag] ?: flag) }
-            .sortedWith(compareBy<Option> { option ->
-                val index = PRIORITY.indexOf(option.flag)
-                if (index >= 0) index else PRIORITY.size
-            }.thenBy { it.label })
+            .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.label })
     }
 }
