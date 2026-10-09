@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/region_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="20dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="8dp"
+        android:text="@string/proxy_region_filter"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/region_list"
+        android:layout_width="match_parent"
+        android:layout_height="320dp"
+        android:clipToPadding="false"
+        android:scrollbars="vertical" />
+</LinearLayout>

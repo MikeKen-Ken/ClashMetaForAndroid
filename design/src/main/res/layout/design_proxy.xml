@@ -438,26 +438,36 @@
 
             </LinearLayout>
 
-            <HorizontalScrollView
-                android:id="@+id/region_scroll_view"
+            <LinearLayout
+                android:id="@+id/region_bar_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:contentDescription="@string/proxy_region_filter"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
                 android:paddingStart="12dp"
                 android:paddingTop="4dp"
                 android:paddingEnd="12dp"
                 android:paddingBottom="4dp"
-                android:scrollbars="none"
                 android:visibility="gone">
 
-                <com.google.android.material.button.MaterialButtonToggleGroup
-                    android:id="@+id/region_toggle_group"
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/region_filter_button"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    app:selectionRequired="true"
-                    app:singleSelection="true" />
-
-            </HorizontalScrollView>
+                    android:contentDescription="@string/proxy_region_filter"
+                    android:minWidth="0dp"
+                    android:minHeight="32dp"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:text="@string/proxy_region_all"
+                    android:textAllCaps="false"
+                    android:textSize="12sp"
+                    app:icon="@drawable/ic_baseline_public"
+                    app:iconGravity="textStart"
+                    app:iconPadding="6dp"
+                    app:iconSize="16dp" />
+            </LinearLayout>
 
             <com.google.android.material.tabs.TabLayout
                 android:id="@+id/tab_layout_view"

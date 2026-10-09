@@ -70,8 +70,8 @@ class ProxyDesign(
     private var suppressModeToggleEmit: Boolean = false
 
     private val regionBar = ProxyRegionBar(
-        binding.regionScrollView,
-        binding.regionToggleGroup,
+        binding.regionBarLayout,
+        binding.regionFilterButton,
         context.getString(R.string.proxy_region_all),
     ) { flag ->
         if (uiStore.proxyRegionFilter == flag) return@ProxyRegionBar
@@ -151,7 +151,7 @@ class ProxyDesign(
         LiquidGlass.attach(binding.timeoutScrollView)
         LiquidGlass.attach(binding.adsScrollView)
         LiquidGlass.attach(binding.concurrencyBarLayout)
-        LiquidGlass.attach(binding.regionScrollView)
+        LiquidGlass.attach(binding.regionBarLayout)
         LiquidGlass.attach(binding.tabLayoutView)
         LiquidGlass.attach(binding.elevationView)
 
@@ -248,7 +248,7 @@ class ProxyDesign(
             binding.timeoutScrollView.visibility = View.GONE
             binding.adsScrollView.visibility = View.GONE
             binding.concurrencyBarLayout.visibility = View.GONE
-            binding.regionScrollView.visibility = View.GONE
+            binding.regionBarLayout.visibility = View.GONE
             binding.tabLayoutView.visibility = View.GONE
             binding.elevationView.visibility = View.GONE
             binding.pagesView.visibility = View.GONE

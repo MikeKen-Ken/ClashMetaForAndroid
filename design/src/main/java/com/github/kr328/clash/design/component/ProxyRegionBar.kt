@@ -1,31 +1,30 @@
 package com.github.kr328.clash.design.component
 
 import android.view.View
-import android.widget.HorizontalScrollView
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
 import com.github.kr328.clash.design.R
+import com.github.kr328.clash.design.dialog.AppBottomSheetDialog
+import com.github.kr328.clash.design.util.applyLinearAdapter
 import com.github.kr328.clash.design.util.layoutInflater
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.button.MaterialButtonToggleGroup
 
 /**
- * One scrollable row of country chips. The first chip clears the filter.
+ * One button on the proxy page. Tapping it opens a bottom drawer of countries.
  */
 class ProxyRegionBar(
-    private val scroll: HorizontalScrollView,
-    private val group: MaterialButtonToggleGroup,
+    private val bar: View,
+    private val button: MaterialButton,
     private val allLabel: String,
     private val onSelected: (String) -> Unit,
 ) {
-    private var suppress = false
-    private var shownFlags: List<String> = emptyList()
-    private val buttonIdByFlag = HashMap<String, Int>()
+    private var regions: List<ProxyRegion.Option> = emptyList()
+    private var selectedFlag: String = ""
 
     init {
-        group.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (suppress || !isChecked) return@addOnButtonCheckedListener
-            val flag = group.findViewById<View>(checkedId)?.tag as? String ?: return@addOnButtonCheckedListener
-            onSelected(flag)
-        }
+        button.setOnClickListener { openDrawer() }
     }
 
     fun render(regions: List<ProxyRegion.Option>, selectedFlag: String) {
@@ -36,60 +35,65 @@ class ProxyRegionBar(
                 shown.add(ProxyRegion.Option(selectedFlag, label))
             }
         }
-        val flags = shown.map { it.flag }
-        val flagsChanged = flags != shownFlags
-        if (flagsChanged) {
-            rebuild(shown)
-            shownFlags = flags
-        }
-        val effective = if (buttonIdByFlag.containsKey(selectedFlag)) selectedFlag else ""
-        val selectionChanged = check(effective)
-        scroll.visibility = if (shown.isEmpty()) View.GONE else View.VISIBLE
-        if (shown.isNotEmpty() && (flagsChanged || selectionChanged)) {
-            scrollSelectedIntoView()
-        }
+        this.regions = shown
+        this.selectedFlag = if (shown.any { it.flag == selectedFlag }) selectedFlag else ""
+        button.text = button.context.getString(R.string.proxy_region_button, labelOf(this.selectedFlag))
+        bar.visibility = if (shown.isEmpty()) View.GONE else View.VISIBLE
     }
 
-    private fun rebuild(regions: List<ProxyRegion.Option>) {
-        suppress = true
-        group.isSelectionRequired = false
-        group.removeAllViews()
-        buttonIdByFlag.clear()
-        addChip("", allLabel)
-        for (region in regions) {
-            addChip(region.flag, "${region.flag} ${region.label}")
+    private fun labelOf(flag: String): String {
+        if (flag.isEmpty()) return allLabel
+        val match = regions.find { it.flag == flag } ?: return flag
+        return "${match.flag} ${match.label}"
+    }
+
+    private fun openDrawer() {
+        if (regions.isEmpty()) return
+        val context = button.context
+        val dialog = AppBottomSheetDialog(context)
+        val content = context.layoutInflater.inflate(R.layout.dialog_proxy_region, null, false)
+        val list = content.findViewById<RecyclerView>(R.id.region_list)
+        val screenHeight = context.resources.displayMetrics.heightPixels
+        list.layoutParams.height = (screenHeight * 0.62f).toInt()
+        val options = ArrayList<ProxyRegion.Option>(regions.size + 1)
+        options.add(ProxyRegion.Option("", allLabel))
+        options.addAll(regions)
+        val selectedIndex = options.indexOfFirst { it.flag == selectedFlag }.coerceAtLeast(0)
+        list.applyLinearAdapter(
+            context,
+            RegionAdapter(options, selectedFlag) { flag ->
+                dialog.dismiss()
+                if (flag != selectedFlag) onSelected(flag)
+            },
+        )
+        dialog.setContentView(content)
+        dialog.show()
+        dialog.behavior.isDraggable = false
+        list.post { list.scrollToPosition(selectedIndex) }
+    }
+
+    private class RegionAdapter(
+        private val options: List<ProxyRegion.Option>,
+        private val selectedFlag: String,
+        private val onClick: (String) -> Unit,
+    ) : RecyclerView.Adapter<RegionAdapter.Holder>() {
+        class Holder(view: View) : RecyclerView.ViewHolder(view) {
+            val label: TextView = view.findViewById(R.id.region_label)
+            val check: ImageView = view.findViewById(R.id.region_check)
         }
-        group.isSelectionRequired = true
-        suppress = false
-    }
 
-    private fun addChip(flag: String, text: String) {
-        val button = scroll.context.layoutInflater
-            .inflate(R.layout.proxy_region_chip, group, false) as MaterialButton
-        val id = View.generateViewId()
-        button.id = id
-        button.tag = flag
-        button.text = text
-        group.addView(button)
-        buttonIdByFlag[flag] = id
-    }
-
-    private fun check(flag: String): Boolean {
-        val id = buttonIdByFlag[flag] ?: return false
-        if (group.checkedButtonId == id) return false
-        suppress = true
-        group.check(id)
-        suppress = false
-        return true
-    }
-
-    private fun scrollSelectedIntoView() {
-        val id = group.checkedButtonId
-        if (id == View.NO_ID) return
-        scroll.post {
-            val button = group.findViewById<View>(id) ?: return@post
-            val target = (button.left - scroll.paddingStart).coerceAtLeast(0)
-            if (scroll.scrollX != target) scroll.scrollTo(target, 0)
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
+            val view = parent.context.layoutInflater.inflate(R.layout.adapter_proxy_region, parent, false)
+            return Holder(view)
         }
+
+        override fun onBindViewHolder(holder: Holder, position: Int) {
+            val option = options[position]
+            holder.label.text = if (option.flag.isEmpty()) option.label else "${option.flag} ${option.label}"
+            holder.check.visibility = if (option.flag == selectedFlag) View.VISIBLE else View.INVISIBLE
+            holder.itemView.setOnClickListener { onClick(option.flag) }
+        }
+
+        override fun getItemCount(): Int = options.size
     }
 }

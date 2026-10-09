@@ -387,6 +387,7 @@
     <string name="show_unavailable_proxies">Show unavailable proxies</string>
     <string name="proxy_region_filter">Filter nodes by country</string>
     <string name="proxy_region_all">All</string>
+    <string name="proxy_region_button">Country: %1$s</string>
     <string name="hide_proxy_detail">Hide proxy detail</string>
     <string name="show_proxy_detail">Show proxy detail</string>
     <string name="proxy_scroll_to_current_node">Jump to current node</string>
