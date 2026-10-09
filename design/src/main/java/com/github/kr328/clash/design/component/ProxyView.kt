@@ -224,22 +224,30 @@ class ProxyView(
         paint.isAntiAlias = true
         WallpaperReadability.applyCanvasTextContrast(context, paint, state.controls)
 
-        val titleY = state.config.layoutPadding +
+        val upperRowY = state.config.layoutPadding +
                 (height - state.config.layoutPadding * 2) / 3f - textOffset
-        val subtitleY = state.config.layoutPadding +
+        val lowerRowY = state.config.layoutPadding +
                 (height - state.config.layoutPadding * 2) / 3f * 2 - textOffset
+        val middleY = height / 2f - textOffset
+        val titleY = if (state.config.showDetail) upperRowY else middleY
+        val hasEffective = effectiveText.isNotEmpty() && effectiveCount > 0
 
         // draw delay (red "T" when timeout, otherwise normal color)
         canvas.apply {
             paint.color = if (state.delayTimeout) state.config.delayTimeoutColor else state.controls
             val x = width - state.config.layoutPadding - state.config.contentPadding - delayWidth
-            drawText(state.delayText, 0, delayCount, x, titleY, paint)
+            drawText(state.delayText, 0, delayCount, x, if (hasEffective) upperRowY else middleY, paint)
         }
-        if (effectiveText.isNotEmpty() && effectiveCount > 0) {
+        if (hasEffective) {
             paint.textSize = effectiveSize
-            paint.color = Color.BLACK
+            paint.color = Color.argb(
+                (Color.alpha(state.controls) * 0.72f).toInt(),
+                Color.red(state.controls),
+                Color.green(state.controls),
+                Color.blue(state.controls),
+            )
             val x = width - state.config.layoutPadding - state.config.contentPadding - effectiveWidth
-            canvas.drawText(effectiveText, 0, effectiveCount, x, subtitleY, paint)
+            canvas.drawText(effectiveText, 0, effectiveCount, x, lowerRowY, paint)
             paint.textSize = state.config.textSize
         }
         paint.color = state.controls
@@ -266,7 +274,7 @@ class ProxyView(
         if (state.config.showDetail) {
             canvas.apply {
                 val x = state.config.layoutPadding + state.config.contentPadding
-                drawText(state.subtitle, 0, subtitleCount, x, subtitleY, paint)
+                drawText(state.subtitle, 0, subtitleCount, x, lowerRowY, paint)
             }
         }
     }
