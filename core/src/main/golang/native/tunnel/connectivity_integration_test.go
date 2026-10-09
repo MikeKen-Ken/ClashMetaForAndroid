@@ -58,7 +58,7 @@ type rankingTestLeaf struct{ rankingHistoryProxy }
 func (p rankingTestLeaf) Type() C.AdapterType     { return C.Shadowsocks }
 func (p rankingTestLeaf) Adapter() C.ProxyAdapter { return nil }
 
-func TestDefaultViewFollowsStableRuntimeOrderWithoutClearingPin(t *testing.T) {
+func TestDefaultViewUsesScoreWhileRuntimeKeepsHysteresis(t *testing.T) {
 	oldProxies, oldProviders := coreTunnel.Proxies(), coreTunnel.Providers()
 	t.Cleanup(func() {
 		coreTunnel.UpdateProxies(oldProxies, oldProviders)
@@ -81,17 +81,17 @@ func TestDefaultViewFollowsStableRuntimeOrderWithoutClearingPin(t *testing.T) {
 	coreTunnel.UpdateProxies(map[string]C.Proxy{"Auto": rankingTestWrapper{group: group}}, nil)
 	ApplyRuntimeConnectivityOrder("Auto")
 	for i := 0; i < 3; i++ {
-		if got := QueryProxyGroup("Auto", Default, nil).Proxies[0].Name; got != "slow" {
-			t.Fatalf("default view discarded hysteresis: %s", got)
+		if got := group.members[0].Name(); got != "slow" {
+			t.Fatalf("runtime order discarded hysteresis: %s", got)
 		}
-	}
-	if got := QueryProxyGroup("Auto", Score, nil).Proxies[0].Name; got != "fast" {
-		t.Fatalf("explicit score view=%s", got)
+		if got := QueryProxyGroup("Auto", Default, nil).Proxies[0].Name; got != "fast" {
+			t.Fatalf("default view did not use score order: %s", got)
+		}
 	}
 	fast.histories["target"] = C.ProxyState{Alive: true, History: []C.DelayHistory{{Time: stamp.Add(time.Minute), Delay: 100}}}
 	ApplyRuntimeConnectivityOrder("Auto")
-	if got := QueryProxyGroup("Auto", Default, nil).Proxies[0].Name; got != "fast" {
-		t.Fatalf("second measurement did not reach UI: %s", got)
+	if got := group.members[0].Name(); got != "fast" {
+		t.Fatalf("second measurement did not promote at runtime: %s", got)
 	}
 	if group.clears != 0 || group.pin != "slow" {
 		t.Fatal("ranking changed manual selection")

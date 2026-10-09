@@ -1,10 +1,12 @@
 package tunnel
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
 
+	"cfa/native/connectivity"
 	C "github.com/metacubex/mihomo/constant"
 )
 
@@ -46,8 +48,8 @@ func TestRuntimeOrderHoldsDuringOutageAndClearsChallenges(t *testing.T) {
 	stamp := time.Unix(100, 0)
 	for round := 0; round < 3; round++ {
 		ranks := []connectivityRank{
-			{name: "a", cost: 900, tier: 1, evidence: stamp},
-			{name: "b", cost: 100, tier: 1, evidence: stamp.Add(time.Duration(round) * time.Minute)},
+			{name: "a", cost: 900, tier: 0, evidence: stamp, recentFailure: true},
+			{name: "b", cost: 100, tier: 0, evidence: stamp.Add(time.Duration(round) * time.Minute), recentFailure: true},
 		}
 		if got := state.order(ranks); got[0] != "a" {
 			t.Fatalf("outage reordered: %v", got)
@@ -78,6 +80,27 @@ func TestRuntimeOrderBypassesHysteresisForHealthAndProtectsHealthy(t *testing.T)
 	}
 }
 
+func TestRuntimeOrderIgnoresProbeRecency(t *testing.T) {
+	t.Cleanup(connectivity.ClearAll)
+	day := time.Now().Format("2006-01-02")
+	if !connectivity.ReplaceRaw(fmt.Sprintf(`{"v":2,"data":{"fast":{"days":{"%s":{"s":100,"ds":6000}}},"slow":{"days":{"%s":{"s":100,"ds":60000}}}}}`, day, day)) {
+		t.Fatal("could not seed pooled history")
+	}
+	now := time.Now()
+	makeProxy := func(name string, at time.Time, delay uint16) C.Proxy {
+		return rankingHistoryProxy{name: name, delayHistoryProxy: delayHistoryProxy{histories: map[string]C.ProxyState{
+			"target": {Alive: true, History: []C.DelayHistory{{Time: at, Delay: delay}}},
+		}}}
+	}
+	proxies := []C.Proxy{makeProxy("fast", now.Add(-20*time.Minute), 60), makeProxy("slow", now, 600)}
+	state := &connectivityOrderState{}
+	for i := 0; i < 3; i++ {
+		if got := state.order(connectivityRanks(proxies, "target", now)); !reflect.DeepEqual(got, []string{"fast", "slow"}) {
+			t.Fatalf("a background probe outranked a faster healthy node: %v", got)
+		}
+	}
+}
+
 type rankingHistoryProxy struct {
 	delayHistoryProxy
 	name string
@@ -96,8 +119,8 @@ func TestRecentHealthRequiresMatchingURLAndPeerEvidence(t *testing.T) {
 	failed := makeProxy("failed", []C.DelayHistory{{Time: now.Add(-time.Minute), Delay: 0}, {Time: now, Delay: 0}})
 	stale := makeProxy("stale", []C.DelayHistory{{Time: now.Add(-time.Hour), Delay: 10}})
 	ranks := connectivityRanks([]C.Proxy{failed, stale}, "target", now)
-	if ranks[0].tier != 1 || ranks[1].tier != 1 {
-		t.Fatalf("outage/stale evidence produced a verdict: %+v", ranks)
+	if ranks[0].tier != 1 || ranks[1].tier != 0 {
+		t.Fatalf("outage failures or success age produced a verdict: %+v", ranks)
 	}
 	healthy := makeProxy("healthy", []C.DelayHistory{{Time: now.Add(-time.Second), Delay: 200}})
 	ranks = connectivityRanks([]C.Proxy{failed, stale, healthy}, "target", now)

@@ -12,15 +12,19 @@ import (
 const recentHealthWindow = 10 * time.Minute
 
 type connectivityRank struct {
-	name         string
-	cost         float64
-	tier         int // healthy=0, unknown/stale=1, confirmed failure=2
-	evidence     time.Time
-	failureSince time.Time
+	name          string
+	cost          float64
+	tier          int // retained success=0, never succeeded=1, confirmed failure=2
+	evidence      time.Time
+	failureSince  time.Time
+	recentSuccess bool
+	recentFailure bool
 }
 
-// Only this group's URL supplies current availability. Historical cost still
-// uses the full synced aggregate, without filtering by network or device.
+// Only this group's URL supplies availability. Historical cost still uses the
+// full synced aggregate, without filtering by network or device. Age alone must
+// not change the tier: background probes cover only a few nodes per window, so a
+// freshness tier would rank recently probed nodes above faster ones.
 func connectivityRanks(proxies []C.Proxy, url string, now time.Time) []connectivityRank {
 	ctx := connectivity.BuildScoreContext()
 	ranks := make([]connectivityRank, 0, len(proxies))
@@ -31,19 +35,28 @@ func connectivityRanks(proxies []C.Proxy, url string, now time.Time) []connectiv
 		// Histories may be provided by adapters in a different order.
 		history = append([]C.DelayHistory(nil), history...)
 		sort.SliceStable(history, func(i, j int) bool { return history[i].Time.Before(history[j].Time) })
+		for _, h := range history {
+			if h.Delay > 0 {
+				rank.tier = 0
+				break
+			}
+		}
 		if n := len(history); n > 0 {
 			last := history[n-1]
 			rank.evidence = last.Time
 			if !last.Time.After(now) && now.Sub(last.Time) <= recentHealthWindow {
 				if last.Delay > 0 {
-					rank.tier = 0
+					rank.recentSuccess = true
 					if last.Time.After(newestSuccess) {
 						newestSuccess = last.Time
 					}
-				} else if n >= 2 && history[n-2].Delay == 0 &&
-					last.Time.Sub(history[n-2].Time) >= time.Second &&
-					now.Sub(history[n-2].Time) <= recentHealthWindow {
-					rank.failureSince = history[n-2].Time
+				} else {
+					rank.recentFailure = true
+					if n >= 2 && history[n-2].Delay == 0 &&
+						last.Time.Sub(history[n-2].Time) >= time.Second &&
+						now.Sub(history[n-2].Time) <= recentHealthWindow {
+						rank.failureSince = history[n-2].Time
+					}
 				}
 			}
 		}
@@ -90,15 +103,15 @@ func (state *connectivityOrderState) order(ranks []connectivityRank) []string {
 			delete(state.challenges, name)
 		}
 	}
-	healthy, observed := false, false
+	recentSuccess, recentFailure := false, false
 	for _, rank := range ranks {
-		healthy = healthy || rank.tier == 0
-		observed = observed || !rank.evidence.IsZero()
+		recentSuccess = recentSuccess || rank.recentSuccess
+		recentFailure = recentFailure || rank.recentFailure
 	}
-	// If all current results fail or have expired, keep the routing order until
-	// a peer proves connectivity again. Repeated outage rounds are not evidence
-	// that a different historical cost should displace the incumbent.
-	if observed && !healthy {
+	// If every current result fails, keep the routing order until a peer proves
+	// connectivity again. Repeated outage rounds are not evidence that a
+	// different historical cost should displace the incumbent.
+	if recentFailure && !recentSuccess {
 		clear(state.challenges)
 		names := make([]string, len(ranks))
 		for i, rank := range ranks {
