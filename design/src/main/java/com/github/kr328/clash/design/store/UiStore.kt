@@ -91,6 +91,12 @@ class UiStore(context: Context) {
         defaultValue = false,
     )
 
+    /** Region emoji selected on the proxy page. Empty shows every country. */
+    var proxyRegionFilter: String by store.string(
+        key = "proxy_region_filter",
+        defaultValue = "",
+    )
+
     /** When false, node cards hide the type/UDP subtitle. Effective delay stays. */
     var proxyShowDetail by store.boolean(
         key = "proxy_show_detail",

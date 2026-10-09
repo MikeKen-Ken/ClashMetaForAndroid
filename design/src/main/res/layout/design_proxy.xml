@@ -438,6 +438,27 @@
 
             </LinearLayout>
 
+            <HorizontalScrollView
+                android:id="@+id/region_scroll_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/proxy_region_filter"
+                android:paddingStart="12dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="4dp"
+                android:scrollbars="none"
+                android:visibility="gone">
+
+                <com.google.android.material.button.MaterialButtonToggleGroup
+                    android:id="@+id/region_toggle_group"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:selectionRequired="true"
+                    app:singleSelection="true" />
+
+            </HorizontalScrollView>
+
             <com.google.android.material.tabs.TabLayout
                 android:id="@+id/tab_layout_view"
                 android:layout_width="match_parent"

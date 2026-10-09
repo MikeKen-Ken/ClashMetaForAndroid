@@ -8,6 +8,7 @@ import com.github.kr328.clash.core.model.Proxy
 import com.github.kr328.clash.design.BR
 import com.github.kr328.clash.design.R
 import com.github.kr328.clash.design.component.ProxyPageFactory
+import com.github.kr328.clash.design.component.ProxyRegion
 import com.github.kr328.clash.design.component.ProxyViewConfig
 import com.github.kr328.clash.design.component.ProxyViewState
 import com.github.kr328.clash.design.model.ProxyPageState
@@ -28,6 +29,9 @@ class ProxyPageAdapter(
 
     val states = List(adapters.size) { ProxyPageState() }
 
+    private val groupLoaded = BooleanArray(adapters.size)
+    private var regionFilter: String = ""
+
     suspend fun updateAdapter(
         position: Int,
         proxies: List<Proxy>,
@@ -44,14 +48,32 @@ class ProxyPageAdapter(
         }
 
         withContext(Dispatchers.Main) {
+            groupLoaded[position] = true
             adapters[position].apply {
                 this.selectable = selectable
+                bindRegionFilter(regionFilter)
                 updateStates(states)
             }
 
             requestRedrawVisible(position)
         }
     }
+
+    fun setRegionFilter(flag: String) {
+        regionFilter = flag
+        adapters.forEach { it.setRegionFilter(flag) }
+    }
+
+    fun availableRegions(): List<ProxyRegion.Option> {
+        val names = ArrayList<String>()
+        adapters.forEachIndexed { index, adapter ->
+            if (!groupLoaded[index]) return@forEachIndexed
+            names.addAll(adapter.proxyNames())
+        }
+        return ProxyRegion.listAvailable(names)
+    }
+
+    fun allGroupsLoaded(): Boolean = groupLoaded.all { it }
 
     fun requestRedrawVisible(currentItem: Int) {
         val rv = parent ?: return

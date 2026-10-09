@@ -10,6 +10,7 @@ import com.github.kr328.clash.core.model.TunnelState
 import com.github.kr328.clash.design.adapter.ProxyAdapter
 import com.github.kr328.clash.design.adapter.ProxyPageAdapter
 import com.github.kr328.clash.design.component.ProxyPageFactory
+import com.github.kr328.clash.design.component.ProxyRegionBar
 import com.github.kr328.clash.design.component.ProxyViewConfig
 import com.github.kr328.clash.design.databinding.DesignProxyBinding
 import com.github.kr328.clash.design.model.ProxyState
@@ -68,6 +69,16 @@ class ProxyDesign(
 
     private var suppressModeToggleEmit: Boolean = false
 
+    private val regionBar = ProxyRegionBar(
+        binding.regionScrollView,
+        binding.regionToggleGroup,
+        context.getString(R.string.proxy_region_all),
+    ) { flag ->
+        if (uiStore.proxyRegionFilter == flag) return@ProxyRegionBar
+        uiStore.proxyRegionFilter = flag
+        if (groupNames.isNotEmpty()) adapter.setRegionFilter(flag)
+    }
+
     override val root: View = binding.root
 
     suspend fun updateGroup(
@@ -84,6 +95,7 @@ class ProxyDesign(
             binding.tabLayoutView.getTabAt(position)?.text =
                 formatGroupName(groupNames[position], parent)
             updateUrlTestButtonStatus()
+            refreshRegionBar()
         }
     }
 
@@ -139,6 +151,7 @@ class ProxyDesign(
         LiquidGlass.attach(binding.timeoutScrollView)
         LiquidGlass.attach(binding.adsScrollView)
         LiquidGlass.attach(binding.concurrencyBarLayout)
+        LiquidGlass.attach(binding.regionScrollView)
         LiquidGlass.attach(binding.tabLayoutView)
         LiquidGlass.attach(binding.elevationView)
 
@@ -235,6 +248,7 @@ class ProxyDesign(
             binding.timeoutScrollView.visibility = View.GONE
             binding.adsScrollView.visibility = View.GONE
             binding.concurrencyBarLayout.visibility = View.GONE
+            binding.regionScrollView.visibility = View.GONE
             binding.tabLayoutView.visibility = View.GONE
             binding.elevationView.visibility = View.GONE
             binding.pagesView.visibility = View.GONE
@@ -254,6 +268,7 @@ class ProxyDesign(
                         updateUrlTestButtonStatus()
                 }
                 this@ProxyDesign.adapter.setHideUnavailable(uiStore.proxyHideUnavailable)
+                this@ProxyDesign.adapter.setRegionFilter(uiStore.proxyRegionFilter)
 
                 registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                     override fun onPageScrollStateChanged(state: Int) {
@@ -361,6 +376,22 @@ class ProxyDesign(
             binding.urlTestView.visibility = View.VISIBLE
             binding.urlTestProgressView.visibility = View.GONE
         }
+    }
+
+    private fun refreshRegionBar() {
+        val regions = adapter.availableRegions()
+        val selected = uiStore.proxyRegionFilter
+        if (
+            selected.isNotEmpty() &&
+            adapter.allGroupsLoaded() &&
+            regions.none { it.flag == selected }
+        ) {
+            uiStore.proxyRegionFilter = ""
+            adapter.setRegionFilter("")
+            regionBar.render(regions, "")
+            return
+        }
+        regionBar.render(regions, selected)
     }
 
     private fun formatGroupName(name: String, state: ProxyState): String {

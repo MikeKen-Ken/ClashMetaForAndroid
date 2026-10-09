@@ -2,6 +2,7 @@ package com.github.kr328.clash.design.adapter
 
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.github.kr328.clash.design.component.ProxyRegion
 import com.github.kr328.clash.design.component.ProxyView
 import com.github.kr328.clash.design.component.ProxyViewConfig
 import com.github.kr328.clash.design.component.ProxyViewState
@@ -17,6 +18,14 @@ class ProxyAdapter(
     var states: List<ProxyViewState> = emptyList()
     private var allStates: List<ProxyViewState> = emptyList()
     private var hideUnavailable: Boolean = false
+    private var regionFilter: String = ""
+
+    fun proxyNames(): List<String> = allStates.map { it.proxy.name }
+
+    /** Stores the filter without redrawing. Call before [updateStates]. */
+    fun bindRegionFilter(flag: String) {
+        regionFilter = flag
+    }
 
     fun updateStates(states: List<ProxyViewState>) {
         allStates = states
@@ -34,11 +43,22 @@ class ProxyAdapter(
         updateVisibleStates()
     }
 
+    fun setRegionFilter(flag: String) {
+        if (regionFilter == flag) return
+
+        bindRegionFilter(flag)
+        updateVisibleStates()
+    }
+
     private fun updateVisibleStates() {
-        val visibleStates = if (hideUnavailable) {
-            allStates.filter { isUsableProxyDelay(it.proxy.delay) }
-        } else {
-            allStates
+        var visibleStates = allStates
+        if (regionFilter.isNotEmpty()) {
+            visibleStates = visibleStates.filter {
+                ProxyRegion.resolve(it.proxy.name) == regionFilter
+            }
+        }
+        if (hideUnavailable) {
+            visibleStates = visibleStates.filter { isUsableProxyDelay(it.proxy.delay) }
         }
 
         val old = states
