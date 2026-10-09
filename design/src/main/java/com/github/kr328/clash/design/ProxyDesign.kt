@@ -240,17 +240,6 @@ class ProxyDesign(
             binding.pagesView.visibility = View.GONE
         } else {
             binding.scrollToCurrentFab.visibility = View.VISIBLE
-            binding.pagesView.post {
-                // 只补新增控制条高度，避免列表下移过多
-                val topInset =
-                    binding.modeScrollView.height + binding.adsScrollView.height
-                binding.pagesView.setPadding(
-                    binding.pagesView.paddingLeft,
-                    topInset,
-                    binding.pagesView.paddingRight,
-                    binding.pagesView.paddingBottom
-                )
-            }
             binding.pagesView.apply {
                 adapter = ProxyPageAdapter(
                     surface,
@@ -275,6 +264,11 @@ class ProxyDesign(
                         uiStore.proxyLastGroup = groupNames[position]
                     }
                 })
+            }
+
+            // 节点网格在半透明头部下方滚动，顶部留白取头部实测高度（随字体缩放/控制条变化）
+            binding.headerLayout.addOnLayoutChangeListener { _, _, top, _, bottom, _, _, _, _ ->
+                adapter.listTopInset = bottom - top
             }
 
             TabLayoutMediator(binding.tabLayoutView, binding.pagesView) { tab, index ->

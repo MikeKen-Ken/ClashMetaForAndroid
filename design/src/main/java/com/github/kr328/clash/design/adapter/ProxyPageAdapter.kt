@@ -1,9 +1,11 @@
 package com.github.kr328.clash.design.adapter
 
 import android.view.ViewGroup
+import androidx.databinding.Observable
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.github.kr328.clash.core.model.Proxy
+import com.github.kr328.clash.design.BR
 import com.github.kr328.clash.design.R
 import com.github.kr328.clash.design.component.ProxyPageFactory
 import com.github.kr328.clash.design.component.ProxyViewConfig
@@ -58,19 +60,41 @@ class ProxyPageAdapter(
         factory.fromRoot(pageView).recyclerView.invalidateChildren()
     }
 
+    /** Measured height of the overlay header (status bar inset included). */
+    var listTopInset: Int = 0
+        set(value) {
+            if (field == value) return
+            field = value
+            holders.forEach { applyListPadding(it.recyclerView) }
+        }
+
+    private val holders = mutableListOf<ProxyPageFactory.Holder>()
+    private val listGap = config.context.getPixels(R.dimen.proxy_layout_padding)
+
+    init {
+        surface.addOnPropertyChangedCallback(object : Observable.OnPropertyChangedCallback() {
+            override fun onPropertyChanged(sender: Observable?, propertyId: Int) {
+                if (propertyId == BR.insets) {
+                    holders.forEach { applyListPadding(it.recyclerView) }
+                }
+            }
+        })
+    }
+
+    private fun applyListPadding(recyclerView: RecyclerView) {
+        recyclerView.setPaddingRelative(
+            0,
+            listTopInset + listGap,
+            0,
+            surface.insets.bottom + listGap,
+        )
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProxyPageFactory.Holder {
         val holder = factory.newInstance()
 
-        val toolbarHeight = config.context.getPixels(R.dimen.toolbar_height)
-        val tabHeight = config.context.getPixels(R.dimen.tab_layout_height)
-        val timeoutBarHeight = config.context.getPixels(R.dimen.delay_timeout_bar_height)
-        val concurrencyBarHeight = config.context.getPixels(R.dimen.delay_concurrency_bar_height)
-        val listTopGap = config.context.getPixels(R.dimen.proxy_layout_padding)
-
-        holder.recyclerView.bindInsets(
-            surface,
-            toolbarHeight + timeoutBarHeight + concurrencyBarHeight + tabHeight + listTopGap,
-        )
+        holders.add(holder)
+        applyListPadding(holder.recyclerView)
         holder.recyclerView.addScrolledToBottomObserver { view, bottom ->
             val position = view.position
             val state = states[position]
