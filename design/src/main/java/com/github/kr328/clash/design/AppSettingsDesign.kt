@@ -185,7 +185,7 @@ class AppSettingsDesign(
 
             category(R.string.webdav_sync)
 
-            val pushSyncSettings = {
+            val pushSyncSettings: () -> Unit = {
                 requests.trySend(Request.PushConnectivitySyncSettings)
             }
 
