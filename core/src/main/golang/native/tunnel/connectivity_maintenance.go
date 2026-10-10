@@ -39,9 +39,6 @@ func StopConnectivityMaintenance() {
 		<-connectivityMaintenance.done
 		connectivityMaintenance.cancel = nil
 	}
-	runtimeConnectivityOrder.Lock()
-	runtimeConnectivityOrder.groups = make(map[string]*connectivityOrderState)
-	runtimeConnectivityOrder.Unlock()
 }
 
 func StartConnectivityMaintenance() {

@@ -129,9 +129,8 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 	case Score:
 		sortProxiesByConnectivity(proxies)
 	case Default:
-		// Matches the desktop Default view. Routing keeps the runtime order,
-		// which adds failure tiers and hysteresis, so the first row may not be
-		// the node an auto group is using.
+		// Same score order url-test / fallback walks. `now` is still the first
+		// healthy member, so a dead top-score node can sit above the node in use.
 		if shouldApplyRuntimeConnectivityOrder(g.Type()) {
 			sortProxiesByConnectivity(proxies)
 		}
