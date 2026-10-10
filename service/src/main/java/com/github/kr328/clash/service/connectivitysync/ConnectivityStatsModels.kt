@@ -87,7 +87,7 @@ internal data class ConnectivityPulledDevice(
 )
 
 @Serializable
-data class ConnectivitySyncResult(
+internal data class ConnectivitySyncResult(
     val deviceCount: Int,
     val proxyCount: Int,
     val lastSyncAt: Long,

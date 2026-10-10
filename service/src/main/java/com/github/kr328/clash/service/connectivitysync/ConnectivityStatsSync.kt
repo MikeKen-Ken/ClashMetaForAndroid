@@ -23,10 +23,10 @@ object ConnectivityStatsSync {
     private val mutex = Mutex()
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
-    fun isConfigured(settings: ConnectivitySyncSettings): Boolean =
+    internal fun isConfigured(settings: ConnectivitySyncSettings): Boolean =
         hasCredentials(settings) && settings.url.trim().startsWith("https://", ignoreCase = true)
 
-    fun hasCredentials(settings: ConnectivitySyncSettings): Boolean =
+    internal fun hasCredentials(settings: ConnectivitySyncSettings): Boolean =
         settings.url.isNotBlank() && settings.username.isNotBlank() && settings.password.isNotBlank()
 
     /** Unix milliseconds of the last successful merge, 0 if this device never merged. */
@@ -39,7 +39,7 @@ object ConnectivityStatsSync {
         return System.currentTimeMillis() - state.lastSyncAt >= intervalMillis
     }
 
-    suspend fun merge(
+    internal suspend fun merge(
         context: Context,
         settings: ConnectivitySyncSettings,
     ): ConnectivitySyncResult = mutex.withLock {
