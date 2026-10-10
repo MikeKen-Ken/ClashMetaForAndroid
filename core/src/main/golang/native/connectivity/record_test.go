@@ -41,14 +41,25 @@ func TestRecordingCountsBothOutcomesDuringBurst(t *testing.T) {
 	}
 }
 
-func TestRecordingPenaltyIndependentOfDeadline(t *testing.T) {
+func TestRecordingPenaltyFollowsDeadline(t *testing.T) {
 	ClearAll()
 	t.Cleanup(ClearAll)
 	RecordDelayTestResult("short", 0, 1000)
 	RecordDelayTestResult("long", 0, 10000)
+	today := todayKey(time.Now())
+	if got := statsCache["short"].Days[today].DelaySum; got != 1000 {
+		t.Fatalf("short deadline penalty = %d; want 1000", got)
+	}
+	if got := statsCache["long"].Days[today].DelaySum; got != 10000 {
+		t.Fatalf("long deadline penalty = %d; want 10000", got)
+	}
 	ctx := BuildScoreContext()
-	if ctx.ScoreFor("short") != ctx.ScoreFor("long") {
-		t.Fatal("deadline changed failure cost")
+	if ctx.ScoreFor("short") <= ctx.ScoreFor("long") {
+		t.Fatal("a longer deadline must cost more per failure")
+	}
+	RecordDelayTestResult("unset", 0, 0)
+	if got := statsCache["unset"].Days[today].DelaySum; got != defaultPenaltyDelayMs {
+		t.Fatalf("unset deadline penalty = %d; want %d", got, defaultPenaltyDelayMs)
 	}
 	RecordDelayTestResult("boundary", 1000, 1000)
 	if counts := statsCache["boundary"].Days[todayKey(time.Now())]; counts.Failure != 1 {

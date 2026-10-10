@@ -1,6 +1,7 @@
 package com.github.kr328.clash
 
 import androidx.appcompat.app.AlertDialog
+import com.github.kr328.clash.common.util.ticker
 import com.github.kr328.clash.connectivitysync.ConnectivityStatsSync
 import com.github.kr328.clash.connectivitysync.ConnectivitySyncBackoff
 import com.github.kr328.clash.design.ConnectivityStatsDesign
@@ -13,14 +14,21 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import java.util.concurrent.TimeUnit
 
 class ConnectivityStatsActivity : BaseActivity<ConnectivityStatsDesign>() {
     private val json = Json { ignoreUnknownKeys = true }
 
     override suspend fun main() {
         val rows = loadRows()
-        val design = ConnectivityStatsDesign(this, rows, uiStore.connectivitySyncIntervalHours)
+        val design = ConnectivityStatsDesign(
+            this,
+            rows,
+            uiStore.connectivitySyncIntervalHours,
+            ConnectivityStatsSync.lastSyncAt(this),
+        )
         setContentDesign(design)
+        val refreshTicker = ticker(TimeUnit.MINUTES.toMillis(1))
 
         while (isActive) {
             select<Unit> {
@@ -31,6 +39,11 @@ class ConnectivityStatsActivity : BaseActivity<ConnectivityStatsDesign>() {
                         }
                         else -> Unit
                     }
+                }
+                // Automatic merges run outside this screen; pick them up while it stays open.
+                refreshTicker.onReceive {
+                    design.setLastMergeAt(ConnectivityStatsSync.lastSyncAt(this@ConnectivityStatsActivity))
+                    design.replaceRows(loadRows())
                 }
                 design.requests.onReceive { request ->
                     when (request) {
@@ -111,6 +124,7 @@ class ConnectivityStatsActivity : BaseActivity<ConnectivityStatsDesign>() {
                 },
             )
             design.replaceRows(loadRows())
+            design.setLastMergeAt(result.lastSyncAt)
             design.showNativeToast(
                 resources.getQuantityString(
                     R.plurals.connectivity_stats_sync_success,

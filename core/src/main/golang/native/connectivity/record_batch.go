@@ -94,7 +94,7 @@ func persistStatsRecordBatch(samples []statsRecordSample) {
 			entry.LastSuccessAt = sample.at.Unix()
 		} else {
 			counts.Failure = safeAddCount(counts.Failure, 1)
-			counts.DelaySum = safeAddCount(counts.DelaySum, defaultPenaltyDelayMs)
+			counts.DelaySum = safeAddCount(counts.DelaySum, int64(sample.timeout))
 		}
 		entry.Days[day] = counts
 		statsCache[sample.name] = entry

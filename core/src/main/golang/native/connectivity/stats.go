@@ -762,8 +762,9 @@ func QueryScoreRows(names []string) []ScoreRow {
 	}
 	ctx := BuildScoreContext()
 	type keyed struct {
-		index int
-		row   ScoreRow
+		index     int
+		rankScore float64
+		row       ScoreRow
 	}
 	keys := make([]keyed, len(names))
 	for i, name := range names {
@@ -771,10 +772,11 @@ func QueryScoreRows(names []string) []ScoreRow {
 		hasStats := stats.Success > 0 || stats.Failure > 0
 		avg := smoothedEffectiveAvgDelay(stats, ctx.priorDelayMs)
 		keys[i] = keyed{
-			index: i,
+			index:     i,
+			rankScore: connectivityScoreFromAvgDelay(avg),
 			row: ScoreRow{
 				Name:                name,
-				Score:               penalizedDelayScore(stats, ctx.priorDelayMs),
+				Score:               displayScoreFromAvgDelay(avg),
 				WeightedSuccess:     stats.Success,
 				WeightedFailure:     stats.Failure,
 				EffectiveAvgDelayMs: avg,
@@ -785,8 +787,8 @@ func QueryScoreRows(names []string) []ScoreRow {
 	}
 	sort.SliceStable(keys, func(i, j int) bool {
 		a, b := keys[i], keys[j]
-		if a.row.Score != b.row.Score {
-			return a.row.Score > b.row.Score
+		if a.rankScore != b.rankScore {
+			return a.rankScore > b.rankScore
 		}
 		return a.index < b.index
 	})

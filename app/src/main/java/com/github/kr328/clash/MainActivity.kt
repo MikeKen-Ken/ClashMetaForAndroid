@@ -10,8 +10,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.common.util.ticker
-import com.github.kr328.clash.connectivitysync.ConnectivityStatsSync
-import com.github.kr328.clash.connectivitysync.ConnectivitySyncBackoff
 import com.github.kr328.clash.design.MainDesign
 import com.github.kr328.clash.design.ui.ToastDuration
 import com.github.kr328.clash.util.startClashService
@@ -20,9 +18,7 @@ import com.github.kr328.clash.util.withClash
 import com.github.kr328.clash.util.withProfile
 import com.github.kr328.clash.core.bridge.*
 import com.github.kr328.clash.update.AppUpdateFlow
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
@@ -43,13 +39,6 @@ class MainActivity : BaseActivity<MainDesign>() {
         setContentDesign(design)
 
         design.fetch()
-
-        launch {
-            while (isActive) {
-                autoMergeConnectivityStatistics()
-                delay(TimeUnit.MINUTES.toMillis(1))
-            }
-        }
 
         val ticker = ticker(TimeUnit.SECONDS.toMillis(1))
 
@@ -160,31 +149,6 @@ class MainActivity : BaseActivity<MainDesign>() {
     private suspend fun MainDesign.fetchTraffic() {
         withClash {
             setForwarded(queryTrafficTotal())
-        }
-    }
-
-    private suspend fun autoMergeConnectivityStatistics() {
-        ConnectivitySyncBackoff.rememberSettings(uiStore)
-        if (!clashRunning || !ConnectivityStatsSync.isConfigured(uiStore)) return
-        if (!ConnectivityStatsSync.isDue(this, uiStore.connectivitySyncIntervalHours)) return
-        if (!ConnectivitySyncBackoff.isOpen()) return
-        try {
-            ConnectivityStatsSync.merge(
-                context = this@MainActivity,
-                store = uiStore,
-                mergeLocal = { previousOthers, remoteOthers, resetWatermarks ->
-                    withClash {
-                        mergeProxyConnectivityStats(
-                            previousOthers,
-                            remoteOthers,
-                            resetWatermarks,
-                        )
-                    }
-                },
-            )
-        } catch (error: Throwable) {
-            if (error is CancellationException) throw error
-            ConnectivitySyncBackoff.noteFailure()
         }
     }
 

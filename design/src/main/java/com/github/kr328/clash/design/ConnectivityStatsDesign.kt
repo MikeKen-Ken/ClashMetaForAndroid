@@ -2,6 +2,8 @@ package com.github.kr328.clash.design
 
 import android.content.Context
 import android.view.View
+import androidx.recyclerview.widget.ConcatAdapter
+import com.github.kr328.clash.design.adapter.ConnectivityMergeHeaderAdapter
 import com.github.kr328.clash.design.adapter.ConnectivityStatsAdapter
 import com.github.kr328.clash.design.databinding.DesignConnectivityStatsBinding
 import com.github.kr328.clash.design.model.ConnectivityScoreRow
@@ -11,6 +13,7 @@ class ConnectivityStatsDesign(
     context: Context,
     rows: List<ConnectivityScoreRow>,
     intervalHours: Int,
+    lastMergeAt: Long,
 ) : Design<ConnectivityStatsDesign.Request>(context) {
     sealed class Request {
         data class ClearOne(val name: String) : Request()
@@ -31,6 +34,8 @@ class ConnectivityStatsDesign(
     override val root: View
         get() = binding.root
 
+    private val header = ConnectivityMergeHeaderAdapter(context, lastMergeAt)
+
     private val adapter = ConnectivityStatsAdapter(context, rows) { row ->
         requests.trySend(Request.ClearOne(row.name))
     }
@@ -39,7 +44,7 @@ class ConnectivityStatsDesign(
         binding.self = this
         binding.activityBarLayout.applyFrom(context)
         binding.mainList.recyclerList.bindAppBarElevation(binding.activityBarLayout)
-        binding.mainList.recyclerList.applyLinearAdapter(context, adapter)
+        binding.mainList.recyclerList.applyLinearAdapter(context, ConcatAdapter(header, adapter))
     }
 
     fun requestClearAll() {
@@ -56,5 +61,9 @@ class ConnectivityStatsDesign(
 
     suspend fun replaceRows(rows: List<ConnectivityScoreRow>) {
         adapter.replaceAll(rows)
+    }
+
+    fun setLastMergeAt(value: Long) {
+        header.setLastMergeAt(value)
     }
 }

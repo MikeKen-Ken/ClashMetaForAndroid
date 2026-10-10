@@ -7,6 +7,7 @@ import com.github.kr328.clash.AppCrashedActivity
 import com.github.kr328.clash.common.Global
 import com.github.kr328.clash.common.log.Log
 import com.github.kr328.clash.common.util.intent
+import com.github.kr328.clash.connectivitysync.ConnectivityAutoMerge
 import com.github.kr328.clash.store.AppStore
 import com.github.kr328.clash.util.ApplicationObserver
 import com.github.kr328.clash.util.verifyApk
@@ -41,6 +42,7 @@ object Remote {
                 service.unbind()
                 broadcasts.unregister()
             }
+            ConnectivityAutoMerge.onAppVisibleChanged(Global.application, it)
         }
 
         Global.launch(Dispatchers.IO) {

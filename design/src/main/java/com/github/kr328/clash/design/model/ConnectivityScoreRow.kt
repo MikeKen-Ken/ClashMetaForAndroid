@@ -13,8 +13,6 @@ data class ConnectivityScoreRow(
     val weightedFailure: Double = 0.0,
     @SerialName("effectiveAvgDelayMs")
     val effectiveAvgDelayMs: Double = 0.0,
-    @SerialName("lastSuccessAt")
-    val lastSuccessAt: Long = 0,
     @SerialName("hasStats")
     val hasStats: Boolean = false,
 )

@@ -26,6 +26,11 @@ object ConnectivityStatsSync {
     fun hasCredentials(store: UiStore): Boolean = store.webdavUrl.isNotBlank() &&
         store.webdavUsername.isNotBlank() && store.webdavPassword.isNotBlank()
 
+    /** Unix milliseconds of the last successful merge, 0 if this device never merged. */
+    suspend fun lastSyncAt(context: Context): Long = withContext(Dispatchers.IO) {
+        loadState(context).lastSyncAt
+    }
+
     suspend fun isDue(context: Context, intervalHours: Int): Boolean = withContext(Dispatchers.IO) {
         val state = loadState(context)
         val intervalMillis = intervalHours.coerceAtLeast(1) * 60L * 60L * 1000L
