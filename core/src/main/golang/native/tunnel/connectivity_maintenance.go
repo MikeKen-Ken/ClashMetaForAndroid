@@ -76,9 +76,8 @@ func StartConnectivityMaintenance() {
 					}(candidate)
 				}
 				wg.Wait()
-				if ctx.Err() == nil {
-					ApplyRuntimeConnectivityOrderAll()
-				}
+				// Probes update scores only. The walk order is rewritten at startup
+				// and when a delay test finishes, matching the desktop timing.
 			}
 		}
 	}()

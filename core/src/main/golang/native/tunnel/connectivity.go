@@ -152,11 +152,30 @@ func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) (result
 	if concurrency > result.Tested {
 		concurrency = result.Tested
 	}
+	orderedMembers := sortProxiesByConnectivityScore(members)
+	orderedNames := make([]string, len(orderedMembers))
+	for i, proxy := range orderedMembers {
+		orderedNames[i] = proxy.Name()
+	}
+	var early *delayTestEarlyOrder
+	if shouldApplyRuntimeConnectivityOrder(g.Type()) {
+		groupProxy := p
+		groupName := name
+		early = newDelayTestEarlyOrder(orderedNames, timeoutMs, func(names []string) {
+			if tunnel.Proxies()[groupName] != groupProxy {
+				return
+			}
+			if reorder, ok := groupProxy.Adapter().(cachedProxyReorderAble); ok {
+				reorder.ReorderCachedProxies(names)
+			}
+		})
+	}
+
 	sem := make(chan struct{}, concurrency)
 	var succeeded atomic.Int64
 	var wg sync.WaitGroup
 
-	for _, px := range sortProxiesByConnectivityScore(members) {
+	for _, px := range orderedMembers {
 		wg.Add(1)
 		sem <- struct{}{}
 		go func(proxy C.Proxy) {
@@ -175,22 +194,31 @@ func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) (result
 				return
 			}
 			succeeded.Add(1)
+			early.onResult(proxy.Name(), int(delay))
 		}(px)
 	}
 
 	wg.Wait()
+	early.stop()
 	result.Succeeded = int(succeeded.Load())
 	result.Failed = result.Tested - result.Succeeded
 	resetGroupConnectTimes(g)
+	if tunnel.Proxies()[name] != p {
+		if result.Succeeded == 0 {
+			result.Error = "all proxies timed out or failed"
+		}
+		return result // The profile was replaced while its probes were running.
+	}
 	if result.Succeeded == 0 {
 		result.Error = "all proxies timed out or failed"
+		// A finished auto-group test still refreshes the score order. The manual
+		// pin stays until a member actually passes.
+		if shouldApplyRuntimeConnectivityOrder(g.Type()) {
+			ApplyRuntimeConnectivityOrderAll()
+		}
 		return result
 	}
 
-	// Routing state is changed only after at least one effective member passed.
-	if tunnel.Proxies()[name] != p {
-		return result // The profile was replaced while its probes were running.
-	}
 	resetSelection()
 	ApplyRuntimeConnectivityOrderAll()
 	return result
