@@ -38,6 +38,7 @@ class ClashService : BaseService() {
         install(TimeZoneModule(self))
         install(SuspendModule(self))
         install(HealthCheckNotificationModule(self))
+        install(ConnectivityAutoMergeModule(self))
 
         try {
             while (isActive) {

@@ -1,6 +1,5 @@
-package com.github.kr328.clash.connectivitysync
+package com.github.kr328.clash.service.connectivitysync
 
-import com.github.kr328.clash.design.store.UiStore
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
@@ -26,12 +25,12 @@ internal object ConnectivitySyncBackoff {
         return delayMs[index]
     }
 
-    fun rememberSettings(store: UiStore) {
+    fun rememberSettings(settings: ConnectivitySyncSettings) {
         val key = listOf(
-            store.webdavUrl,
-            store.webdavUsername,
-            store.webdavPassword,
-            store.connectivitySyncIntervalHours.toString(),
+            settings.url,
+            settings.username,
+            settings.password,
+            settings.intervalHours.toString(),
         ).joinToString("\n")
         val previous = settingsKey.get()
         if (previous != key) {

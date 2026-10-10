@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.pm.PackageManager
 import androidx.activity.result.contract.ActivityResultContracts
 import com.github.kr328.clash.common.util.componentName
+import com.github.kr328.clash.connectivitysync.ConnectivitySyncSettingsMirror
 import com.github.kr328.clash.design.AppSettingsDesign
 import com.github.kr328.clash.design.model.Behavior
 import com.github.kr328.clash.design.ui.ToastDuration
@@ -70,6 +71,9 @@ class AppSettingsActivity : BaseActivity<AppSettingsDesign>(), Behavior {
                         }
                         AppSettingsDesign.Request.UploadWallpapers -> {
                             syncWallpapers(design, upload = true)
+                        }
+                        AppSettingsDesign.Request.PushConnectivitySyncSettings -> {
+                            ConnectivitySyncSettingsMirror.push(this@AppSettingsActivity)
                         }
                         AppSettingsDesign.Request.DownloadWallpapers -> {
                             syncWallpapers(design, upload = false)

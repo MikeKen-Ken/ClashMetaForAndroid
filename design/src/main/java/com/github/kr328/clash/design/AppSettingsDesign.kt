@@ -29,6 +29,7 @@ class AppSettingsDesign(
         ClearBackground,
         UploadWallpapers,
         DownloadWallpapers,
+        PushConnectivitySyncSettings,
     }
 
     private val binding = DesignSettingsCommonBinding
@@ -184,12 +185,17 @@ class AppSettingsDesign(
 
             category(R.string.webdav_sync)
 
+            val pushSyncSettings = {
+                requests.trySend(Request.PushConnectivitySyncSettings)
+            }
+
             editableText(
                 value = uiStore::webdavUrl,
                 adapter = StoredStringAdapter,
                 icon = R.drawable.ic_baseline_public,
                 title = R.string.webdav_url,
                 placeholder = R.string.webdav_not_set,
+                onCommit = pushSyncSettings,
             )
 
             editableText(
@@ -198,6 +204,7 @@ class AppSettingsDesign(
                 icon = R.drawable.ic_baseline_assignment,
                 title = R.string.webdav_username,
                 placeholder = R.string.webdav_not_set,
+                onCommit = pushSyncSettings,
             )
 
             editableText(
@@ -208,6 +215,7 @@ class AppSettingsDesign(
                 placeholder = R.string.webdav_not_set,
                 secret = true,
                 secretSummary = R.string.webdav_password_set,
+                onCommit = pushSyncSettings,
             )
 
             clickable(

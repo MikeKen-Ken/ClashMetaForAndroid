@@ -1,4 +1,4 @@
-package com.github.kr328.clash.connectivitysync
+package com.github.kr328.clash.service.connectivitysync
 
 import java.text.SimpleDateFormat
 import java.text.ParsePosition

@@ -492,6 +492,13 @@
     <string name="connectivity_stats_subtitle">Score %1$.1f · Success %2$s · Failure %3$s · Effective delay %4$s</string>
     <string name="connectivity_stats_last_merge">Last merge: %s</string>
     <string name="connectivity_stats_last_merge_never">Last merge: never</string>
+    <string name="connectivity_stats_merge_running">Merging… %1$d%%</string>
+    <string name="connectivity_stats_merge_success">Last merge: %1$s · Success</string>
+    <string name="connectivity_stats_merge_partial">Last merge: %1$s · Partial, %2$d device(s) skipped</string>
+    <string name="connectivity_stats_merge_failed">Merge attempt at %1$s failed: %2$s</string>
+    <string name="connectivity_stats_merge_pulled">Pulled %1$s · uploaded %2$s · %3$d nodes</string>
+    <string name="connectivity_stats_merge_no_devices">No other devices found on WebDAV</string>
+    <string name="connectivity_stats_merge_skipped">Skipped %1$s</string>
     <string name="connectivity_stats_clear_one">Cleared connectivity statistics for “%s”</string>
     <string name="connectivity_stats_clear_all_message">Clear connectivity statistics for all nodes? This action cannot be undone.</string>
     <string name="connectivity_stats_clear">Clear</string>

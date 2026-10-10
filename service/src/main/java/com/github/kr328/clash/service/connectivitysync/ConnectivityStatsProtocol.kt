@@ -1,4 +1,4 @@
-package com.github.kr328.clash.connectivitysync
+package com.github.kr328.clash.service.connectivitysync
 
 internal object ConnectivityStatsProtocol {
     const val PROTOCOL_VERSION = 2

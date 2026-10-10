@@ -14,9 +14,14 @@ import com.github.kr328.clash.service.config.OverrideReloadDecision
 import com.github.kr328.clash.service.config.OverrideRuntimeApplier
 import com.github.kr328.clash.service.util.persistSummaryForDebug
 import com.github.kr328.clash.service.util.importedDir
+import com.github.kr328.clash.service.connectivitysync.ConnectivityStatsSync
+import com.github.kr328.clash.service.connectivitysync.ConnectivitySyncResult
+import com.github.kr328.clash.service.connectivitysync.ConnectivitySyncSettings
+import com.github.kr328.clash.service.connectivitysync.ConnectivitySyncStatus
 import com.github.kr328.clash.service.util.sendDebugUiLog
 import com.github.kr328.clash.service.util.sendOverrideChanged
 import com.github.kr328.clash.service.util.sendRuntimeConfigUpdated
+import kotlinx.serialization.json.Json
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import java.io.File
@@ -277,6 +282,22 @@ class ClashManager(private val context: Context) : IClashManager,
         resetWatermarks: String,
     ): String {
         return Clash.mergeProxyConnectivityStats(previousOthers, remoteOthers, resetWatermarks)
+    }
+
+    override fun queryConnectivityMergeStatus(): String =
+        ConnectivitySyncStatus.currentJson(context)
+
+    override suspend fun syncConnectivityStatistics(): String {
+        val result = ConnectivityStatsSync.merge(context, ConnectivitySyncSettings.from(store))
+        return Json.encodeToString(ConnectivitySyncResult.serializer(), result)
+    }
+
+    override suspend fun resetConnectivityStatistics(name: String) {
+        ConnectivityStatsSync.reset(context, listOf(name))
+    }
+
+    override suspend fun clearAllConnectivityStatistics() {
+        ConnectivityStatsSync.clearAll(context)
     }
 
     override fun queryNetworkDiagnostics(): String =

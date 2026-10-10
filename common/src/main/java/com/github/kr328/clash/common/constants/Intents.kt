@@ -27,6 +27,7 @@ object Intents {
     val ACTION_PROXY_GROUP_REFRESH = "$packageName.intent.action.PROXY_GROUP_REFRESH"
     /** 由 :background 进程发往主进程，写入 [com.github.kr328.clash.common.log.DebugLog] 供调试界面展示。 */
     val ACTION_DEBUG_UI_LOG = "$packageName.intent.action.DEBUG_UI_LOG"
+    val ACTION_CONNECTIVITY_MERGE_STATUS = "$packageName.intent.action.CONNECTIVITY_MERGE_STATUS"
 
     const val EXTRA_STOP_REASON = "stop_reason"
     const val EXTRA_UUID = "uuid"
@@ -34,4 +35,5 @@ object Intents {
     const val EXTRA_AUTO_COMMIT = "auto_commit"
     const val EXTRA_DEBUG_LOG_TAG = "debug_log_tag"
     const val EXTRA_DEBUG_LOG_MESSAGE = "debug_log_message"
+    const val EXTRA_CONNECTIVITY_MERGE_STATUS = "connectivity_merge_status"
 }

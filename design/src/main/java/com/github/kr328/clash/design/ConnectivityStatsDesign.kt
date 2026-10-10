@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.ConcatAdapter
 import com.github.kr328.clash.design.adapter.ConnectivityMergeHeaderAdapter
 import com.github.kr328.clash.design.adapter.ConnectivityStatsAdapter
 import com.github.kr328.clash.design.databinding.DesignConnectivityStatsBinding
+import com.github.kr328.clash.design.model.ConnectivityMergeStatus
 import com.github.kr328.clash.design.model.ConnectivityScoreRow
 import com.github.kr328.clash.design.util.*
 
@@ -65,5 +66,9 @@ class ConnectivityStatsDesign(
 
     fun setLastMergeAt(value: Long) {
         header.setLastMergeAt(value)
+    }
+
+    fun setMergeStatus(status: ConnectivityMergeStatus) {
+        header.setStatus(status)
     }
 }

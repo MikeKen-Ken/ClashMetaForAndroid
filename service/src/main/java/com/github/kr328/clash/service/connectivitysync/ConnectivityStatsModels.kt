@@ -1,4 +1,4 @@
-package com.github.kr328.clash.connectivitysync
+package com.github.kr328.clash.service.connectivitysync
 
 import kotlinx.serialization.Serializable
 
@@ -42,6 +42,8 @@ internal data class DeviceSnapshot(
     val generations: ResetWatermarks = emptyMap(),
     val data: StatsData = emptyMap(),
     val clearAll: ResetGeneration = ResetGeneration(),
+    /** Display-only label; older snapshots omit it. */
+    val deviceName: String = "",
 )
 
 @Serializable
@@ -77,8 +79,18 @@ internal data class RemoteSnapshotRef(
     val slot: Int,
 )
 
+@Serializable
+internal data class ConnectivityPulledDevice(
+    val device: String,
+    val updatedAt: Long,
+    val proxyCount: Int,
+)
+
+@Serializable
 data class ConnectivitySyncResult(
     val deviceCount: Int,
     val proxyCount: Int,
     val lastSyncAt: Long,
+    val pulled: List<ConnectivityPulledDevice>,
+    val skipped: List<String>,
 )

@@ -26,6 +26,7 @@ fun <T> PreferenceScreen.editableText(
     @StringRes empty: Int? = null,
     secret: Boolean = false,
     @StringRes secretSummary: Int? = null,
+    onCommit: () -> Unit = {},
     configure: EditableTextPreference.() -> Unit = {},
 ): EditableTextPreference {
     val impl = object : EditableTextPreference, ClickablePreference by clickable(title, icon) {
@@ -89,6 +90,7 @@ fun <T> PreferenceScreen.editableText(
                 }
 
                 impl.text = adapter.from(newValue)
+                onCommit()
             }
         }
     }

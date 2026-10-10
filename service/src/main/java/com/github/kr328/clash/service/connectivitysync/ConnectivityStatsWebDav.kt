@@ -1,8 +1,7 @@
-package com.github.kr328.clash.connectivitysync
+package com.github.kr328.clash.service.connectivitysync
 
 import android.net.Uri
 import android.util.Xml
-import com.github.kr328.clash.design.store.UiStore
 import okhttp3.Credentials
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -14,7 +13,7 @@ import java.io.StringReader
 import java.net.URLDecoder
 import java.util.concurrent.TimeUnit
 
-internal class ConnectivityStatsWebDav(private val store: UiStore) {
+internal class ConnectivityStatsWebDav(private val settings: ConnectivitySyncSettings) {
     private val http = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
@@ -23,8 +22,8 @@ internal class ConnectivityStatsWebDav(private val store: UiStore) {
         .followSslRedirects(false)
         .build()
 
-    fun isConfigured(): Boolean = store.webdavUrl.isNotBlank() &&
-        store.webdavUsername.isNotBlank() && store.webdavPassword.isNotBlank()
+    fun isConfigured(): Boolean = settings.url.isNotBlank() &&
+        settings.username.isNotBlank() && settings.password.isNotBlank()
 
     fun prepareCollections() {
         ensureCollection("clash-connectivity-sync")
@@ -118,12 +117,12 @@ internal class ConnectivityStatsWebDav(private val store: UiStore) {
             .url("${baseUrl()}/$path$suffix")
             .header(
                 "Authorization",
-                Credentials.basic(store.webdavUsername.trim(), store.webdavPassword),
+                Credentials.basic(settings.username.trim(), settings.password),
             )
     }
 
     private fun baseUrl(): String {
-        val value = store.webdavUrl.trim().trimEnd('/')
+        val value = settings.url.trim().trimEnd('/')
         require(value.startsWith("https://", ignoreCase = true)) { "WebDAV URL must be https" }
         return value
     }

@@ -1,6 +1,7 @@
 package com.github.kr328.clash.service.store
 
 import android.content.Context
+import com.github.kr328.clash.common.secret.SecretString
 import com.github.kr328.clash.common.store.Store
 import com.github.kr328.clash.common.store.asStoreProvider
 import com.github.kr328.clash.core.model.TunnelState
@@ -74,6 +75,35 @@ class ServiceStore(context: Context) {
     var persistedProxyUiMode: String by store.string(
         key = "persisted_proxy_ui_mode",
         defaultValue = "",
+    )
+
+    var connectivityWebdavUrl: String by store.string(
+        key = "connectivity_webdav_url",
+        defaultValue = "",
+    )
+
+    var connectivityWebdavUsername: String by store.string(
+        key = "connectivity_webdav_username",
+        defaultValue = "",
+    )
+
+    var connectivityWebdavPasswordStored: String by store.string(
+        key = "connectivity_webdav_password",
+        defaultValue = "",
+    )
+
+    val connectivityWebdavPassword: String
+        get() = SecretString.unwrap(connectivityWebdavPasswordStored)
+
+    var connectivitySyncIntervalHours: Int by store.int(
+        key = "connectivity_sync_interval_hours",
+        defaultValue = 24,
+    )
+
+    /** True after the UI has published WebDAV settings, or after the one-time UI preference copy. */
+    var connectivitySyncSettingsReady: Boolean by store.boolean(
+        key = "connectivity_sync_settings_ready",
+        defaultValue = false,
     )
 
     fun persistedProxyModeOrDefault(): TunnelState.Mode {

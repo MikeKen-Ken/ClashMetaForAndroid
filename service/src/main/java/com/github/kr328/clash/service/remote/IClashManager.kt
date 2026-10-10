@@ -54,5 +54,10 @@ interface IClashManager {
         resetWatermarks: String,
     ): String
 
+    fun queryConnectivityMergeStatus(): String
+    suspend fun syncConnectivityStatistics(): String
+    suspend fun resetConnectivityStatistics(name: String)
+    suspend fun clearAllConnectivityStatistics()
+
     fun setLogObserver(observer: ILogObserver?)
 }
