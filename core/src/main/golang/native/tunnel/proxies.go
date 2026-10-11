@@ -32,13 +32,14 @@ type Proxy struct {
 }
 
 type ProxyGroup struct {
-	SchemaVersion   int      `json:"schemaVersion"`
-	Type            string   `json:"type"`
-	Now             string   `json:"now"`
-	NowIsManual     bool     `json:"now-is-manual"`
-	ConnectTimes    int      `json:"connectTimes"`
-	MaxConnectTimes int      `json:"maxConnectTimes"`
-	Proxies         []*Proxy `json:"proxies"`
+	SchemaVersion      int      `json:"schemaVersion"`
+	Type               string   `json:"type"`
+	Now                string   `json:"now"`
+	NowIsManual        bool     `json:"now-is-manual"`
+	ConnectTimes       int      `json:"connectTimes"`
+	MaxConnectTimes    int      `json:"maxConnectTimes"`
+	DelayTestTimeoutMs int      `json:"delayTestTimeoutMs"`
+	Proxies            []*Proxy `json:"proxies"`
 }
 
 const proxyGroupSchemaVersion = 1
@@ -149,13 +150,14 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 	}
 
 	return &ProxyGroup{
-		SchemaVersion:   proxyGroupSchemaVersion,
-		Type:            g.Type().String(),
-		Now:             g.Now(),
-		NowIsManual:     nowIsManual,
-		ConnectTimes:    connectTimes,
-		MaxConnectTimes: maxConnectTimes,
-		Proxies:         proxies,
+		SchemaVersion:      proxyGroupSchemaVersion,
+		Type:               g.Type().String(),
+		Now:                g.Now(),
+		NowIsManual:        nowIsManual,
+		ConnectTimes:       connectTimes,
+		MaxConnectTimes:    maxConnectTimes,
+		DelayTestTimeoutMs: startupGroupTimeout(g),
+		Proxies:            proxies,
 	}
 }
 

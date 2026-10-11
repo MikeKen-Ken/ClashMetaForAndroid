@@ -37,7 +37,8 @@ class ProxyPageAdapter(
         proxies: List<Proxy>,
         selectable: Boolean,
         parent: ProxyState,
-        links: Map<String, ProxyState>
+        links: Map<String, ProxyState>,
+        delayTimeoutMs: Int,
     ) {
         val states = withContext(Dispatchers.Default) {
             proxies.map {
@@ -52,6 +53,7 @@ class ProxyPageAdapter(
             adapters[position].apply {
                 this.selectable = selectable
                 bindRegionFilter(regionFilter)
+                bindDelayTimeout(delayTimeoutMs)
                 updateStates(states)
             }
 

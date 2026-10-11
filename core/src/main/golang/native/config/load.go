@@ -81,11 +81,13 @@ func loadRawConfig(rawCfg *config.RawConfig, path string) error {
 
 	// like hub.Parse()
 	tunnel.StopConnectivityMaintenance()
+	tunnel.StopStartupDelayTest()
 	hub.ApplyConfig(cfg)
 
 	applyProxySelectionsFromOverride()
 	tunnel.ApplyStartupAutoGroupOrder()
 	tunnel.StartConnectivityMaintenance()
+	tunnel.StartStartupDelayTest()
 
 	app.ApplySubtitlePattern(rawCfg.ClashForAndroid.UiSubtitlePattern)
 
@@ -122,5 +124,6 @@ func LoadDefault() {
 	}
 
 	tunnel.StopConnectivityMaintenance()
+	tunnel.StopStartupDelayTest()
 	hub.ApplyConfig(cfg)
 }

@@ -153,5 +153,11 @@ class ProxyViewState(
     }
 }
 
-/** 1 until 0xffff = 成功延迟。未测速与超时均为 0xffff（显示为 T），hide-unavailable 会一并隐藏。 */
+/** 1 until 0xffff = 成功延迟。未测速与超时均为 0xffff（显示为 T）。 */
 fun isUsableProxyDelay(delay: Int): Boolean = delay in 1 until 0xffff
+
+/** Desktop hide-unavailable: a measured delay stays visible only while it is under the group timeout. */
+fun isProxyDelayWithinGroupTimeout(delay: Int, timeoutMs: Int): Boolean {
+    val timeout = if (timeoutMs > 0) timeoutMs else 5000
+    return delay > 0 && delay < timeout
+}

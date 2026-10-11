@@ -90,9 +90,10 @@ class ProxyDesign(
         proxies: List<Proxy>,
         selectable: Boolean,
         parent: ProxyState,
-        links: Map<String, ProxyState>
+        links: Map<String, ProxyState>,
+        delayTimeoutMs: Int,
     ) {
-        adapter.updateAdapter(position, proxies, selectable, parent, links)
+        adapter.updateAdapter(position, proxies, selectable, parent, links, delayTimeoutMs)
 
         withContext(Dispatchers.Main) {
             adapter.states[position].urlTesting = false

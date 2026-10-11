@@ -15,6 +15,7 @@ data class ProxyGroup(
     @SerialName("now-is-manual") val nowIsManual: Boolean = false,
     val connectTimes: Int = 0,
     val maxConnectTimes: Int = 0,
+    val delayTestTimeoutMs: Int = 5000,
 ) : Parcelable {
     class SliceProxyList(data: List<Proxy>) : List<Proxy> by data, Parcelable {
         constructor(parcel: Parcel) : this(Proxy.createListFromParcelSlice(parcel, 0, 50))
@@ -47,6 +48,7 @@ data class ProxyGroup(
         parcel.readByte() != 0.toByte(),
         parcel.readInt(),
         parcel.readInt(),
+        parcel.readInt(),
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
@@ -58,6 +60,7 @@ data class ProxyGroup(
         parcel.writeByte((if (nowIsManual) 1 else 0).toByte())
         parcel.writeInt(connectTimes)
         parcel.writeInt(maxConnectTimes)
+        parcel.writeInt(delayTestTimeoutMs)
     }
 
     override fun describeContents(): Int {

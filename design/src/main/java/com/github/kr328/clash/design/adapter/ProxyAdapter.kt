@@ -6,7 +6,7 @@ import com.github.kr328.clash.design.component.ProxyRegion
 import com.github.kr328.clash.design.component.ProxyView
 import com.github.kr328.clash.design.component.ProxyViewConfig
 import com.github.kr328.clash.design.component.ProxyViewState
-import com.github.kr328.clash.design.component.isUsableProxyDelay
+import com.github.kr328.clash.design.component.isProxyDelayWithinGroupTimeout
 
 class ProxyAdapter(
     private val config: ProxyViewConfig,
@@ -19,6 +19,12 @@ class ProxyAdapter(
     private var allStates: List<ProxyViewState> = emptyList()
     private var hideUnavailable: Boolean = false
     private var regionFilter: String = ""
+    private var delayTimeoutMs: Int = 5000
+
+    /** Stores the group timeout without redrawing. Call before [updateStates]. */
+    fun bindDelayTimeout(timeoutMs: Int) {
+        delayTimeoutMs = if (timeoutMs > 0) timeoutMs else 5000
+    }
 
     fun proxyNames(): List<String> = allStates.map { it.proxy.name }
 
@@ -58,7 +64,10 @@ class ProxyAdapter(
             }
         }
         if (hideUnavailable) {
-            visibleStates = visibleStates.filter { isUsableProxyDelay(it.proxy.delay) }
+            visibleStates = visibleStates.filter {
+                it.currentGroupNow == it.proxy.name ||
+                    isProxyDelayWithinGroupTimeout(it.proxy.delay, delayTimeoutMs)
+            }
         }
 
         val old = states

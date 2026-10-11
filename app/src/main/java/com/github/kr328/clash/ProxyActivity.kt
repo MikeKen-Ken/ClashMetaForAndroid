@@ -177,7 +177,8 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                             group.type == Proxy.Type.Fallback ||
                                             group.type == Proxy.Type.URLTest,
                                         state,
-                                        unorderedStates
+                                        unorderedStates,
+                                        group.delayTestTimeoutMs,
                                     )
                                 }
                             }
@@ -226,7 +227,8 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                                 g.type == Proxy.Type.Fallback ||
                                                 g.type == Proxy.Type.URLTest,
                                             st,
-                                            unorderedStates
+                                            unorderedStates,
+                                            g.delayTestTimeoutMs,
                                         )
                                     }
                                     reloadGroup()
