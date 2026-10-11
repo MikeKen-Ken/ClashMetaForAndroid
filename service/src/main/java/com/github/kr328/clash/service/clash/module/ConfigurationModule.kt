@@ -83,6 +83,9 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                 session.mode = store.persistedProxyModeOrDefault()
                 session.proxyDelayTestTimeoutMs = readProxyDelayTestTimeoutFromMainProcessPreferences(service)
                 session.proxyDelayTestConcurrency = readProxyDelayTestConcurrencyFromMainProcessPreferences(service)
+                session.autoDelayDetection = readAutoDelayDetectionFromMainProcessPreferences(service)
+                session.autoDelayDetectionIntervalMinutes =
+                    readAutoDelayDetectionIntervalFromMainProcessPreferences(service)
                 // 网络/覆写/日志等 UI 主要写 Persist；Session 若残留非空会在合并时盖住 Persist，导致「退出再进又变回去」。
                 override.logLevel?.let { session.logLevel = it }
                 override.allowLan?.let { session.allowLan = it }
@@ -145,6 +148,8 @@ private const val UI_PREF_NAME = "ui"
 private const val UI_PREF_KEY_PROXY_MODE = "proxy_ui_mode"
 private const val UI_PREF_KEY_PROXY_DELAY_TEST_TIMEOUT_MS = "proxy_delay_test_timeout_ms"
 private const val UI_PREF_KEY_PROXY_DELAY_TEST_CONCURRENCY = "proxy_delay_test_concurrency"
+private const val UI_PREF_KEY_AUTO_DELAY_DETECTION = "auto_delay_detection"
+private const val UI_PREF_KEY_AUTO_DELAY_DETECTION_INTERVAL = "auto_delay_detection_interval_minutes"
 
 /** 与代理页安全档位一致：30 / 50 / 100 / 150 / 200；其他历史值迁入为 30。 */
 private fun normalizeProxyDelayTestConcurrency(raw: Int): Int = when (raw) {
@@ -171,6 +176,19 @@ private fun readProxyDelayTestTimeoutFromMainProcessPreferences(context: Context
     val prefs = context.applicationContext.getSharedPreferences(UI_PREF_NAME, Context.MODE_MULTI_PROCESS)
     val timeout = prefs.getInt(UI_PREF_KEY_PROXY_DELAY_TEST_TIMEOUT_MS, 0)
     return if (timeout > 0) timeout else null
+}
+
+@Suppress("DEPRECATION")
+private fun readAutoDelayDetectionFromMainProcessPreferences(context: Context): Boolean {
+    val prefs = context.applicationContext.getSharedPreferences(UI_PREF_NAME, Context.MODE_MULTI_PROCESS)
+    return prefs.getBoolean(UI_PREF_KEY_AUTO_DELAY_DETECTION, false)
+}
+
+@Suppress("DEPRECATION")
+private fun readAutoDelayDetectionIntervalFromMainProcessPreferences(context: Context): Int {
+    val prefs = context.applicationContext.getSharedPreferences(UI_PREF_NAME, Context.MODE_MULTI_PROCESS)
+    val minutes = prefs.getInt(UI_PREF_KEY_AUTO_DELAY_DETECTION_INTERVAL, 5)
+    return if (minutes > 0) minutes else 5
 }
 
 @Suppress("DEPRECATION")

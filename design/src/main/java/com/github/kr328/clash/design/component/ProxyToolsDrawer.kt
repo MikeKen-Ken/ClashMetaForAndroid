@@ -7,8 +7,12 @@ import com.github.kr328.clash.design.databinding.DialogProxyToolsBinding
 import com.github.kr328.clash.design.dialog.AppBottomSheetDialog
 import com.github.kr328.clash.design.store.UiStore
 import com.github.kr328.clash.design.util.layoutInflater
+import android.view.Gravity
+import android.widget.LinearLayout
+import android.widget.TextView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
+import com.google.android.material.switchmaterial.SwitchMaterial
 
 /**
  * One button for mode, delay timeout, ad blocking, and concurrency.
@@ -77,6 +81,7 @@ class ProxyToolsDrawer(
         }
 
         modeGroup = binding.modeToggleGroup
+        addAutoDelayRow(binding.root as LinearLayout)
         binding.modeToggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (suppressMode) return@addOnButtonCheckedListener
             val next = when {
@@ -127,6 +132,33 @@ class ProxyToolsDrawer(
             uiStore.proxyDelayTestConcurrency = concurrency
             onRequest(ProxyDesign.Request.PatchConcurrency(concurrency))
         }
+    }
+
+    private fun addAutoDelayRow(parent: LinearLayout) {
+        val context = parent.context
+        val pad = (8 * context.resources.displayMetrics.density).toInt()
+        val row = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(pad, pad, pad, 0)
+        }
+        val label = TextView(context).apply {
+            text = context.getString(R.string.auto_delay_detection) +
+                " · " + context.getString(R.string.auto_delay_detection_interval)
+            textSize = 13f
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        val toggle = SwitchMaterial(context).apply {
+            isChecked = uiStore.autoDelayDetection
+            setOnCheckedChangeListener { _, checked ->
+                uiStore.autoDelayDetection = checked
+                val minutes = uiStore.autoDelayDetectionIntervalMinutes.coerceAtLeast(1)
+                onRequest(ProxyDesign.Request.PatchAutoDelay(checked, minutes))
+            }
+        }
+        row.addView(label)
+        row.addView(toggle)
+        parent.addView(row)
     }
 
     private fun checkMode(group: MaterialButtonToggleGroup, mode: TunnelState.Mode?) {

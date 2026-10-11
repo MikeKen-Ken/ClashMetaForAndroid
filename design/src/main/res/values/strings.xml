@@ -405,6 +405,8 @@
     <string name="concurrency_200">×200</string>
     <string name="proxy_ads_on">Ad Blocking</string>
     <string name="proxy_ads_off">No Ad Blocking</string>
+    <string name="auto_delay_detection">Test current node</string>
+    <string name="auto_delay_detection_interval">Every 5 min</string>
 
     <string name="format_provider_type">%1$s(%2$s)</string>
     <string name="rule">Rule</string>

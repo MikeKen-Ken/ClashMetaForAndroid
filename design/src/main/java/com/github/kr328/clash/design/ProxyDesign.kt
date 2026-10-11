@@ -42,6 +42,7 @@ class ProxyDesign(
         data class PatchAdsBlock(val enabled: Boolean) : Request()
         data class PatchTimeout(val timeoutMs: Int) : Request()
         data class PatchConcurrency(val concurrency: Int) : Request()
+        data class PatchAutoDelay(val enabled: Boolean, val intervalMinutes: Int) : Request()
         data class Reload(val index: Int) : Request()
         data class Select(
             val index: Int,

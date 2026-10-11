@@ -70,10 +70,11 @@ internal object ConfigurationOverrideClassifier {
         PROXY_SELECTIONS,
         PROXY_ADS_BLOCK,
         PROXY_DELAY_TEST,
+        AUTO_DELAY,
     }
 
     private val LIGHT_RUNTIME_KINDS: Set<Kind> =
-        setOf(Kind.LOG_LEVEL, Kind.ALLOW_LAN, Kind.BIND_ADDRESS)
+        setOf(Kind.LOG_LEVEL, Kind.ALLOW_LAN, Kind.BIND_ADDRESS, Kind.AUTO_DELAY)
 
     private object Diff {
         fun collectKinds(
@@ -133,6 +134,11 @@ internal object ConfigurationOverrideClassifier {
 
             addIf(prev.proxyDelayTestTimeoutMs != next.proxyDelayTestTimeoutMs, Kind.PROXY_DELAY_TEST)
             addIf(prev.proxyDelayTestConcurrency != next.proxyDelayTestConcurrency, Kind.PROXY_DELAY_TEST)
+            addIf(prev.autoDelayDetection != next.autoDelayDetection, Kind.AUTO_DELAY)
+            addIf(
+                prev.autoDelayDetectionIntervalMinutes != next.autoDelayDetectionIntervalMinutes,
+                Kind.AUTO_DELAY,
+            )
 
             return kinds
         }

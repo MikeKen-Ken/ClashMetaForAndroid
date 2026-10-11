@@ -343,6 +343,14 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                     setHealthCheckWorkerLimit(it.concurrency)
                                 }
                             }
+                            is ProxyDesign.Request.PatchAutoDelay -> {
+                                scheduleClashMutation("当前节点定时测速") {
+                                    val o = queryOverride(Clash.OverrideSlot.Session)
+                                    o.autoDelayDetection = it.enabled
+                                    o.autoDelayDetectionIntervalMinutes = it.intervalMinutes
+                                    patchOverride(Clash.OverrideSlot.Session, o)
+                                }
+                            }
                             ProxyDesign.Request.FlushFakeIpCache -> {
                                 launch {
                                     try {

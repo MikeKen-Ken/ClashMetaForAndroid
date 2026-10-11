@@ -78,6 +78,7 @@ func StartConnectivityMaintenance() {
 				wg.Wait()
 				// Probes update scores only. The walk order is rewritten at startup
 				// and when a delay test finishes, matching the desktop timing.
+				maybeProbeAutoDelay(ctx, now)
 			}
 		}
 	}()

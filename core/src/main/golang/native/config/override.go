@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"cfa/native/tunnel"
+
 	"github.com/metacubex/mihomo/constant"
 	"github.com/metacubex/mihomo/log"
 )
@@ -63,6 +65,7 @@ func WriteOverride(slot OverrideSlot, content string) {
 		_, err = file.Write([]byte(content))
 	case OverrideSlotSession:
 		sessionOverride = content
+		applyAutoDelayFromSession(content)
 		// Apply log-level immediately so changing level in UI takes effect without reloading config
 		var o sessionOverrideLogLevel
 		if err := json.Unmarshal([]byte(content), &o); err == nil && o.LogLevel != nil {
@@ -80,5 +83,23 @@ func ClearOverride(slot OverrideSlot) {
 		_ = os.Remove(overridePersistPath())
 	case OverrideSlotSession:
 		sessionOverride = defaultSessionOverride
+		tunnel.SetAutoDelayDetection(false, 5)
 	}
+}
+
+func applyAutoDelayFromSession(content string) {
+	var session struct {
+		Enabled *bool `json:"auto-delay-detection"`
+		Minutes *int  `json:"auto-delay-detection-interval-minutes"`
+	}
+	if err := json.Unmarshal([]byte(content), &session); err != nil {
+		tunnel.SetAutoDelayDetection(false, 5)
+		return
+	}
+	enabled := session.Enabled != nil && *session.Enabled
+	minutes := 5
+	if session.Minutes != nil && *session.Minutes > 0 {
+		minutes = *session.Minutes
+	}
+	tunnel.SetAutoDelayDetection(enabled, minutes)
 }

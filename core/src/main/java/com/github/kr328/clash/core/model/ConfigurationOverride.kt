@@ -100,6 +100,13 @@ data class ConfigurationOverride(
     /** 与主界面延迟测速并发一致，写入 session 供核心订阅健康检查与默认组测速使用。 */
     @SerialName("proxy-delay-test-concurrency")
     var proxyDelayTestConcurrency: Int? = null,
+
+    /** 可选：按间隔只测当前节点。默认关闭。与桌面自动延迟检测同一开关。 */
+    @SerialName("auto-delay-detection")
+    var autoDelayDetection: Boolean? = null,
+
+    @SerialName("auto-delay-detection-interval-minutes")
+    var autoDelayDetectionIntervalMinutes: Int? = null,
 ) : Parcelable {
     @Serializable
     data class Dns(

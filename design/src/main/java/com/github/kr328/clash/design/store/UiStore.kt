@@ -166,6 +166,17 @@ class UiStore(context: Context) {
         defaultValue = 30,
     )
 
+    /** 只测当前节点的可选定时器，默认关闭。 */
+    var autoDelayDetection: Boolean by store.boolean(
+        key = "auto_delay_detection",
+        defaultValue = false,
+    )
+
+    var autoDelayDetectionIntervalMinutes: Int by store.int(
+        key = "auto_delay_detection_interval_minutes",
+        defaultValue = 5,
+    )
+
     companion object {
         private const val PREFERENCE_NAME = "ui"
     }
