@@ -18,6 +18,7 @@ internal data class ConnectivityMergeSnapshot(
     val progress: Int = 0,
     val finishedAt: Long = 0,
     val error: String? = null,
+    val uploaded: ConnectivityPulledDevice? = null,
     val pulled: List<ConnectivityPulledDevice> = emptyList(),
     val skipped: List<String> = emptyList(),
 ) {
@@ -50,6 +51,7 @@ internal object ConnectivitySyncStatus {
     suspend fun succeed(
         context: Context,
         pulled: List<ConnectivityPulledDevice>,
+        uploaded: ConnectivityPulledDevice,
         skipped: List<String>,
     ) = finish(
         context,
@@ -61,6 +63,7 @@ internal object ConnectivitySyncStatus {
             },
             progress = 100,
             finishedAt = System.currentTimeMillis(),
+            uploaded = uploaded,
             pulled = pulled,
             skipped = skipped,
         ),

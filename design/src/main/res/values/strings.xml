@@ -498,6 +498,7 @@
     <string name="connectivity_stats_merge_success">Last merge: %1$s · Success</string>
     <string name="connectivity_stats_merge_partial">Last merge: %1$s · Partial, %2$d device(s) skipped</string>
     <string name="connectivity_stats_merge_failed">Merge attempt at %1$s failed: %2$s</string>
+    <string name="connectivity_stats_merge_uploaded">Uploaded %1$s · %2$s · %3$d nodes</string>
     <string name="connectivity_stats_merge_pulled">Pulled %1$s · uploaded %2$s · %3$d nodes</string>
     <string name="connectivity_stats_merge_no_devices">No other devices found on WebDAV</string>
     <string name="connectivity_stats_merge_skipped">Skipped %1$s</string>

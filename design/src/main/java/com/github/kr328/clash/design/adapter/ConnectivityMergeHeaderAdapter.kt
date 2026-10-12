@@ -74,6 +74,14 @@ class ConnectivityMergeHeaderAdapter(
         }
 
         if (status.phase == Phase.Success || status.phase == Phase.Partial) {
+            status.uploaded?.let {
+                lines += context.getString(
+                    R.string.connectivity_stats_merge_uploaded,
+                    it.device,
+                    formatTime(it.updatedAt),
+                    it.proxyCount,
+                )
+            }
             if (status.pulled.isEmpty()) {
                 lines += context.getString(R.string.connectivity_stats_merge_no_devices)
             }

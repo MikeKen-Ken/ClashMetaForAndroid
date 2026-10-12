@@ -91,6 +91,7 @@ internal data class ConnectivitySyncResult(
     val deviceCount: Int,
     val proxyCount: Int,
     val lastSyncAt: Long,
+    val uploaded: ConnectivityPulledDevice,
     val pulled: List<ConnectivityPulledDevice>,
     val skipped: List<String>,
 )

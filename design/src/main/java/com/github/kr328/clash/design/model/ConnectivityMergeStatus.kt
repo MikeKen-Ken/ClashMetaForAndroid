@@ -15,6 +15,7 @@ data class ConnectivityMergeStatus(
     val progress: Int = 0,
     val finishedAt: Long = 0,
     val error: String? = null,
+    val uploaded: ConnectivityPulledDevice? = null,
     val pulled: List<ConnectivityPulledDevice> = emptyList(),
     val skipped: List<String> = emptyList(),
 ) {

@@ -16,6 +16,7 @@ import com.github.kr328.clash.core.model.TunnelState
 import com.github.kr328.clash.core.model.Proxy
 import com.github.kr328.clash.design.ProxyDesign
 import com.github.kr328.clash.design.R
+import com.github.kr328.clash.design.model.ConnectivityMergeStatus
 import com.github.kr328.clash.design.model.ProxyState
 import com.github.kr328.clash.design.util.showExceptionToast
 import com.github.kr328.clash.util.scheduleClashMutation
@@ -27,6 +28,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import kotlinx.serialization.json.Json
 
 class ProxyActivity : BaseActivity<ProxyDesign>() {
     companion object {
@@ -34,6 +36,15 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
         private val SKIP_DELAY_CHECK_GROUPS = setOf("Direct", "Final")
 
         private const val LOG_FLUSH_FAKE_IP = "FakeIpFlush"
+        private val mergeStatusJson = Json { ignoreUnknownKeys = true }
+
+        private fun connectivityMergeApplied(payload: String): Boolean {
+            val status = runCatching {
+                mergeStatusJson.decodeFromString(ConnectivityMergeStatus.serializer(), payload)
+            }.getOrNull() ?: return false
+            return status.phase == ConnectivityMergeStatus.Phase.Success ||
+                status.phase == ConnectivityMergeStatus.Phase.Partial
+        }
     }
 
     override suspend fun main() {
@@ -49,13 +60,20 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
         val unorderedStates = names.indices.map { names[it] to states[it] }.toMap()
         val reloadLock = Semaphore(3)
         val crossProcessRefresh = Channel<String>(Channel.UNLIMITED)
+        val mergeStatusEvents = Channel<String>(Channel.CONFLATED)
         val refreshReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                if (intent?.action != Intents.ACTION_PROXY_GROUP_REFRESH) return
-
-                intent.getStringExtra(Intents.EXTRA_NAME)
-                    ?.takeIf { it.isNotBlank() }
-                    ?.let { crossProcessRefresh.trySend(it) }
+                when (intent?.action) {
+                    Intents.ACTION_PROXY_GROUP_REFRESH -> {
+                        intent.getStringExtra(Intents.EXTRA_NAME)
+                            ?.takeIf { it.isNotBlank() }
+                            ?.let { crossProcessRefresh.trySend(it) }
+                    }
+                    Intents.ACTION_CONNECTIVITY_MERGE_STATUS -> {
+                        intent.getStringExtra(Intents.EXTRA_CONNECTIVITY_MERGE_STATUS)
+                            ?.let { mergeStatusEvents.trySend(it) }
+                    }
+                }
             }
         }
 
@@ -97,7 +115,10 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
         design.requests.send(ProxyDesign.Request.ReloadAll)
         registerReceiverCompat(
             refreshReceiver,
-            IntentFilter().apply { addAction(Intents.ACTION_PROXY_GROUP_REFRESH) },
+            IntentFilter().apply {
+                addAction(Intents.ACTION_PROXY_GROUP_REFRESH)
+                addAction(Intents.ACTION_CONNECTIVITY_MERGE_STATUS)
+            },
             Permissions.RECEIVE_SELF_BROADCASTS,
             null
         )
@@ -109,6 +130,11 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                     }
                     crossProcessRefresh.onReceive { groupName ->
                         scheduleGroupReload(groupName)
+                    }
+                    mergeStatusEvents.onReceive { payload ->
+                        if (connectivityMergeApplied(payload)) {
+                            design.requests.send(ProxyDesign.Request.ReloadAll)
+                        }
                     }
                     events.onReceive {
                         when (it) {

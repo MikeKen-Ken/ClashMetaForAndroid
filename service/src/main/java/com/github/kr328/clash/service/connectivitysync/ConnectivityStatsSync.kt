@@ -46,7 +46,7 @@ object ConnectivityStatsSync {
         ConnectivitySyncStatus.begin(context)
         try {
             mergeLocked(context, settings).also {
-                ConnectivitySyncStatus.succeed(context, it.pulled, it.skipped)
+                ConnectivitySyncStatus.succeed(context, it.pulled, it.uploaded, it.skipped)
             }
         } catch (error: Throwable) {
             val message = if (error is CancellationException) {
@@ -183,6 +183,7 @@ object ConnectivityStatsSync {
         }
         val nextRevision = currentRevision + 1
         val slot = (nextRevision % ConnectivityStatsProtocol.SLOT_COUNT).toInt()
+        val deviceName = "Android ${Build.MODEL}"
         val ownSnapshot = DeviceSnapshot(
             deviceId = state.deviceId,
             revision = nextRevision,
@@ -192,7 +193,7 @@ object ConnectivityStatsSync {
             generations = ConnectivityStatsProtocol.generationsFor(localResult.own, mergedResets),
             data = localResult.own,
             clearAll = mergedClearAll,
-            deviceName = "Android ${Build.MODEL}",
+            deviceName = deviceName,
         )
         webDav.upload(
             RemoteSnapshotRef(state.deviceId, slot),
@@ -214,6 +215,11 @@ object ConnectivityStatsSync {
             deviceCount = (snapshots.keys + state.deviceId).size,
             proxyCount = localResult.merged.size,
             lastSyncAt = now,
+            uploaded = ConnectivityPulledDevice(
+                device = deviceLabel(deviceName, state.deviceId),
+                updatedAt = now,
+                proxyCount = localResult.own.size,
+            ),
             pulled = pulled,
             skipped = skipped,
         )
