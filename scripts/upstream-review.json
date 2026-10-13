@@ -23,7 +23,7 @@
   },
   "lastReview": {
     "date": "2026-10-13",
-    "method": "Core incremental window dca26db..bc76c139 screened. Small crash, leak, and protocol patches committed to mihomo Alpha as 8ebcb536. Prerelease-Alpha not published."
+    "method": "Core incremental window dca26db..bc76c139 screened. Small crash, leak, and protocol patches committed to mihomo Alpha as 8ebcb536. Prerelease-Alpha not published. Android window c454d0e..3cc102aa screened; no merge and no patches applied."
   },
   "components": {
     "android": {
@@ -32,8 +32,8 @@
       "upstreamUrl": "git@github.com:MetaCubeX/ClashMetaForAndroid.git",
       "upstreamRef": "main",
       "localHeadAtReview": "ea2da9e5dcebc92822e871a91b9bae30e8559a60",
-      "reviewedThrough": "c454d0e73b047d9f4c0173e8d35088f08b65bc98",
-      "reviewedThroughSubject": "Bump version to 2.11.33 (211033)",
+      "reviewedThrough": "3cc102aab3f251ef460a3b6e2835b6c1eb581e73",
+      "reviewedThroughSubject": "Add QR code sharing for URL profiles (#850)",
       "note": "本仓 main 与 MetaCubeX main 历史分叉较大。增量窗口以 upstream/main 的 SHA 为准，不要用本仓 HEAD..upstream/main 当全量历史。",
       "ported": [
         {
@@ -54,14 +54,64 @@
           "sha": "8453bfc07db2b5f7cdca41960547260661bd17b6",
           "subject": "Fix crash when Hide App Icon is enabled alongside dynamic shortcuts",
           "reason": "本 fork 无 ShortcutManager / setupShortcuts，补丁不适用"
+        },
+        {
+          "sha": "0b214dafcbb0e5768574427354d2377e8cce5e91",
+          "subject": "support mips stack in tun stack mode",
+          "reason": "UI option for the mips TUN stack. That core feature was already skipped. Local stack list stays system/gvisor/mixed.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "513b67fc35c68af1b0e7377681f95b33c074ecf7",
+          "subject": "Update Dependencies (#820)",
+          "reason": "Moves the core gitlink to ab405bad and pulls EasyTier plus sing-tun/mipstack bumps. Local gitlink stays 8ebcb536.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "251a013b18f16c1077fcbad9dd7c855d8e1e97f4",
+          "subject": "Bump version to 2.11.34 (211034)",
+          "reason": "Upstream version bump. Local versionName is 2.11.22.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "4483af43a9f6fc83b212be506928efad1ab79dad",
+          "subject": "change mips stack to default tun stack mode",
+          "reason": "Changes the default from system to mips. Local default is already mixed, and the mips core stack was not ported.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "a55827bfdd79f69ded8cf75c90293d2b7cb7e5a1",
+          "subject": "Update Dependencies (#833)",
+          "reason": "Moves the core gitlink to 88dcbf7f and bumps http, sing-mux, utls, and sing-tun. Those module jumps were already skipped on the mihomo side. Local gitlink stays 8ebcb536.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "94ebfd648abae76d32ae2191cfc413482d654c66",
+          "subject": "Bump version to 2.11.35 (211035)",
+          "reason": "Upstream version bump. Local versionName is 2.11.22.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "3cc102aab3f251ef460a3b6e2835b6c1eb581e73",
+          "subject": "Add QR code sharing for URL profiles (#850)",
+          "reason": "New feature, 14 files. Cherry-pick conflicts in ProfilesActivity.kt and ProfilesDesign.kt. Not a crash or security fix.",
+          "reviewDate": "2026-10-13"
         }
       ],
-      "pending": [],
+      "pending": [
+        {
+          "sha": "559594d4f99600d592757b23b2ee8e9b924512e4",
+          "subject": "fix the focus state of home page on android tv, there's no item focused. (#839)",
+          "reason": "Three-line requestFocus on the home status card. merge-tree applies it onto local design_main.xml with no conflict markers. Android TV only; not applied.",
+          "reviewDate": "2026-10-13"
+        }
+      ],
       "lastIncrementalReview": {
-        "date": "2026-09-13",
+        "date": "2026-10-13",
         "from": "c454d0e73b047d9f4c0173e8d35088f08b65bc98",
-        "commitCount": 0,
-        "scope": "All incremental subjects screened; selected fix diffs compared with local source. No builds, runtime tests or patches applied."
+        "to": "3cc102aab3f251ef460a3b6e2835b6c1eb581e73",
+        "commitCount": 8,
+        "scope": "All 8 subjects screened. git merge-base HEAD upstream/main has no ancestor, so a merge is not possible. No patches applied."
       },
       "additionalBranchReview": {
         "date": "2026-09-13",
@@ -604,6 +654,20 @@
           "date": "2026-09-13",
           "how": "Selective adaptation; see docs/upstream-port-2026-09-13.md",
           "status": "Applied in working tree; full app build not completed"
+        },
+        {
+          "sha": "a1bebf6d",
+          "subject": "fix(exit): bound session-ending cleanup with a hard deadline",
+          "date": "2026-10-13",
+          "how": "Adapted. Unpreventable Exit now runs save, proxy reset, and core stop on a private runtime and abandons that work after 6s on Windows or 7s elsewhere. Interactive quit is unchanged. The upstream tauri-plugin-mihomo bump in the same commit was not taken.",
+          "status": "Applied in clash-verge-rev working tree. cargo test not run; Rust toolchain is not installed on this machine."
+        },
+        {
+          "sha": "d6a2717f",
+          "subject": "fix(profiles): skip reloading current profile on URL import (#8092)",
+          "date": "2026-10-13",
+          "how": "Adapted. Import still uses the local five-retry refresh. onEnhance runs only when the refreshed current uid differs from the uid captured before import.",
+          "status": "Applied in clash-verge-rev working tree. Frontend typecheck not run."
         }
       ],
       "skipped": [
@@ -1049,6 +1113,30 @@
           "subject": "fix(profiles): stabilize drag reorder motion",
           "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
           "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "4a125681bded38cce47a21156a3d2f8792abc7e5",
+          "subject": "fix(windows): pin muda fork to prevent tray menu command ID exhaustion",
+          "reason": "The pin replaces crates.io muda 0.20.0 with wonfen/muda 547de493. Local muda is 0.17.1, and that rev is a newer API (PlatformMenu, MenuItemAction). The Windows id recycle itself is c079dbcc on that fork and does not apply as a Cargo.toml patch. Local 0.17.1 still uses an unbounded COUNTER from 1000.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "a8e8fe66",
+          "subject": "fix(tray): patch tray-icon for macOS 27 click reentrancy",
+          "reason": "The patch replaces tray-icon 0.24.2 with a 0.24.1 git fork. Local tray-icon is 0.21.3. Pinning that fork is a major upgrade, not the two-line patch.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "2a7972fa5b1d9f35b3ed9352f04254b84a08846b",
+          "subject": "fix(core): drain sidecar events before readiness probe to avoid startup stall (#7966)",
+          "reason": "Local start_core_by_sidecar already spawns the stdout/stderr drain before it returns, and it has no readiness probe before that drain.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "bfef4e84",
+          "subject": "fix(sysproxy): avoid proxy reset during cold start or lightweight mode recovery (#7917)",
+          "reason": "Local system-proxy UI does not toggle the proxy when the mixed port changes, so the upstream deletion has no call site.",
+          "reviewDate": "2026-10-13"
         }
       ],
       "pending": [
