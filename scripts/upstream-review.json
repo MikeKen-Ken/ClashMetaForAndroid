@@ -22,8 +22,8 @@
     "afterReview": "把对应组件的 reviewedThrough 更新为当时的上游 tip SHA；把摘入/跳过的提交追加进 ported 或 skipped。"
   },
   "lastReview": {
-    "date": "2026-09-13",
-    "method": "Incremental subject screening and selected patch/local-source comparison; recommendations in pending, explicit deferrals in skipped; no patches applied."
+    "date": "2026-10-13",
+    "method": "Core incremental window dca26db..bc76c139 screened. Small crash, leak, and protocol patches committed to mihomo Alpha as 8ebcb536. Prerelease-Alpha not published."
   },
   "components": {
     "android": {
@@ -78,11 +78,11 @@
       "upstreamRemote": "upstream",
       "upstreamUrl": "git@github.com:MetaCubeX/mihomo.git",
       "upstreamRef": "Alpha",
-      "localHeadAtReview": "b32bb2593f24dc92b7a269e2835b7bed82d25342",
+      "localHeadAtReview": "66858b97a20678424c404a0164d948f316aab020",
       "mergeBaseWithUpstreamAtReview": "f99d4e1be6bef9479fd5f13213ad17edcd0cd3e4",
-      "reviewedThrough": "dca26db017bcde90071f3e16f97b12fafbccfa31",
-      "reviewedThroughSubject": "feat: add EasyTier outbound (#3194)",
-      "note": "2026-08-13 已在工作区摘入下列补丁，但 submodule HEAD 仍可能停在 localHeadAtReview，直到提交到自有 mihomo 并更新 gitlink。",
+      "reviewedThrough": "bc76c1398c6e70089367a30169d0df7c7f77c42d",
+      "reviewedThroughSubject": "chore: update mieru version (#3304)",
+      "note": "2026-10-13 的小补丁已提交到自有 mihomo Alpha 8ebcb536 并推送。尚未发布 Prerelease-Alpha。",
       "ported": [
         {
           "sha": "8453e589df956192fbdd713ad1e1c239d3d805ac",
@@ -172,6 +172,97 @@
           "date": "2026-09-13",
           "how": "Selective adaptation; see docs/upstream-port-2026-09-13.md",
           "status": "Committed as a043a65a, pushed to Alpha and published as alpha-a043a65 / Prerelease-Alpha"
+        },
+        {
+          "sha": "1cdca1a01541900b2185964195ff726401fbe4ee",
+          "subject": "fix: handle decryption handshake errors in server",
+          "date": "2026-10-13",
+          "how": "Clean apply. Close the original conn when VLESS decryption handshake fails, and keep the handshake conn only on success.",
+          "status": "Applied in mihomo working tree on 66858b97. Committed as 8ebcb536 on Alpha. Prerelease-Alpha not published."
+        },
+        {
+          "sha": "e0f1d2b2fd1bb6bfff19432d3092fc1b37767895",
+          "subject": "fix: close udp endpoint in mieru server",
+          "date": "2026-10-13",
+          "how": "Clean apply.",
+          "status": "Applied in mihomo working tree on 66858b97. Committed as 8ebcb536 on Alpha. Prerelease-Alpha not published."
+        },
+        {
+          "sha": "faeb537ae276bfda63cbc6058170757edb50c006",
+          "subject": "fix: close connection after error handling in tuic server",
+          "date": "2026-10-13",
+          "how": "Clean apply.",
+          "status": "Applied in mihomo working tree on 66858b97. Committed as 8ebcb536 on Alpha. Prerelease-Alpha not published."
+        },
+        {
+          "sha": "7d7532d49f006404f0192f5e109778c655d1899d",
+          "subject": "fix: error using of safeConnClose in sudoku outbound",
+          "date": "2026-10-13",
+          "how": "Clean apply. Capture the conn for the defer so a later reassignment does not close the wrong socket.",
+          "status": "Applied in mihomo working tree on 66858b97. Committed as 8ebcb536 on Alpha. Prerelease-Alpha not published."
+        },
+        {
+          "sha": "0436650753f75bc91aafa8e6d26b6aed7872a9cf",
+          "subject": "fix: close connection after error handling in doq",
+          "date": "2026-10-13",
+          "how": "Adapted. Local Dial failure already closed packetConn. Added the same close on SplitHostPort and TLS-config errors. Rechecked 2026-10-13: both closes run before quic.Transport takes ownership.",
+          "status": "Rechecked 2026-10-13, keep. Applied in mihomo working tree on 66858b97. Committed as 8ebcb536 on Alpha. Prerelease-Alpha not published."
+        },
+        {
+          "sha": "78210c9c724299fbffd8036a697d431d8974d8e5",
+          "subject": "fix: close connection after error handling in kcptun",
+          "date": "2026-10-13",
+          "how": "Clean apply.",
+          "status": "Applied in mihomo working tree on 66858b97. Committed as 8ebcb536 on Alpha. Prerelease-Alpha not published."
+        },
+        {
+          "sha": "dc66a8a180c0fa1c2b91cf5413426e68dbca320e",
+          "subject": "fix: close connection after error handling in handleContextListener",
+          "date": "2026-10-13",
+          "how": "Clean apply.",
+          "status": "Applied in mihomo working tree on 66858b97. Committed as 8ebcb536 on Alpha. Prerelease-Alpha not published."
+        },
+        {
+          "sha": "5019cc090ed7cafb76643f964a76b1e97aee2985",
+          "subject": "fix: potential race condition in c.idleSession.Len() in idleCleanupExpTime() for anytls (#3225)",
+          "date": "2026-10-13",
+          "how": "Clean apply. Read idleSession.Len under idleSessionLock.",
+          "status": "Applied in mihomo working tree on 66858b97. Committed as 8ebcb536 on Alpha. Prerelease-Alpha not published."
+        },
+        {
+          "sha": "afe94dafef8cb61472a0442d9af3a19c288a380e",
+          "subject": "fix: set udp InUser metadata for mieru inbound (#3236)",
+          "date": "2026-10-13",
+          "how": "Clean apply after the UDP close patch. Rechecked 2026-10-13: listener name still comes from BaseOption.Additions, which overwrites InName. InUser is the mieru username and is not overwritten. Accept already requires UserContext. UDP append is safe because that additions slice has cap == len.",
+          "status": "Rechecked 2026-10-13, keep. Applied in mihomo working tree on 66858b97. Committed as 8ebcb536 on Alpha. Prerelease-Alpha not published."
+        },
+        {
+          "sha": "8d57a8c57c44125f2a59899f0e40efd3557f694f",
+          "subject": "fix: exclude opcode from P_DATA_V1 AEAD additional data for OpenVPN (#3237)",
+          "date": "2026-10-13",
+          "how": "Source applied cleanly. Test adapted because local NewDataChannel has no key-id argument and always uses key id 0. Rechecked 2026-10-13: decrypt test still seals a V1 packet with key-id 4 and packet-id-only additional data.",
+          "status": "Rechecked 2026-10-13, keep. go test ./transport/openvpn passed. Committed as 8ebcb536 on Alpha. Prerelease-Alpha not published."
+        },
+        {
+          "sha": "3c947c76d4f48a938aace935a30a1da1364a1b1b",
+          "subject": "chore: convert support xhttp `extra.headers` (#3230)",
+          "date": "2026-10-13",
+          "how": "Clean apply. Subscription converter copies xhttp extra.headers.",
+          "status": "Applied in mihomo working tree on 66858b97. go test ./common/convert passed. Committed as 8ebcb536 on Alpha. Prerelease-Alpha not published."
+        },
+        {
+          "sha": "80101933c007185c7a72efb3a377482b2bb70246",
+          "subject": "fix: bound doh dials so ones the query gave up on cannot pile up (#3274)",
+          "date": "2026-10-13",
+          "how": "Adapted. Dial and TLS handshake use dialTimeout. Local MaxConnsPerHost and MaxIdleConns kept. Rechecked 2026-10-13: cancel runs when DialContext returns, and DNSDialer does not bind the conn lifetime to that context.",
+          "status": "Rechecked 2026-10-13, keep. Applied in mihomo working tree on 66858b97. Committed as 8ebcb536 on Alpha. Prerelease-Alpha not published."
+        },
+        {
+          "sha": "e4dd968de9e10ecc6770acfafd306edeb578eb52",
+          "subject": "fix: keep fake-ip allocation state when cloning the pool on reload (#3283)",
+          "date": "2026-10-13",
+          "how": "Clean apply, including the new pool test.",
+          "status": "Applied in mihomo working tree on 66858b97. go test ./component/fakeip passed. Committed as 8ebcb536 on Alpha. Prerelease-Alpha not published."
         }
       ],
       "skipped": [
@@ -299,6 +390,126 @@
           "subject": "fix: typo in config.yaml (#3145)",
           "reason": "Deferred from targeted shortlist: feature/platform change or broad refactor; no patch ported and no claim of complete behavioral audit.",
           "reviewDate": "2026-09-13"
+        },
+        {
+          "sha": "94ccba566194346a4e15ac0daf7f65cde1ba156c",
+          "subject": "fix: mieru listener doesn't obey \"listen\" config (#3205)",
+          "reason": "Needs ListenIPAddress from mieru v3.37. Local module is v3.33.0, so the one-line config change does not compile without a multi-version dependency jump.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "c210be21e0e6806e42946eaf579ec0246bc20764",
+          "subject": "chore: buffer geodata reads with a 16 KiB reader (#3185)",
+          "reason": "Patch applies, but it rewrites memconservative geodata decoding. Left out until there are fixture tests for matched and truncated records.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "187c6342c4cbcdd5652d5da05bbb0ccb00ee53b7",
+          "subject": "fix: close connection after error handling in snell outbound",
+          "reason": "Local pool calls snellStreamConn, which does not return a handshake error. The upstream close path is not present.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "06b2c5b887922b5312c09bca121184fe3a090af6",
+          "subject": "fix: close connection after error handling in mkcp outbound",
+          "reason": "Local VMess dialContext has no mkcp or kcp branch.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "ab405bad5beeeac8b003bb01f60f134f6df54471",
+          "subject": "feat: support `stack: mips` in tun configuration",
+          "reason": "New TUN stack feature, not a small fix.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "fbb674227d5cf5a3796a1dd1451849fa1872884a",
+          "subject": "fix: restart EasyTier outbound after silent overlay failure (#3215)",
+          "reason": "Local tree has no adapter/outbound/easytier.go. EasyTier itself was already deferred.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "91dd03a9e5fd08efe75e34188f0f4f8deb643ebb",
+          "subject": "chore: support lazy receive buffer reads for mipstack and gvisor",
+          "reason": "API change plus several module bumps. Local sing-tun is v0.4.20.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "3025efad065a9ae3d7491faebaf7f81b0aa70b9f",
+          "subject": "feat: add load-balance hash-key to pin a session on the inbound user (#3133)",
+          "reason": "New load-balance feature.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "41b8a059158507284e9aefd4e53ef1b38d22ae5c",
+          "subject": "fix: account for TCP options in effective MSS",
+          "reason": "Fix lives in a mipstack pseudo-version bump. Local tree has no direct mipstack require.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "f103639c808d93a2c34cae56757b458862871b22",
+          "subject": "chore: update mieru version (#3242)",
+          "reason": "Dependency bump only. Local mieru is v3.33.0.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "63bd52ec794b7051569b76ede2f6cdbf4c091fda",
+          "subject": "chore: change default IP stack mode to mips and support `congestion-controller` option for tun",
+          "reason": "Default-stack change tied to the mips feature, which was not ported.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "60f70cec633c75c08d2190cd632d0a11e8843711",
+          "subject": "fix: align unconnected UDP and raw IP ICMP errors with Linux for mipstack",
+          "reason": "Fix lives in a mipstack pseudo-version bump. Local sing-tun is v0.4.20.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "134176994f6624bf5a20cbe5e3bd9b48ba8c5c47",
+          "subject": "chore: support RX checksum offload for mipstack",
+          "reason": "Module bump for a feature, not a local source fix.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "8fa048d3762ea19cf11d8b35313325e6cad3ee71",
+          "subject": "fix: half-close in sing-mux",
+          "reason": "Fix is sing-mux v0.3.12. Local module is v0.3.9, so this is a multi-version dependency jump.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "409ee57ef26eb44021993ffa97c84209d3da3a7f",
+          "subject": "fix: populate HWCap from auxv on linux",
+          "reason": "Bumps metacubex/cpu and metacubex/utls. Local utls is v1.8.4; upstream moves to v1.8.8.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "ac652970fe33a3dc11a910089f6cab6370b1398e",
+          "subject": "fix: nil pconn deref when ctx is canceled during h2 ClientConn setup",
+          "reason": "Fix is metacubex/http v0.1.8. Local module is v0.1.6, so the crash fix is not a one-line source patch.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "88dcbf7f1614a67c3b36b848ee3592dfa92ada36",
+          "subject": "fix: default listener tun to mips stack (#3264)",
+          "reason": "One-line default change for the mips stack feature, which was not ported.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "9f053c49075de076d83d3e5918241e410f7e9adf",
+          "subject": "chore: lazy init wireguard device and stack",
+          "reason": "WireGuard init refactor plus a module bump, not a small crash fix.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "1354e52e6f72b94c1e684788f1a9c3e0a731e544",
+          "subject": "fix: unpassed loadbalance test",
+          "reason": "Test-only follow-up to the load-balance hash-key feature, which was not ported.",
+          "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "bc76c1398c6e70089367a30169d0df7c7f77c42d",
+          "subject": "chore: update mieru version (#3304)",
+          "reason": "Dependency bump only. Local mieru remains v3.33.0.",
+          "reviewDate": "2026-10-13"
         }
       ],
       "pending": [
@@ -346,10 +557,11 @@
         }
       ],
       "lastIncrementalReview": {
-        "date": "2026-09-13",
-        "from": "f295ba6da4928af24f6f4c15f732e728b045db0a",
-        "commitCount": 31,
-        "scope": "All incremental subjects screened; selected fix diffs compared with local source. No builds, runtime tests or patches applied."
+        "date": "2026-10-13",
+        "from": "dca26db017bcde90071f3e16f97b12fafbccfa31",
+        "to": "bc76c1398c6e70089367a30169d0df7c7f77c42d",
+        "commitCount": 33,
+        "scope": "All 33 subjects screened. Thirteen small patches committed as 8ebcb536 and pushed to Alpha. go test passed for fakeip, openvpn, dns, common/net, common/convert, sing_vless, and adapter/outbound. Prerelease-Alpha not published."
       }
     },
     "clash-verge-rev": {
