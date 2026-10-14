@@ -119,6 +119,12 @@ class UiStore(context: Context) {
         defaultValue = ""
     )
 
+    /** Last panel left in front. Empty until the user opens one. */
+    var lastPanel: String by store.string(
+        key = "last_panel",
+        defaultValue = "",
+    )
+
     /** 前端自己记录代理页模式（规则/全局/直连），用于按钮选中状态，与电脑端一致不依赖 core 返回的 mode */
     var proxyUiMode: TunnelState.Mode by store.enum(
         key = "proxy_ui_mode",

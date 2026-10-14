@@ -4,8 +4,10 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
 import com.github.kr328.clash.common.compat.isAllowForceDarkCompat
 import com.github.kr328.clash.common.compat.isLightNavigationBarCompat
 import com.github.kr328.clash.common.compat.isLightStatusBarsCompat
@@ -58,6 +60,7 @@ abstract class BaseActivity<D : Design<*>> : AppCompatActivity(),
     private var deferRunning = false
     private val nextRequestKey = AtomicInteger(0)
     private var dayNight: DayNight = DayNight.Day
+    private var panelDecisionPosted = false
 
     protected abstract suspend fun main()
 
@@ -92,17 +95,52 @@ abstract class BaseActivity<D : Design<*>> : AppCompatActivity(),
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         applyDayNight()
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (handleUserBack()) return
+                PanelMemory.noteUserBack()
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+            }
+        })
 
         launch {
             main()
         }
     }
 
+    /**
+     * Return true when this screen handles back itself. Otherwise the user is
+     * leaving the panel, and the main screen must not immediately reopen it.
+     */
+    protected open fun handleUserBack(): Boolean = false
+
     override fun onStart() {
         super.onStart()
         activityStarted = true
         Remote.broadcasts.addObserver(this)
         events.trySend(Event.ActivityStart)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val panel = PanelMemory.idOf(this) ?: return
+        if (panelDecisionPosted) return
+        panelDecisionPosted = true
+        window.decorView.post {
+            panelDecisionPosted = false
+            if (isFinishing || !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return@post
+            val reopen = PanelRestore.panelToReopen(
+                visible = panel,
+                remembered = AppPanel.fromId(uiStore.lastPanel),
+                userNavigatedBack = PanelMemory.userNavigatedBack(),
+            )
+            if (reopen != null) {
+                startActivity(PanelMemory.intent(this@BaseActivity, reopen))
+                return@post
+            }
+            uiStore.lastPanel = panel.storageId
+        }
     }
 
     override fun onStop() {

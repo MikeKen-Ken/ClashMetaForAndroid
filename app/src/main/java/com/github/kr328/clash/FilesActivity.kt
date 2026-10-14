@@ -55,6 +55,7 @@ class FilesActivity : BaseActivity<FilesDesign>() {
                         when (it) {
                             FilesDesign.Request.PopStack -> {
                                 if (stack.empty()) {
+                                    PanelMemory.noteUserBack()
                                     finish()
                                 } else {
                                     stack.pop()
@@ -122,8 +123,9 @@ class FilesActivity : BaseActivity<FilesDesign>() {
         }
     }
 
-    override fun onBackPressed() {
+    override fun handleUserBack(): Boolean {
         design?.requests?.trySend(FilesDesign.Request.PopStack)
+        return design != null
     }
 
     private suspend fun FilesDesign.fetch(client: FilesClient, stack: Stack<String>, root: String) {

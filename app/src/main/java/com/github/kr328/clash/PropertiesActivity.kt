@@ -85,15 +85,19 @@ class PropertiesActivity : BaseActivity<PropertiesDesign>() {
         }
     }
 
-    override fun onBackPressed() {
-        design?.apply {
+    override fun handleUserBack(): Boolean {
+        val current = design ?: return false
+        current.apply {
             launch {
                 if (!progressing) {
-                    if (original == profile || requestExitWithoutSaving())
+                    if (original == profile || requestExitWithoutSaving()) {
+                        PanelMemory.noteUserBack()
                         finish()
+                    }
                 }
             }
-        } ?: return super.onBackPressed()
+        }
+        return true
     }
 
     private suspend fun PropertiesDesign.verifyAndCommit() {
