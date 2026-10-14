@@ -1,5 +1,6 @@
 package com.github.kr328.clash
 
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
@@ -7,7 +8,6 @@ import android.view.View
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Lifecycle
 import com.github.kr328.clash.common.compat.isAllowForceDarkCompat
 import com.github.kr328.clash.common.compat.isLightNavigationBarCompat
 import com.github.kr328.clash.common.compat.isLightStatusBarsCompat
@@ -125,22 +125,30 @@ abstract class BaseActivity<D : Design<*>> : AppCompatActivity(),
     override fun onResume() {
         super.onResume()
         val panel = PanelMemory.idOf(this) ?: return
-        if (panelDecisionPosted) return
-        panelDecisionPosted = true
-        window.decorView.post {
-            panelDecisionPosted = false
-            if (isFinishing || !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return@post
-            val reopen = PanelRestore.panelToReopen(
-                visible = panel,
-                remembered = AppPanel.fromId(uiStore.lastPanel),
-                userNavigatedBack = PanelMemory.userNavigatedBack(),
+        val reopen = PanelRestore.panelToReopen(
+            visible = panel,
+            remembered = AppPanel.fromId(uiStore.lastPanel),
+            userNavigatedBack = PanelMemory.userNavigatedBack(),
+        )
+        if (reopen != null) {
+            if (panelDecisionPosted) return
+            panelDecisionPosted = true
+            window.decorView.alpha = 0f
+            startActivity(
+                PanelMemory.intent(this, reopen)
+                    .addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION),
             )
-            if (reopen != null) {
-                startActivity(PanelMemory.intent(this@BaseActivity, reopen))
-                return@post
+            if (Build.VERSION.SDK_INT >= 34) {
+                overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, 0, 0)
+            } else {
+                @Suppress("DEPRECATION")
+                overridePendingTransition(0, 0)
             }
-            uiStore.lastPanel = panel.storageId
+            return
         }
+        panelDecisionPosted = false
+        window.decorView.alpha = 1f
+        uiStore.lastPanel = panel.storageId
     }
 
     override fun onStop() {
