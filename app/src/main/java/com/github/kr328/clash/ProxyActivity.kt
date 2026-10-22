@@ -216,6 +216,11 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                     urlTestManualOverrides[groupName] =
                                         if (it.clearManualSelection) "" else it.name
                                 }
+                                val alreadyPinned = states[it.index].nowIsManual &&
+                                    states[it.index].now == it.name
+                                if (!it.clearManualSelection && alreadyPinned) {
+                                    // patchSelector on the pinned node starts a core delay test.
+                                } else {
                                 withClash {
                                     if (it.clearManualSelection) {
                                         clearManualSelectionForGroup(groupName)
@@ -263,6 +268,7 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                     // 选择后 3.5s 时查询一次，仅刷新当前选中节点所在组
                                     delay(3500L)
                                     if (idx in names.indices) reloadGroup()
+                                }
                                 }
                             }
                             is ProxyDesign.Request.TestPinned -> {

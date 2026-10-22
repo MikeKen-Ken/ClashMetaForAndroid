@@ -3,11 +3,8 @@ package com.github.kr328.clash.design.adapter
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
-import android.view.MotionEvent
-import android.view.ViewConfiguration
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import kotlin.math.abs
 import com.github.kr328.clash.design.component.ProxyRegion
 import com.github.kr328.clash.design.component.ProxyView
 import com.github.kr328.clash.design.component.ProxyViewConfig
@@ -113,13 +110,12 @@ class ProxyAdapter(
             val isSelector = selectable
             isFocusable = isSelector
             isClickable = isSelector
-            if (isSelector && current.isManualSelection) {
-                bindPinnedTouch(this, current)
-            } else {
-                setOnTouchListener(null)
-                setOnClickListener {
-                    if (isSelector) clicked(current.proxy.name, ProxyNodeTap.Select)
-                }
+            setOnTouchListener(null)
+            setOnClickListener {
+                if (!isSelector) return@setOnClickListener
+                // Read the pin at click time. The row is often drawn as pinned
+                // before the list rebinds, and the old listener would select again.
+                dispatchTap(current.isManualSelection, current.proxy.name)
             }
 
             current.update(true)
@@ -130,51 +126,22 @@ class ProxyAdapter(
         return states.size
     }
 
-    private fun bindPinnedTouch(view: ProxyView, state: ProxyViewState) {
-        val slop = ViewConfiguration.get(view.context).scaledTouchSlop
-        var downX = 0f
-        var downY = 0f
-        var tap = false
-        view.setOnClickListener(null)
-        view.setOnTouchListener { _, event ->
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
-                    downX = event.x
-                    downY = event.y
-                    tap = true
-                    true
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    if (tap && (abs(event.x - downX) > slop || abs(event.y - downY) > slop)) {
-                        tap = false
-                    }
-                    true
-                }
-                MotionEvent.ACTION_UP -> {
-                    if (tap) onPinnedClick(state.proxy.name)
-                    true
-                }
-                MotionEvent.ACTION_CANCEL -> {
-                    tap = false
-                    true
-                }
-                else -> false
-            }
-        }
-    }
-
-    private fun onPinnedClick(name: String) {
+    private fun dispatchTap(manual: Boolean, name: String) {
         val now = SystemClock.uptimeMillis()
-        if (name == pendingTapName && now - pendingTapAt <= DOUBLE_TAP_MS) {
-            tapHandler.removeCallbacks(confirmTap)
+        val secondTap = pendingTapName == name && now - pendingTapAt <= DOUBLE_TAP_MS
+        tapHandler.removeCallbacks(confirmTap)
+        if (secondTap) {
             pendingTapName = null
             clicked(name, ProxyNodeTap.Unpin)
             return
         }
-        tapHandler.removeCallbacks(confirmTap)
         pendingTapName = name
         pendingTapAt = now
-        tapHandler.postDelayed(confirmTap, DOUBLE_TAP_MS)
+        if (manual) {
+            tapHandler.postDelayed(confirmTap, DOUBLE_TAP_MS)
+        } else {
+            clicked(name, ProxyNodeTap.Select)
+        }
     }
 
     private companion object {
