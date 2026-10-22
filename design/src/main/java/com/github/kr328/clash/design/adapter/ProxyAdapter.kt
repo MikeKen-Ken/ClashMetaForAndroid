@@ -1,9 +1,13 @@
 package com.github.kr328.clash.design.adapter
 
-import android.view.GestureDetector
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.view.MotionEvent
+import android.view.ViewConfiguration
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import kotlin.math.abs
 import com.github.kr328.clash.design.component.ProxyRegion
 import com.github.kr328.clash.design.component.ProxyView
 import com.github.kr328.clash.design.component.ProxyViewConfig
@@ -21,6 +25,15 @@ class ProxyAdapter(
     private val clicked: (String, ProxyNodeTap) -> Unit,
 ) : RecyclerView.Adapter<ProxyAdapter.Holder>() {
     class Holder(val view: ProxyView) : RecyclerView.ViewHolder(view)
+
+    private val tapHandler = Handler(Looper.getMainLooper())
+    private var pendingTapName: String? = null
+    private var pendingTapAt = 0L
+    private val confirmTap = Runnable {
+        val name = pendingTapName ?: return@Runnable
+        pendingTapName = null
+        clicked(name, ProxyNodeTap.TestPinned)
+    }
 
     var selectable: Boolean = false
     var states: List<ProxyViewState> = emptyList()
@@ -100,31 +113,10 @@ class ProxyAdapter(
             val isSelector = selectable
             isFocusable = isSelector
             isClickable = isSelector
-            setOnTouchListener(null)
             if (isSelector && current.isManualSelection) {
-                // A pinned node: one tap tests that node, a double tap clears the pin.
-                val detector = GestureDetector(
-                    context,
-                    object : GestureDetector.SimpleOnGestureListener() {
-                        override fun onDown(e: MotionEvent): Boolean = true
-
-                        override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                            clicked(current.proxy.name, ProxyNodeTap.TestPinned)
-                            return true
-                        }
-
-                        override fun onDoubleTap(e: MotionEvent): Boolean {
-                            clicked(current.proxy.name, ProxyNodeTap.Unpin)
-                            return true
-                        }
-                    },
-                )
-                setOnClickListener(null)
-                setOnTouchListener { _, event ->
-                    detector.onTouchEvent(event)
-                    false
-                }
+                bindPinnedTouch(this, current)
             } else {
+                setOnTouchListener(null)
                 setOnClickListener {
                     if (isSelector) clicked(current.proxy.name, ProxyNodeTap.Select)
                 }
@@ -136,5 +128,56 @@ class ProxyAdapter(
 
     override fun getItemCount(): Int {
         return states.size
+    }
+
+    private fun bindPinnedTouch(view: ProxyView, state: ProxyViewState) {
+        val slop = ViewConfiguration.get(view.context).scaledTouchSlop
+        var downX = 0f
+        var downY = 0f
+        var tap = false
+        view.setOnClickListener(null)
+        view.setOnTouchListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    downX = event.x
+                    downY = event.y
+                    tap = true
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (tap && (abs(event.x - downX) > slop || abs(event.y - downY) > slop)) {
+                        tap = false
+                    }
+                    true
+                }
+                MotionEvent.ACTION_UP -> {
+                    if (tap) onPinnedClick(state.proxy.name)
+                    true
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    tap = false
+                    true
+                }
+                else -> false
+            }
+        }
+    }
+
+    private fun onPinnedClick(name: String) {
+        val now = SystemClock.uptimeMillis()
+        if (name == pendingTapName && now - pendingTapAt <= DOUBLE_TAP_MS) {
+            tapHandler.removeCallbacks(confirmTap)
+            pendingTapName = null
+            clicked(name, ProxyNodeTap.Unpin)
+            return
+        }
+        tapHandler.removeCallbacks(confirmTap)
+        pendingTapName = name
+        pendingTapAt = now
+        tapHandler.postDelayed(confirmTap, DOUBLE_TAP_MS)
+    }
+
+    private companion object {
+        const val DOUBLE_TAP_MS = 500L
     }
 }
