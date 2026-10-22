@@ -8,6 +8,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.github.kr328.clash.core.model.Proxy
 import com.github.kr328.clash.core.model.TunnelState
 import com.github.kr328.clash.design.adapter.ProxyAdapter
+import com.github.kr328.clash.design.adapter.ProxyNodeTap
 import com.github.kr328.clash.design.adapter.ProxyPageAdapter
 import com.github.kr328.clash.design.component.ProxyPageFactory
 import com.github.kr328.clash.design.component.ProxyRegionBar
@@ -49,6 +50,7 @@ class ProxyDesign(
             val name: String,
             val clearManualSelection: Boolean = false,
         ) : Request()
+        data class TestPinned(val index: Int, val name: String) : Request()
         data class UrlTest(val index: Int) : Request()
     }
 
@@ -157,8 +159,13 @@ class ProxyDesign(
                     surface,
                     config,
                     List(groupNames.size) { index ->
-                        ProxyAdapter(config) { name, clearManualSelection ->
-                            requests.trySend(Request.Select(index, name, clearManualSelection))
+                        ProxyAdapter(config) { name, tap ->
+                            val request = when (tap) {
+                                ProxyNodeTap.Select -> Request.Select(index, name)
+                                ProxyNodeTap.Unpin -> Request.Select(index, name, clearManualSelection = true)
+                                ProxyNodeTap.TestPinned -> Request.TestPinned(index, name)
+                            }
+                            requests.trySend(request)
                         }
                     }
                 ) {

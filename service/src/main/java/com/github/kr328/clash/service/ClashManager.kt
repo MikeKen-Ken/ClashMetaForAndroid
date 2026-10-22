@@ -321,6 +321,11 @@ class ClashManager(private val context: Context) : IClashManager,
         )
     }
 
+    override suspend fun healthCheckProxy(group: String, proxy: String, timeoutMs: Int): DelayTestResult {
+        // One pinned node. Leave the saved selection alone. The group test clears it on success.
+        return Clash.healthCheckProxy(group, proxy, timeoutMs)
+    }
+
     override suspend fun applyManualConnectivityOrder() {
         val profile = store.activeProfile ?: return
         val selections = SelectionDao().querySelections(profile)

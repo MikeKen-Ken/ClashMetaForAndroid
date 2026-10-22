@@ -185,6 +185,12 @@ object Clash {
         return BridgeJson.decodeFromString(DelayTestResult.serializer(), bridgeResult.await())
     }
 
+    suspend fun healthCheckProxy(group: String, name: String, timeoutMs: Int): DelayTestResult {
+        val bridgeResult = CompletableDeferred<String>()
+        Bridge.nativeHealthCheckProxy(bridgeResult, group, name, timeoutMs)
+        return BridgeJson.decodeFromString(DelayTestResult.serializer(), bridgeResult.await())
+    }
+
     fun healthCheckAll() {
         Bridge.nativeHealthCheckAll()
     }

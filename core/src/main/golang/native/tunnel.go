@@ -94,6 +94,17 @@ func healthCheckWithTimeout(completable unsafe.Pointer, name C.c_string, timeout
 	}(C.GoString(name), int(timeoutMs), int(concurrency))
 }
 
+//export healthCheckProxy
+func healthCheckProxy(completable unsafe.Pointer, group C.c_string, proxy C.c_string, timeoutMs C.int) {
+	go func(groupName string, proxyName string, timeout int) {
+		defer C.release_object(completable)
+
+		result := tunnel.HealthCheckProxy(groupName, proxyName, timeout)
+
+		C.complete_string(completable, marshalJson(result), nil)
+	}(C.GoString(group), C.GoString(proxy), int(timeoutMs))
+}
+
 //export healthCheckAll
 func healthCheckAll() {
 	tunnel.HealthCheckAll()

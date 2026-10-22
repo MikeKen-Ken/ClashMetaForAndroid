@@ -1,5 +1,7 @@
 package com.github.kr328.clash.design.adapter
 
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.github.kr328.clash.design.component.ProxyRegion
@@ -8,9 +10,15 @@ import com.github.kr328.clash.design.component.ProxyViewConfig
 import com.github.kr328.clash.design.component.ProxyViewState
 import com.github.kr328.clash.design.component.isProxyDelayWithinGroupTimeout
 
+enum class ProxyNodeTap {
+    Select,
+    TestPinned,
+    Unpin,
+}
+
 class ProxyAdapter(
     private val config: ProxyViewConfig,
-    private val clicked: (String, Boolean) -> Unit,
+    private val clicked: (String, ProxyNodeTap) -> Unit,
 ) : RecyclerView.Adapter<ProxyAdapter.Holder>() {
     class Holder(val view: ProxyView) : RecyclerView.ViewHolder(view)
 
@@ -89,15 +97,38 @@ class ProxyAdapter(
         holder.view.apply {
             state = current
 
-            setOnClickListener {
-                // 再次点击当前「手动选择」节点时，触发清除手动选择逻辑。
-                clicked(current.proxy.name, current.isManualSelection)
-            }
-
             val isSelector = selectable
-
             isFocusable = isSelector
             isClickable = isSelector
+            setOnTouchListener(null)
+            if (isSelector && current.isManualSelection) {
+                // A pinned node: one tap tests that node, a double tap clears the pin.
+                val detector = GestureDetector(
+                    context,
+                    object : GestureDetector.SimpleOnGestureListener() {
+                        override fun onDown(e: MotionEvent): Boolean = true
+
+                        override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                            clicked(current.proxy.name, ProxyNodeTap.TestPinned)
+                            return true
+                        }
+
+                        override fun onDoubleTap(e: MotionEvent): Boolean {
+                            clicked(current.proxy.name, ProxyNodeTap.Unpin)
+                            return true
+                        }
+                    },
+                )
+                setOnClickListener(null)
+                setOnTouchListener { _, event ->
+                    detector.onTouchEvent(event)
+                    false
+                }
+            } else {
+                setOnClickListener {
+                    if (isSelector) clicked(current.proxy.name, ProxyNodeTap.Select)
+                }
+            }
 
             current.update(true)
         }

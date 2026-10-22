@@ -235,6 +235,21 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeHealthCheckWithTimeout(JNIE
     healthCheckWithTimeout(_completable, _name, (int) timeoutMs, (int) concurrency);
 }
 
+JNIEXPORT void JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeHealthCheckProxy(JNIEnv *env, jobject thiz,
+                                                                      jobject completable,
+                                                                      jstring group,
+                                                                      jstring proxy,
+                                                                      jint timeoutMs) {
+    TRACE_METHOD();
+
+    jobject _completable = new_global(completable);
+    scoped_string _group = get_string(group);
+    scoped_string _proxy = get_string(proxy);
+
+    healthCheckProxy(_completable, _group, _proxy, (int) timeoutMs);
+}
+
 JNIEXPORT jboolean JNICALL
 Java_com_github_kr328_clash_core_bridge_Bridge_nativePatchSelector(JNIEnv *env, jobject thiz,
                                                                    jstring selector, jstring name) {

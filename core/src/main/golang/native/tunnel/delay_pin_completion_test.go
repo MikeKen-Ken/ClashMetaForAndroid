@@ -79,6 +79,48 @@ func TestDelayCompletionReturnsGroupsToAutomatic(t *testing.T) {
 	}
 }
 
+func TestHealthCheckProxyKeepsManualPin(t *testing.T) {
+	for _, kind := range []string{"url-test", "fallback", "selector"} {
+		for _, fail := range []bool{false, true} {
+			name := "ok"
+			wantSucceeded := 1
+			if fail {
+				name = "failed"
+				wantSucceeded = 0
+			}
+			t.Run(kind+"/"+name, func(t *testing.T) {
+				oldProxies, oldProviders := coreTunnel.Proxies(), coreTunnel.Providers()
+				t.Cleanup(func() { coreTunnel.UpdateProxies(oldProxies, oldProviders) })
+				leaf := &completionLeaf{fail: fail}
+				option := &outboundgroup.GroupCommonOption{Name: "Auto", URL: "https://example.test/204"}
+				providers := []P.ProxyProvider{completionProvider{leaf: leaf}}
+				var group interface {
+					C.ProxyAdapter
+					ForceSet(string)
+					NowIsManual() bool
+				}
+				switch kind {
+				case "url-test":
+					group = outboundgroup.NewURLTest(option, providers)
+				case "fallback":
+					group = outboundgroup.NewFallback(option, providers)
+				default:
+					group = outboundgroup.NewSelector(option, providers)
+				}
+				group.ForceSet("node")
+				coreTunnel.UpdateProxies(map[string]C.Proxy{"Auto": adapter.NewProxy(group)}, nil)
+				result := HealthCheckProxy("Auto", "node", 1000)
+				if result.Succeeded != wantSucceeded {
+					t.Fatalf("result = %+v", result)
+				}
+				if !group.NowIsManual() {
+					t.Fatal("single-node delay test cleared the manual pin")
+				}
+			})
+		}
+	}
+}
+
 func TestStartupOrderDoesNotCreateManualPin(t *testing.T) {
 	oldProxies, oldProviders := coreTunnel.Proxies(), coreTunnel.Providers()
 	t.Cleanup(func() { coreTunnel.UpdateProxies(oldProxies, oldProviders) })

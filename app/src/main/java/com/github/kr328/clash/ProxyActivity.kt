@@ -91,6 +91,8 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
         var refreshScheduled = false
         /** 当前正在执行组级测速的代理组名 */
         val urlTestingGroups = mutableSetOf<String>()
+        /** 正在测速的「组 + 节点」，避免连点重复探测 */
+        val nodeDelayTests = mutableSetOf<String>()
         /** 测速期间用户已手动切换的组 → 节点名；空字符串表示用户清钉 */
         val urlTestManualOverrides = mutableMapOf<String, String>()
         fun scheduleGroupReload(groupName: String) {
@@ -261,6 +263,42 @@ class ProxyActivity : BaseActivity<ProxyDesign>() {
                                     // 选择后 3.5s 时查询一次，仅刷新当前选中节点所在组
                                     delay(3500L)
                                     if (idx in names.indices) reloadGroup()
+                                }
+                            }
+                            is ProxyDesign.Request.TestPinned -> {
+                                val idx = it.index
+                                if (idx in names.indices) {
+                                    val groupName = names[idx]
+                                    val proxyName = it.name
+                                    val key = "$groupName\u0000$proxyName"
+                                    if (nodeDelayTests.add(key)) {
+                                        launch {
+                                            try {
+                                                design.showNativeToast(
+                                                    getString(R.string.node_delay_test_started, proxyName),
+                                                )
+                                                val result = withClash {
+                                                    healthCheckProxy(
+                                                        groupName,
+                                                        proxyName,
+                                                        uiStore.proxyDelayTestTimeoutMs,
+                                                    )
+                                                }
+                                                if (!result.hasSuccess) {
+                                                    design.showNativeToast(
+                                                        getString(R.string.node_delay_test_failed, proxyName),
+                                                    )
+                                                }
+                                            } catch (e: Exception) {
+                                                design.showExceptionToast(e)
+                                            } finally {
+                                                nodeDelayTests.remove(key)
+                                            }
+                                            if (idx in names.indices) {
+                                                design.requests.send(ProxyDesign.Request.Reload(idx))
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             is ProxyDesign.Request.UrlTest -> {

@@ -22,6 +22,7 @@ interface IClashManager {
 
     suspend fun healthCheck(group: String)
     suspend fun healthCheckWithTimeout(group: String, timeoutMs: Int, concurrency: Int): DelayTestResult
+    suspend fun healthCheckProxy(group: String, proxy: String, timeoutMs: Int): DelayTestResult
     suspend fun applyManualConnectivityOrder()
     suspend fun updateProvider(type: Provider.Type, name: String)
 
