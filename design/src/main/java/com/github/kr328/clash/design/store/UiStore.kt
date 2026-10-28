@@ -81,6 +81,12 @@ class UiStore(context: Context) {
         defaultValue = 24,
     )
 
+    /** 0 disables automatic runtime YAML downloads. Allowed values: 0, 1, 6, 12, 24. */
+    var runtimeYamlAutoDownloadIntervalHours: Int by store.int(
+        key = "runtime_yaml_auto_download_interval_hours",
+        defaultValue = 0,
+    )
+
     var proxyExcludeNotSelectable by store.boolean(
         key = "proxy_exclude_not_selectable",
         defaultValue = false,

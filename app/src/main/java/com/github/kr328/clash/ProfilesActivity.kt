@@ -1,6 +1,7 @@
 package com.github.kr328.clash
 
 import com.github.kr328.clash.common.util.intent
+import com.github.kr328.clash.connectivitysync.ConnectivitySyncSettingsMirror
 import com.github.kr328.clash.common.util.setUUID
 import com.github.kr328.clash.common.util.ticker
 import com.github.kr328.clash.design.ProfilesDesign
@@ -46,6 +47,8 @@ class ProfilesActivity : BaseActivity<ProfilesDesign>() {
                             uploadRuntimeYaml(design)
                         ProfilesDesign.Request.DownloadRuntimeYaml ->
                             downloadRuntimeYaml(design)
+                        ProfilesDesign.Request.RuntimeYamlAutoDownloadChanged ->
+                            ConnectivitySyncSettingsMirror.push(this@ProfilesActivity)
                         ProfilesDesign.Request.UpdateAll ->
                             withProfile {
                                 try {

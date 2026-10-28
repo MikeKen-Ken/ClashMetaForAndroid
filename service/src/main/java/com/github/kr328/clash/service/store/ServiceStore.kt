@@ -100,6 +100,12 @@ class ServiceStore(context: Context) {
         defaultValue = 24,
     )
 
+    /** 0 disables automatic runtime YAML downloads. Allowed values: 0, 1, 6, 12, 24. */
+    var runtimeYamlAutoDownloadIntervalHours: Int by store.int(
+        key = "runtime_yaml_auto_download_interval_hours",
+        defaultValue = 0,
+    )
+
     /** True after the UI has published WebDAV settings, or after the one-time UI preference copy. */
     var connectivitySyncSettingsReady: Boolean by store.boolean(
         key = "connectivity_sync_settings_ready",

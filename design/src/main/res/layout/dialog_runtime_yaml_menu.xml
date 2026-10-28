@@ -30,5 +30,14 @@
             android:padding="@dimen/bottom_sheet_menu_items_padding"
             app:icon="@drawable/ic_baseline_cloud_download"
             app:text="@string/download_runtime_yaml" />
+
+        <com.github.kr328.clash.design.view.LargeActionLabel
+            android:id="@+id/auto_download"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="@{() -> master.requestRuntimeYamlAutoDownloadInterval(self)}"
+            android:padding="@dimen/bottom_sheet_menu_items_padding"
+            app:icon="@drawable/ic_baseline_update"
+            app:text="@string/runtime_yaml_auto_download" />
     </LinearLayout>
 </layout>

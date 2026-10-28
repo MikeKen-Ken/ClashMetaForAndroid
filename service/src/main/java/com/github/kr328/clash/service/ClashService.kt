@@ -39,6 +39,7 @@ class ClashService : BaseService() {
         install(SuspendModule(self))
         install(HealthCheckNotificationModule(self))
         install(ConnectivityAutoMergeModule(self))
+        install(RuntimeYamlAutoDownloadModule(self))
 
         try {
             while (isActive) {

@@ -44,6 +44,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         install(SuspendModule(self))
         install(HealthCheckNotificationModule(self))
         install(ConnectivityAutoMergeModule(self))
+        install(RuntimeYamlAutoDownloadModule(self))
 
         try {
             tun.open()

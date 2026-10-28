@@ -4,6 +4,7 @@ import android.content.Context
 import com.github.kr328.clash.common.Global
 import com.github.kr328.clash.design.store.UiStore
 import com.github.kr328.clash.service.connectivitysync.publishConnectivitySyncSettings
+import com.github.kr328.clash.service.runtimeyaml.publishRuntimeYamlAutoDownloadInterval
 import com.github.kr328.clash.service.store.ServiceStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -13,7 +14,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Copies WebDAV settings into the VPN process. The background service cannot trust the UI
- * preference file, and the merge timer lives in that process.
+ * preference file, and the connectivity merge and runtime YAML timers live in that process.
  */
 object ConnectivitySyncSettingsMirror {
     private const val PUSH_INTERVAL_MS = 15_000L
@@ -36,11 +37,13 @@ object ConnectivitySyncSettingsMirror {
 
     fun push(context: Context) {
         val ui = UiStore(context)
-        ServiceStore(context).publishConnectivitySyncSettings(
+        val service = ServiceStore(context)
+        service.publishConnectivitySyncSettings(
             url = ui.webdavUrl,
             username = ui.webdavUsername,
             password = ui.webdavPassword,
             intervalHours = ui.connectivitySyncIntervalHours,
         )
+        service.publishRuntimeYamlAutoDownloadInterval(ui.runtimeYamlAutoDownloadIntervalHours)
     }
 }

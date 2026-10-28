@@ -536,6 +536,13 @@
     <string name="runtime_yaml_requires_running">Start Clash.Meta before uploading the runtime YAML.</string>
     <string name="runtime_yaml_not_available">The runtime YAML is not available.</string>
     <string name="runtime_yaml_webdav_https_required">Runtime YAML transfer requires an HTTPS WebDAV URL</string>
+    <string name="runtime_yaml_auto_download">Auto download</string>
+    <string name="runtime_yaml_auto_download_message">While Clash is running, check WebDAV on this interval. An unchanged file is skipped. This replaces the imported runtime YAML profile and reloads it only when that profile is already active.</string>
+    <string name="runtime_yaml_auto_download_off">Off</string>
+    <string name="runtime_yaml_auto_download_1h">Every 1 hour</string>
+    <string name="runtime_yaml_auto_download_6h">Every 6 hours</string>
+    <string name="runtime_yaml_auto_download_12h">Every 12 hours</string>
+    <string name="runtime_yaml_auto_download_24h">Every 24 hours</string>
     <string name="upload">Upload</string>
     <string name="download">Download</string>
 </resources>

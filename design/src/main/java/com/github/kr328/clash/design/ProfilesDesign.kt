@@ -12,6 +12,7 @@ import com.github.kr328.clash.design.databinding.DialogProfilesMenuBinding
 import com.github.kr328.clash.design.databinding.DialogRuntimeYamlMenuBinding
 import com.github.kr328.clash.design.dialog.AppBottomSheetDialog
 import com.github.kr328.clash.design.ui.ToastDuration
+import com.github.kr328.clash.design.store.UiStore
 import com.github.kr328.clash.design.util.*
 import com.github.kr328.clash.service.model.Profile
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -26,6 +27,7 @@ class ProfilesDesign(context: Context) : Design<ProfilesDesign.Request>(context)
         object Create : Request()
         object UploadRuntimeYaml : Request()
         object DownloadRuntimeYaml : Request()
+        object RuntimeYamlAutoDownloadChanged : Request()
         data class Active(val profile: Profile) : Request()
         data class Update(val profile: Profile) : Request()
         data class Edit(val profile: Profile) : Request()
@@ -105,8 +107,37 @@ class ProfilesDesign(context: Context) : Design<ProfilesDesign.Request>(context)
 
         menu.master = this
         menu.self = dialog
+        menu.autoDownload.subtext = runtimeYamlIntervalLabel(
+            UiStore(context).runtimeYamlAutoDownloadIntervalHours,
+        )
         dialog.setContentView(menu.root)
         dialog.show()
+    }
+
+    fun requestRuntimeYamlAutoDownloadInterval(dialog: Dialog) {
+        dialog.dismiss()
+        val store = UiStore(context)
+        val values = intArrayOf(0, 1, 6, 12, 24)
+        val labels = values.map { runtimeYamlIntervalLabel(it) }.toTypedArray()
+        val selected = values.indexOf(store.runtimeYamlAutoDownloadIntervalHours).coerceAtLeast(0)
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.runtime_yaml_auto_download)
+            .setMessage(R.string.runtime_yaml_auto_download_message)
+            .setSingleChoiceItems(labels, selected) { picker, index ->
+                store.runtimeYamlAutoDownloadIntervalHours = values[index]
+                requests.trySend(Request.RuntimeYamlAutoDownloadChanged)
+                picker.dismiss()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun runtimeYamlIntervalLabel(hours: Int): String = when (hours) {
+        1 -> context.getString(R.string.runtime_yaml_auto_download_1h)
+        6 -> context.getString(R.string.runtime_yaml_auto_download_6h)
+        12 -> context.getString(R.string.runtime_yaml_auto_download_12h)
+        24 -> context.getString(R.string.runtime_yaml_auto_download_24h)
+        else -> context.getString(R.string.runtime_yaml_auto_download_off)
     }
 
     fun requestUploadRuntimeYaml(dialog: Dialog) {
