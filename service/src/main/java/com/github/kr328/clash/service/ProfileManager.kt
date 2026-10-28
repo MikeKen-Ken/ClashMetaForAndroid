@@ -13,7 +13,7 @@ import com.github.kr328.clash.service.runtimeyaml.RuntimeYamlImporter
 import com.github.kr328.clash.service.runtimeyaml.RuntimeYamlPendingBackup
 import com.github.kr328.clash.service.runtimeyaml.RuntimeYamlProfileSlot
 import com.github.kr328.clash.service.store.ServiceStore
-import com.github.kr328.clash.service.util.directoryLastModified
+import com.github.kr328.clash.service.util.configUpdatedAt
 import com.github.kr328.clash.service.util.generateProfileUUID
 import com.github.kr328.clash.service.util.importedDir
 import com.github.kr328.clash.service.util.pendingDir
@@ -338,9 +338,11 @@ class ProfileManager(private val context: Context) : IProfileManager,
     }
 
     private fun resolveUpdatedAt(uuid: UUID): Long {
-        return context.pendingDir.resolve(uuid.toString()).directoryLastModified
-            ?: context.importedDir.resolve(uuid.toString()).directoryLastModified
-            ?: -1
+        val name = uuid.toString()
+        return configUpdatedAt(
+            context.pendingDir.resolve(name).resolve("config.yaml"),
+            context.importedDir.resolve(name).resolve("config.yaml"),
+        )
     }
 
     private suspend fun createPending(

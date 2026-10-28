@@ -122,7 +122,6 @@ class ProfilesDesign(context: Context) : Design<ProfilesDesign.Request>(context)
         val selected = values.indexOf(store.runtimeYamlAutoDownloadIntervalHours).coerceAtLeast(0)
         MaterialAlertDialogBuilder(context)
             .setTitle(R.string.runtime_yaml_auto_download)
-            .setMessage(R.string.runtime_yaml_auto_download_message)
             .setSingleChoiceItems(labels, selected) { picker, index ->
                 store.runtimeYamlAutoDownloadIntervalHours = values[index]
                 requests.trySend(Request.RuntimeYamlAutoDownloadChanged)
