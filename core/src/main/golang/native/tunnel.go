@@ -145,11 +145,6 @@ func patchSelector(selector, name C.c_string) C.int {
 	return 0
 }
 
-//export clearAllManualSelections
-func clearAllManualSelections() {
-	tunnel.ClearAllManualSelections()
-}
-
 //export clearManualSelectionForGroup
 func clearManualSelectionForGroup(name C.c_string) C.int {
 	if tunnel.ClearManualSelectionForGroup(C.GoString(name)) {

@@ -281,13 +281,6 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativePatchConnectivityJson(JNIEn
     return (jboolean) patchConnectivityJson(_json);
 }
 
-JNIEXPORT void JNICALL
-Java_com_github_kr328_clash_core_bridge_Bridge_nativeClearAllManualSelections(JNIEnv *env, jobject thiz) {
-    TRACE_METHOD();
-
-    clearAllManualSelections();
-}
-
 JNIEXPORT jboolean JNICALL
 Java_com_github_kr328_clash_core_bridge_Bridge_nativeClearManualSelectionForGroup(JNIEnv *env,
                                                                                    jobject thiz,

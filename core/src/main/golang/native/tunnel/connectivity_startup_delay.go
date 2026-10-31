@@ -171,10 +171,7 @@ func testStartupGroup(ctx context.Context, name string, reuse map[string]uint16)
 	groupProxy := p
 	timeoutMs := startupGroupTimeout(g)
 	testURL, expectedStatusText := delayTestSpec(g)
-	resetSelection := func() {}
-	if guarded, ok := g.(interface{ PrepareManualSelectionReset() func() }); ok {
-		resetSelection = guarded.PrepareManualSelectionReset()
-	}
+	// The startup pass only refreshes delay and order; it never touches a pin.
 	expectedStatus, err := utils.NewUnsignedRanges[uint16](expectedStatusText)
 	if err != nil {
 		log.Debugln("[startup-delay] group=%s invalid expected status %q: %v", name, expectedStatusText, err)
@@ -267,9 +264,6 @@ func testStartupGroup(ctx context.Context, name string, reuse map[string]uint16)
 		return false
 	}
 	resetGroupConnectTimes(g)
-	if succeeded.Load() > 0 {
-		resetSelection()
-	}
 	return true
 }
 

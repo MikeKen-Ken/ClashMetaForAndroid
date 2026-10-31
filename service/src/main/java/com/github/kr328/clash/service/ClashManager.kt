@@ -33,7 +33,6 @@ private const val LOG_FLUSH_FAKE_IP = "FakeIpFlush"
 class ClashManager(private val context: Context) : IClashManager,
     CoroutineScope by CoroutineScope(Dispatchers.IO) {
     private val store = ServiceStore(context)
-    private val delayTestSelections = DelayTestSelectionGuard()
     private var logReceiver: ReceiveChannel<LogMessage>? = null
 
     override fun queryTunnelState(): TunnelState {
@@ -68,27 +67,22 @@ class ClashManager(private val context: Context) : IClashManager,
         return Clash.queryOverride(slot)
     }
 
+    // A saved pin is written when the user picks a node and removed only by
+    // clearManualSelectionForGroup (the user's explicit unpin). A failed patch
+    // never deletes an existing pin.
     override fun patchSelector(group: String, name: String): Boolean {
-        return delayTestSelections.mutate(group) {
-            Clash.patchSelector(group, name).also {
-                val current = store.activeProfile ?: return@also
-
-                if (it) {
-                    SelectionDao().setSelected(Selection(current, group, name))
-                } else {
-                    SelectionDao().removeSelected(current, group)
-                }
-            }
+        return Clash.patchSelector(group, name).also {
+            if (!it) return@also
+            val current = store.activeProfile ?: return@also
+            SelectionDao().setSelected(Selection(current, group, name))
         }
     }
 
     override fun clearManualSelectionForGroup(group: String): Boolean {
-        return delayTestSelections.mutate(group) {
-            Clash.clearManualSelectionForGroup(group).also {
-                if (!it) return@also
-                val current = store.activeProfile ?: return@also
-                SelectionDao().removeSelected(current, group)
-            }
+        return Clash.clearManualSelectionForGroup(group).also {
+            if (!it) return@also
+            val current = store.activeProfile ?: return@also
+            SelectionDao().removeSelected(current, group)
         }
     }
 
@@ -308,21 +302,11 @@ class ClashManager(private val context: Context) : IClashManager,
     }
 
     override suspend fun healthCheckWithTimeout(group: String, timeoutMs: Int, concurrency: Int): DelayTestResult {
-        val selectionGeneration = delayTestSelections.generation(group)
-        return runProfileScopedDelayTest(
-            activeProfile = { store.activeProfile },
-            test = { Clash.healthCheckWithTimeout(group, timeoutMs, concurrency) },
-            hasSuccess = { it.hasSuccess },
-            clearSelection = { profile ->
-                delayTestSelections.ifUnchanged(group, selectionGeneration) {
-                    SelectionDao().removeSelected(profile, group)
-                }
-            },
-        )
+        // A delay test never touches the saved pin.
+        return Clash.healthCheckWithTimeout(group, timeoutMs, concurrency)
     }
 
     override suspend fun healthCheckProxy(group: String, proxy: String, timeoutMs: Int): DelayTestResult {
-        // One pinned node. Leave the saved selection alone. The group test clears it on success.
         return Clash.healthCheckProxy(group, proxy, timeoutMs)
     }
 

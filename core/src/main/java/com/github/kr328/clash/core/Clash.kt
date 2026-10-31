@@ -208,10 +208,6 @@ object Clash {
         return Bridge.nativePatchConnectivityJson(jsonPayload)
     }
 
-    fun clearAllManualSelections() {
-        Bridge.nativeClearAllManualSelections()
-    }
-
     fun clearManualSelectionForGroup(group: String): Boolean {
         return Bridge.nativeClearManualSelectionForGroup(group)
     }

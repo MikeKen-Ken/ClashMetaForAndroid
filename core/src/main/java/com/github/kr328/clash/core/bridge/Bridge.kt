@@ -37,7 +37,6 @@ object Bridge {
     external fun nativePatchRuntimeLogLevel(levelKeyLowercaseOrYamlName: String): Boolean
     /** 等价于 PATCH /configs 子集（allow-lan / bind-address） */
     external fun nativePatchConnectivityJson(jsonPayload: String): Boolean
-    external fun nativeClearAllManualSelections()
     external fun nativeClearManualSelectionForGroup(group: String): Boolean
     external fun nativeFetchAndValid(
         completable: FetchCallback,

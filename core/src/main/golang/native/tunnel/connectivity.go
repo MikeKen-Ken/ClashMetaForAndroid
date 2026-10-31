@@ -125,14 +125,7 @@ func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) (result
 	}
 
 	testURL, expectedStatusText := delayTestSpec(g)
-	// Capture before suspending for probes, including a re-selection of the same
-	// node. Completion must never erase a newer user choice.
-	resetSelection := func() {}
-	if guarded, ok := g.(interface{ PrepareManualSelectionReset() func() }); ok {
-		resetSelection = guarded.PrepareManualSelectionReset()
-	} else if clearable, ok := g.(outboundgroup.ClearManualSelectionAble); ok {
-		resetSelection = clearable.ClearManualSelection
-	}
+	// A delay test never touches the user's pin.
 	expectedStatus, err := utils.NewUnsignedRanges[uint16](expectedStatusText)
 	if err != nil {
 		log.Debugln("[delay-test] group=%s invalid expected status %q: %v", name, expectedStatusText, err)
@@ -211,15 +204,13 @@ func HealthCheckWithTimeout(name string, timeoutMs int, concurrency int) (result
 	}
 	if result.Succeeded == 0 {
 		result.Error = "all proxies timed out or failed"
-		// A finished auto-group test still refreshes the score order. The manual
-		// pin stays until a member actually passes.
+		// A finished auto-group test still refreshes the score order.
 		if shouldApplyRuntimeConnectivityOrder(g.Type()) {
 			ApplyRuntimeConnectivityOrderAll()
 		}
 		return result
 	}
 
-	resetSelection()
 	ApplyRuntimeConnectivityOrderAll()
 	return result
 }
@@ -259,21 +250,6 @@ func isSkipLeafProxyName(name string) bool {
 	}
 }
 
-// applyPostReorderAutoGroupSelection returns automatic groups to automatic
-// selection after startup reordering. It must never create a manual pin.
-func applyPostReorderAutoGroupSelection(p C.Proxy) {
-	if p == nil {
-		return
-	}
-	adapter := p.Adapter()
-	switch adapter.Type() {
-	case C.URLTest, C.Fallback:
-		if clearable, ok := adapter.(outboundgroup.ClearManualSelectionAble); ok {
-			clearable.ClearManualSelection()
-		}
-	}
-}
-
 func resetGroupConnectTimes(group outboundgroup.ProxyGroup) {
 	if connectable, ok := group.(outboundgroup.ConnectTimesAble); ok {
 		connectable.ResetConnectTimes()
@@ -307,21 +283,8 @@ func sortProxiesByConnectivityScore(proxies []C.Proxy) []C.Proxy {
 	return out
 }
 
-// ClearAllManualSelections clears manual selection on all groups (Selector/Fallback).
-// Call when proxy stops or restarts so no node is shown as "current" until user selects again.
-func ClearAllManualSelections() {
-	for _, name := range QueryProxyGroupNames(false) {
-		p := tunnel.Proxies()[name]
-		if p == nil {
-			continue
-		}
-		if clearable, ok := p.Adapter().(outboundgroup.ClearManualSelectionAble); ok {
-			clearable.ClearManualSelection()
-		}
-	}
-}
-
-// ClearManualSelectionForGroup clears manual selection on a single group (Selector/Fallback).
+// ClearManualSelectionForGroup releases the pin of a single group. It is the
+// only way a pin is released, and is called only for the user's explicit unpin.
 func ClearManualSelectionForGroup(name string) bool {
 	p := tunnel.Proxies()[name]
 	if p == nil {
@@ -406,31 +369,32 @@ func isAutoSelectAdapterType(t C.AdapterType) bool {
 	}
 }
 
-// ShouldSkipPersistedAutoGroupSelection 启动时不把上次固定写回 url-test/fallback。
-func ShouldSkipPersistedAutoGroupSelection(name string) bool {
-	if shouldSkipDelayCheckGroup(name) {
-		return true
+// RestoreSelection re-applies a saved pin to select / url-test / fallback groups
+// after a (re)load. It does not require the node to be in the group yet (a
+// provider may not have loaded), so the pin takes effect as soon as it appears.
+// It reports false only when the group does not exist or cannot be pinned; the
+// caller must keep the saved record in that case.
+func RestoreSelection(group, name string) bool {
+	if name == "" {
+		return false
 	}
-	p := tunnel.Proxies()[name]
+	p := tunnel.Proxies()[group]
 	if p == nil {
 		return false
 	}
-	return isAutoSelectAdapterType(p.Type())
+	selectable, ok := p.Adapter().(outboundgroup.SelectAble)
+	if !ok {
+		return false
+	}
+	selectable.ForceSet(name)
+	log.Infoln("Restore selection %s -> %s", group, name)
+	return true
 }
 
 // ApplyStartupAutoGroupOrder 启动/重载后按积分重排自动选组。
-// url-test / fallback 均恢复自动选择，不创建手动固定。
+// 只改顺序，不创建也不清除用户的固定。
 func ApplyStartupAutoGroupOrder() {
 	ApplyRuntimeConnectivityOrderAll()
-	for name, p := range tunnel.Proxies() {
-		if p == nil || shouldSkipDelayCheckGroup(name) {
-			continue
-		}
-		if !isAutoSelectAdapterType(p.Type()) {
-			continue
-		}
-		applyPostReorderAutoGroupSelection(p)
-	}
 }
 
 // SetHealthCheckWorkerLimit 同步延迟测速并发上限（订阅健康检查 / 默认组测速回退值）。

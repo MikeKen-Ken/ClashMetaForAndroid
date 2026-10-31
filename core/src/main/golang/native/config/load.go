@@ -110,10 +110,7 @@ func applyProxySelectionsFromOverride() {
 		if name == "" {
 			continue
 		}
-		if tunnel.ShouldSkipPersistedAutoGroupSelection(group) {
-			continue
-		}
-		tunnel.PatchSelector(group, name)
+		tunnel.RestoreSelection(group, name)
 	}
 }
 

@@ -3,6 +3,10 @@ package com.github.kr328.clash.service.data
 import androidx.room.*
 import java.util.*
 
+/**
+ * Saved pins. A row is removed only by [removeSelected], which is called for the user's
+ * explicit unpin. There is deliberately no bulk delete.
+ */
 @Dao
 @TypeConverters(Converters::class)
 interface SelectionDao {
@@ -12,12 +16,6 @@ interface SelectionDao {
     @Query("DELETE FROM selections WHERE uuid = :uuid AND proxy = :proxy")
     fun removeSelected(uuid: UUID, proxy: String)
 
-    @Query("DELETE FROM selections WHERE uuid = :uuid")
-    fun removeAllSelections(uuid: UUID)
-
     @Query("SELECT * FROM selections WHERE uuid = :uuid")
     suspend fun querySelections(uuid: UUID): List<Selection>
-
-    @Query("DELETE FROM selections WHERE uuid = :uuid AND proxy in (:proxies)")
-    suspend fun removeSelections(uuid: UUID, proxies: List<String>)
 }

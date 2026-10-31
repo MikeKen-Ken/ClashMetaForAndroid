@@ -39,9 +39,10 @@ type completionProvider struct {
 func (p completionProvider) Version() uint32    { return 1 }
 func (p completionProvider) Proxies() []C.Proxy { return []C.Proxy{p.leaf} }
 
-func TestDelayCompletionReturnsGroupsToAutomatic(t *testing.T) {
-	for _, kind := range []string{"url-test", "fallback"} {
-		for _, scenario := range []string{"automatic", "new-manual-pin", "failed", "replaced-profile"} {
+// A group delay test never releases a pin, whatever the outcome.
+func TestGroupDelayTestKeepsManualPin(t *testing.T) {
+	for _, kind := range []string{"url-test", "fallback", "selector"} {
+		for _, scenario := range []string{"succeeded", "new-manual-pin", "failed", "replaced-profile"} {
 			t.Run(kind+"/"+scenario, func(t *testing.T) {
 				oldProxies, oldProviders := coreTunnel.Proxies(), coreTunnel.Providers()
 				t.Cleanup(func() { coreTunnel.UpdateProxies(oldProxies, oldProviders) })
@@ -53,10 +54,13 @@ func TestDelayCompletionReturnsGroupsToAutomatic(t *testing.T) {
 					ForceSet(string)
 					NowIsManual() bool
 				}
-				if kind == "url-test" {
+				switch kind {
+				case "url-test":
 					group = outboundgroup.NewURLTest(option, providers)
-				} else {
+				case "fallback":
 					group = outboundgroup.NewFallback(option, providers)
+				default:
+					group = outboundgroup.NewSelector(option, providers)
 				}
 				group.ForceSet("node")
 				if scenario == "new-manual-pin" {
@@ -70,9 +74,8 @@ func TestDelayCompletionReturnsGroupsToAutomatic(t *testing.T) {
 				if (result.Succeeded == 1) != !leaf.fail {
 					t.Fatalf("test did not succeed: %+v", result)
 				}
-				wantManual := scenario != "automatic"
-				if group.NowIsManual() != wantManual {
-					t.Fatalf("manual=%v, want %v", group.NowIsManual(), wantManual)
+				if !group.NowIsManual() {
+					t.Fatal("group delay test released the pin")
 				}
 			})
 		}

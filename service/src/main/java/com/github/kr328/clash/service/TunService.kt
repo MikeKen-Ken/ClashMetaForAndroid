@@ -9,7 +9,6 @@ import com.github.kr328.clash.common.log.Log
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.service.clash.clashRuntime
 import com.github.kr328.clash.service.clash.module.*
-import com.github.kr328.clash.service.data.SelectionDao
 import com.github.kr328.clash.service.model.AccessControlMode
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.cancelAndJoinBlocking
@@ -77,10 +76,8 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             reason = e.message
         } finally {
             withContext(NonCancellable) {
-                ServiceStore(self).activeProfile?.let { uuid ->
-                    Clash.clearAllManualSelections()
-                    SelectionDao().removeAllSelections(uuid)
-                }
+                // Pins are kept when the service stops: they are only released by
+                // the user's explicit unpin and are restored on the next start.
                 tun.close()
 
                 stopSelf()
