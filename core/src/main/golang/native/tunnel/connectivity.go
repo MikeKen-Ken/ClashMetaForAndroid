@@ -65,7 +65,7 @@ func HealthCheck(name string) {
 	wg.Wait()
 	resetGroupConnectTimes(g)
 	// 测速后按最新积分重排所有 url-test/fallback 组。NoHK / Download 与 Auto
-	// 共用节点，只重排当前组时第二、第三组清钉后仍会回到配置原序。
+	// 共用节点，只重排当前组时第二、第三组仍会停留在配置原序。固定不受影响。
 	ApplyRuntimeConnectivityOrderAll()
 }
 
@@ -367,28 +367,6 @@ func isAutoSelectAdapterType(t C.AdapterType) bool {
 	default:
 		return false
 	}
-}
-
-// RestoreSelection re-applies a saved pin to select / url-test / fallback groups
-// after a (re)load. It does not require the node to be in the group yet (a
-// provider may not have loaded), so the pin takes effect as soon as it appears.
-// It reports false only when the group does not exist or cannot be pinned; the
-// caller must keep the saved record in that case.
-func RestoreSelection(group, name string) bool {
-	if name == "" {
-		return false
-	}
-	p := tunnel.Proxies()[group]
-	if p == nil {
-		return false
-	}
-	selectable, ok := p.Adapter().(outboundgroup.SelectAble)
-	if !ok {
-		return false
-	}
-	selectable.ForceSet(name)
-	log.Infoln("Restore selection %s -> %s", group, name)
-	return true
 }
 
 // ApplyStartupAutoGroupOrder 启动/重载后按积分重排自动选组。

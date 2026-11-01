@@ -82,9 +82,15 @@ func loadRawConfig(rawCfg *config.RawConfig, path string) error {
 	// like hub.Parse()
 	tunnel.StopConnectivityMaintenance()
 	tunnel.StopStartupDelayTest()
+	// Pin the new groups before they carry any traffic, then once more after the
+	// apply in case applying the config touched a selection.
+	selections := savedProxySelections()
+	tunnel.RestoreSelections(cfg.Proxies, selections)
 	hub.ApplyConfig(cfg)
+	for group, name := range selections {
+		tunnel.RestoreSelection(group, name)
+	}
 
-	applyProxySelectionsFromOverride()
 	tunnel.ApplyStartupAutoGroupOrder()
 	tunnel.StartConnectivityMaintenance()
 	tunnel.StartStartupDelayTest()
@@ -100,18 +106,21 @@ type persistProxySelections struct {
 	ProxySelections map[string]string `json:"proxy-selections"`
 }
 
-func applyProxySelectionsFromOverride() {
+// savedProxySelections returns the pins ConfigurationModule wrote into the
+// persist override before this load. Empty names are ignored.
+func savedProxySelections() map[string]string {
 	raw := ReadOverride(OverrideSlotPersist)
 	var o persistProxySelections
 	if err := json.Unmarshal([]byte(raw), &o); err != nil || o.ProxySelections == nil {
-		return
+		return nil
 	}
+	selections := make(map[string]string, len(o.ProxySelections))
 	for group, name := range o.ProxySelections {
-		if name == "" {
-			continue
+		if name != "" {
+			selections[group] = name
 		}
-		tunnel.RestoreSelection(group, name)
 	}
+	return selections
 }
 
 func LoadDefault() {

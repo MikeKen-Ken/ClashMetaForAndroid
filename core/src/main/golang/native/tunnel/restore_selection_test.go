@@ -64,6 +64,23 @@ func TestRestoreSelectionReportsMissingGroup(t *testing.T) {
 	}
 }
 
+// Pins are put on the parsed groups before the config is applied, so the new
+// groups never run unpinned.
+func TestRestoreSelectionsPinsParsedGroupsBeforeApply(t *testing.T) {
+	for _, kind := range []string{"url-test", "fallback", "selector"} {
+		t.Run(kind, func(t *testing.T) {
+			group := newPinnableGroup(kind, &completionLeaf{})
+			parsed := map[string]C.Proxy{"Auto": adapter.NewProxy(group)}
+
+			RestoreSelections(parsed, map[string]string{"Auto": "node", "Gone": "x", "Empty": ""})
+
+			if !group.NowIsManual() {
+				t.Fatal("parsed group was not pinned before apply")
+			}
+		})
+	}
+}
+
 // Neither the startup reorder nor the startup delay pass may release a pin.
 func TestStartupKeepsManualPin(t *testing.T) {
 	for _, kind := range []string{"url-test", "fallback"} {

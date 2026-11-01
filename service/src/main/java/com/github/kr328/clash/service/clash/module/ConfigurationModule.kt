@@ -8,6 +8,7 @@ import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.core.model.TunnelState
 import com.github.kr328.clash.service.StatusProvider
 import com.github.kr328.clash.service.data.ImportedDao
+import com.github.kr328.clash.service.data.Selection
 import com.github.kr328.clash.service.data.SelectionDao
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.importedDir
@@ -107,6 +108,7 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                 // Saved pins (select / url-test / fallback) were written into the persist
                 // override above and are re-applied by the native Load itself. A saved pin is
                 // never deleted here; only the user's explicit unpin removes it.
+                syncSelectionsChangedDuringLoad(active.uuid, selections)
 
                 StatusProvider.currentProfile = active.name
 
@@ -131,6 +133,27 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
     }
 }
 
+/**
+ * The pins handed to the native load were read from the database before the load started.
+ * A pin or unpin the user made while the load was running was saved afterwards, so the load
+ * did not see it. Apply that difference so the running core matches the saved state.
+ */
+private suspend fun syncSelectionsChangedDuringLoad(uuid: UUID, applied: List<Selection>) {
+    val appliedByGroup = applied.associate { it.proxy to it.selected }
+    val latest = SelectionDao().querySelections(uuid)
+    val latestByGroup = latest.associate { it.proxy to it.selected }
+
+    latestByGroup.forEach { (group, name) ->
+        if (appliedByGroup[group] != name) {
+            Clash.patchSelector(group, name)
+        }
+    }
+    appliedByGroup.keys.forEach { group ->
+        if (group !in latestByGroup) {
+            Clash.clearManualSelectionForGroup(group)
+        }
+    }
+}
 private const val UI_PREF_NAME = "ui"
 private const val UI_PREF_KEY_PROXY_MODE = "proxy_ui_mode"
 private const val UI_PREF_KEY_PROXY_DELAY_TEST_TIMEOUT_MS = "proxy_delay_test_timeout_ms"
