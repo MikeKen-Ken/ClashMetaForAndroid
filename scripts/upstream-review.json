@@ -22,8 +22,8 @@
     "afterReview": "把对应组件的 reviewedThrough 更新为当时的上游 tip SHA；把摘入/跳过的提交追加进 ported 或 skipped。"
   },
   "lastReview": {
-    "date": "2026-10-13",
-    "method": "Core incremental window dca26db..bc76c139 screened. Small crash, leak, and protocol patches committed to mihomo Alpha as 8ebcb536. Prerelease-Alpha not published. Android window c454d0e..3cc102aa screened; no merge and no patches applied."
+    "date": "2026-11-04",
+    "method": "Core window bc76c139..69c16319 screened. Eight small patches are in the mihomo working tree and are not committed. Android window 3cc102aa..1a4f9492 screened, with no app source merge. Desktop window d72ffcde..f076d4cd screened. Null editor entries and the auto-backup watch publish were applied. Prerelease-Alpha not published."
   },
   "components": {
     "android": {
@@ -31,9 +31,9 @@
       "upstreamRemote": "upstream",
       "upstreamUrl": "git@github.com:MetaCubeX/ClashMetaForAndroid.git",
       "upstreamRef": "main",
-      "localHeadAtReview": "ea2da9e5dcebc92822e871a91b9bae30e8559a60",
-      "reviewedThrough": "3cc102aab3f251ef460a3b6e2835b6c1eb581e73",
-      "reviewedThroughSubject": "Add QR code sharing for URL profiles (#850)",
+      "localHeadAtReview": "e930d5590b029e9c55663c22a2ee1ad62039d799",
+      "reviewedThrough": "1a4f949213fcbb7f0c9e2a4a21138642d84b8f22",
+      "reviewedThroughSubject": "Bump version to 2.11.36 (211036)",
       "note": "本仓 main 与 MetaCubeX main 历史分叉较大。增量窗口以 upstream/main 的 SHA 为准，不要用本仓 HEAD..upstream/main 当全量历史。",
       "ported": [
         {
@@ -96,6 +96,18 @@
           "subject": "Add QR code sharing for URL profiles (#850)",
           "reason": "New feature, 14 files. Cherry-pick conflicts in ProfilesActivity.kt and ProfilesDesign.kt. Not a crash or security fix.",
           "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "043a6072225405b285a73e3d7b7e53431ccfc04c",
+          "subject": "Update Dependencies (#845)",
+          "reason": "Moves the core gitlink and bumps mieru, mipstack, sing-tun, and sing-wireguard along with tls. Local gitlink stays 7453aa96. tls v0.1.9 was bumped on its own.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "1a4f949213fcbb7f0c9e2a4a21138642d84b8f22",
+          "subject": "Bump version to 2.11.36 (211036)",
+          "reason": "Upstream version bump. Local version was not moved.",
+          "reviewDate": "2026-11-04"
         }
       ],
       "pending": [
@@ -107,11 +119,11 @@
         }
       ],
       "lastIncrementalReview": {
-        "date": "2026-10-13",
-        "from": "c454d0e73b047d9f4c0173e8d35088f08b65bc98",
-        "to": "3cc102aab3f251ef460a3b6e2835b6c1eb581e73",
-        "commitCount": 8,
-        "scope": "All 8 subjects screened. git merge-base HEAD upstream/main has no ancestor, so a merge is not possible. No patches applied."
+        "date": "2026-11-04",
+        "from": "3cc102aab3f251ef460a3b6e2835b6c1eb581e73",
+        "to": "1a4f949213fcbb7f0c9e2a4a21138642d84b8f22",
+        "commitCount": 2,
+        "scope": "Both subjects screened. No app source merge. The tls v0.1.9 bump inside the dependency commit was applied separately in the fork modules."
       },
       "additionalBranchReview": {
         "date": "2026-09-13",
@@ -128,11 +140,11 @@
       "upstreamRemote": "upstream",
       "upstreamUrl": "git@github.com:MetaCubeX/mihomo.git",
       "upstreamRef": "Alpha",
-      "localHeadAtReview": "66858b97a20678424c404a0164d948f316aab020",
+      "localHeadAtReview": "7453aa964222078fdc621cd9dbd26ae74cbfde23",
       "mergeBaseWithUpstreamAtReview": "f99d4e1be6bef9479fd5f13213ad17edcd0cd3e4",
-      "reviewedThrough": "bc76c1398c6e70089367a30169d0df7c7f77c42d",
-      "reviewedThroughSubject": "chore: update mieru version (#3304)",
-      "note": "2026-10-13 的小补丁已提交到自有 mihomo Alpha 8ebcb536 并推送。尚未发布 Prerelease-Alpha。",
+      "reviewedThrough": "69c16319b12d10ec1ed05eefca3a482357f5ffbb",
+      "reviewedThroughSubject": "fix: keep bytes that arrive with the HTTP proxy's CONNECT response (#3382)",
+      "note": "2026-10-13 的小补丁已提交到自有 mihomo Alpha 8ebcb536 并推送。尚未发布 Prerelease-Alpha。2026-11-04 窗口 bc76c139..69c16319 已改在工作区，尚未提交。",
       "ported": [
         {
           "sha": "8453e589df956192fbdd713ad1e1c239d3d805ac",
@@ -313,6 +325,62 @@
           "date": "2026-10-13",
           "how": "Clean apply, including the new pool test.",
           "status": "Applied in mihomo working tree on 66858b97. go test ./component/fakeip passed. Committed as 8ebcb536 on Alpha. Prerelease-Alpha not published."
+        },
+        {
+          "sha": "349af19116508e51a57c91291fa4b1d8afbbc888",
+          "subject": "fix: the embedded shadowsocks listener can't be closed (#3314)",
+          "date": "2026-11-04",
+          "how": "Clean apply. Close sets closed before it shuts the sockets, so the accept loop can exit.",
+          "status": "Applied in mihomo working tree on 7453aa96. Not committed. Prerelease-Alpha not published."
+        },
+        {
+          "sha": "df1b07af2c7e60b99ea5bf4a9db5a0024859a3c0",
+          "subject": "fix: a sub-millisecond URL test is reported as a failure (#3316)",
+          "date": "2026-11-04",
+          "how": "Adapted. Local URLTest still treats 0 as a failed delay, including RememberPassedDelay and the proxies route. A sub-millisecond success is stored as 1 ms, before the local timeout check.",
+          "status": "Applied in mihomo working tree on 7453aa96. Not committed. Prerelease-Alpha not published."
+        },
+        {
+          "sha": "94b13aed49b8dc41973e4bb3f721c5fa2c5c5c1f",
+          "subject": "fix: dialer-proxy cycle check takes quadratic time and memory (#3315)",
+          "date": "2026-11-04",
+          "how": "Clean apply, including the updated cycle tests. go test ./config passed.",
+          "status": "Applied in mihomo working tree on 7453aa96. Not committed. Prerelease-Alpha not published."
+        },
+        {
+          "sha": "c4e818694c758458c343eed3dc56fb60cb8a99b3",
+          "subject": "fix: CVE-2026-97031 for crypto/tls",
+          "date": "2026-11-04",
+          "how": "Bumped github.com/metacubex/tls from v0.1.8 to v0.1.9 in the mihomo module and both Android wrapper modules. No other dependency moved.",
+          "status": "Applied in mihomo working tree on 7453aa96. Not committed. Prerelease-Alpha not published."
+        },
+        {
+          "sha": "6780eeeb27c7eda5e79a6310a4f7f91ba7cb725d",
+          "subject": "fix: prevent SOCKS domain length arithmetic overflow (#3359)",
+          "date": "2026-11-04",
+          "how": "Clean apply, including the new length test. go test ./adapter/inbound passed.",
+          "status": "Applied in mihomo working tree on 7453aa96. Not committed. Prerelease-Alpha not published."
+        },
+        {
+          "sha": "b6a15182c2870f42eb04df7b763171fd3e2f1da4",
+          "subject": "fix: i386 struct define of PROCESS_MEMORY_COUNTERS",
+          "date": "2026-11-04",
+          "how": "Clean apply. SIZE_T fields use uintptr, and the psapi call uses SyscallN. go test ./component/memory passed on this Windows machine.",
+          "status": "Applied in mihomo working tree on 7453aa96. Not committed. Prerelease-Alpha not published."
+        },
+        {
+          "sha": "ca8d7c41bf620dbe41c8d221f35dc5435216def5",
+          "subject": "fix: ssh clients do not close when underlying connection writing errors",
+          "date": "2026-11-04",
+          "how": "Clean apply. A write error closes the underlying socket so the shared SSH client can be discarded.",
+          "status": "Applied in mihomo working tree on 7453aa96. Not committed. Prerelease-Alpha not published."
+        },
+        {
+          "sha": "69c16319b12d10ec1ed05eefca3a482357f5ffbb",
+          "subject": "fix: keep bytes that arrive with the HTTP proxy's CONNECT response (#3382)",
+          "date": "2026-11-04",
+          "how": "Clean apply. The CONNECT response and any bytes after it share one bufio.Reader, and the returned conn reads that buffer first.",
+          "status": "Applied in mihomo working tree on 7453aa96. Not committed. Prerelease-Alpha not published."
         }
       ],
       "skipped": [
@@ -560,6 +628,42 @@
           "subject": "chore: update mieru version (#3304)",
           "reason": "Dependency bump only. Local mieru remains v3.33.0.",
           "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "ff179c43a197b772badae59aa3f32f3d92258d07",
+          "subject": "feat: add ss-password generation functionality to the command line tool (#3372)",
+          "reason": "New command-line feature for generating a Shadowsocks password. Not a crash, leak, or security fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "de439c88125b2b255be022fbb695876a50a9320f",
+          "subject": "fix: drain cached data before reading upstream",
+          "reason": "The fix is inside metacubex/sing v0.5.9. Local sing is v0.5.7, so this is a two-version dependency jump, not a source patch.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "5b79f3c367b964ca951936f13298fd147317060f",
+          "subject": "fix: tfo-go not working on go1.26.9+ and go1.27.2+",
+          "reason": "The fix is a tfo-go bump from 2026-06-23 to 2026-10-26. Local tfo-go is 2025-11-30. Installed Go is 1.27.0, and the regression starts at go1.27.2, so the jump was not taken.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "91e85eebf0b654c73424f0a215b3c56f6b39614f",
+          "subject": "chore: allow mieru inbound to actively close idle TCP connection (#3354)",
+          "reason": "Adds a mieru idle-timeout option and moves mieru from v3.38.1 to v3.39.0. Local mieru is v3.33.0.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "3f27ef39f8c96bbfbc8b0b9bb10f5c9ef60149d8",
+          "subject": "chore: refactored and fixed issues for sudoku while also improving performance (#3333)",
+          "reason": "Sudoku refactor, 38 files and about 2,600 insertions. Not a small fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "2df147b90640ef5f03cd69a784abcd2c800a5dcc",
+          "subject": "feat: support `dns-mode` for tun (#3288)",
+          "reason": "New TUN dns-mode feature, plus module bumps. Not a small fix.",
+          "reviewDate": "2026-11-04"
         }
       ],
       "pending": [
@@ -607,11 +711,11 @@
         }
       ],
       "lastIncrementalReview": {
-        "date": "2026-10-13",
-        "from": "dca26db017bcde90071f3e16f97b12fafbccfa31",
-        "to": "bc76c1398c6e70089367a30169d0df7c7f77c42d",
-        "commitCount": 33,
-        "scope": "All 33 subjects screened. Thirteen small patches committed as 8ebcb536 and pushed to Alpha. go test passed for fakeip, openvpn, dns, common/net, common/convert, sing_vless, and adapter/outbound. Prerelease-Alpha not published."
+        "date": "2026-11-04",
+        "from": "bc76c1398c6e70089367a30169d0df7c7f77c42d",
+        "to": "69c16319b12d10ec1ed05eefca3a482357f5ffbb",
+        "commitCount": 14,
+        "scope": "All 14 subjects screened. Eight small patches are in the mihomo working tree on 7453aa96. go test passed for adapter, adapter/inbound, config, listener/shadowsocks, and component/memory. adapter/outbound tests compiled. Not committed. Prerelease-Alpha not published."
       }
     },
     "clash-verge-rev": {
@@ -619,10 +723,10 @@
       "upstreamRemote": "upstream",
       "upstreamUrl": "git@github.com:clash-verge-rev/clash-verge-rev.git",
       "upstreamRef": "dev",
-      "localHeadAtReview": "e7d16a273fc12e0daf116ae7a1fd85f5e5ea13de",
+      "localHeadAtReview": "3af2794b0607b2b240d57b476424dfa1b16f666e",
       "mergeBaseWithUpstreamAtReview": "95281632a15f4af1fef189273cbb2a25743aa342",
-      "reviewedThrough": "d72ffcde0366fcd8612fd08bb0534fac3702fb98",
-      "reviewedThroughSubject": "chore(deps): update github/gh-aw-actions action to v0.89.8 (#7922)",
+      "reviewedThrough": "f076d4cd5de03eaf0c9d4fca72dce2843ca5760f",
+      "reviewedThroughSubject": "fix(macos): preserve DNS and proxy state across network changes",
       "ported": [
         {
           "sha": "4673360f693d0117c8f244159d2aae6d8a7896c5",
@@ -668,6 +772,20 @@
           "date": "2026-10-13",
           "how": "Adapted. Import still uses the local five-retry refresh. onEnhance runs only when the refreshed current uid differs from the uid captured before import.",
           "status": "Applied in clash-verge-rev working tree. Frontend typecheck not run."
+        },
+        {
+          "sha": "3953e125",
+          "subject": "fix(profile): ignore null entries in the rules editor (#8432)",
+          "date": "2026-11-04",
+          "how": "Adapted. Rules and proxies editors drop null YAML list entries before render. Groups prepend and append get the same filter. Groups delete already goes through normalizeDeleteSeq, which drops non-strings.",
+          "status": "Applied in clash-verge-rev working tree. Frontend typecheck not run."
+        },
+        {
+          "sha": "94942b91",
+          "subject": "fix(backup): publish scheduler settings with send_replace (#8386)",
+          "date": "2026-11-04",
+          "how": "Adapted onto module/auto_backup.rs. init and refresh_settings call send before the scheduler subscribes. tokio 1.49 send returns the value unchanged when no receiver exists, so the scheduler kept the default disabled settings. send_replace stores the loaded settings anyway.",
+          "status": "Applied in clash-verge-rev working tree. cargo test not run."
         }
       ],
       "skipped": [
@@ -1137,6 +1255,1284 @@
           "subject": "fix(sysproxy): avoid proxy reset during cold start or lightweight mode recovery (#7917)",
           "reason": "Local system-proxy UI does not toggle the proxy when the mixed port changes, so the upstream deletion has no call site.",
           "reviewDate": "2026-10-13"
+        },
+        {
+          "sha": "e46bcfeb2e4a8ae6d418e8a0537ac8c50c602f86",
+          "subject": "chore(deps): update github/gh-aw-actions action to v0.89.9 (#7923)",
+          "reason": "Dependency bump (1 files, +1/-1). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "669526890597b329fa8aa836b8c8493b0e7afe47",
+          "subject": "chore(deps): update github/gh-aw-actions action to v0.89.10 (#7929)",
+          "reason": "Dependency bump (1 files, +1/-1). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "6f19c3dfaaeb9bdc04a9d827824535c4d1b49b1e",
+          "subject": "chore(deps): update github/gh-aw-actions action to v0.89.12 (#7934)",
+          "reason": "Dependency bump (1 files, +1/-1). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "1d9bca13c823a766a873ee69e519f227ab9da3e3",
+          "subject": "chore(deps): bump clash-verge-service-ipc to v2.7.0",
+          "reason": "Dependency bump (3 files, +4/-3). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "8a5548af1002e3c84ff917fb0bca3de81331746c",
+          "subject": "chore(deps): update github/gh-aw-actions action to v0.89.13 (#7939)",
+          "reason": "Dependency bump (1 files, +1/-1). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "d289a608d9ea7165cbbf209443a135e43fcfda14",
+          "subject": "refactor(sysproxy): delegate macOS network monitoring to sysproxy-rs",
+          "reason": "Refactor (5 files, +34/-53). Not ported as a small fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "ce963d175a0369aab65f3ec5ef1adcf1397804a8",
+          "subject": "feat(tun): support mips stack from mihomo v1.19.31",
+          "reason": "Feature (2 files, +8/-0). Not a small crash, leak, or security fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "e3bdea4386090dca8f2a0bbf61cf59dea08098fa",
+          "subject": "chore(deps): update github/gh-aw-actions action to v0.89.15 (#7941)",
+          "reason": "Dependency bump (1 files, +1/-1). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "75c921b466dc3aceca80744fa131ea2e35779380",
+          "subject": "fix(traffic): avoid scientific notation in traffic display near 1000 threshold (#7928)",
+          "reason": "Screened (2 files, +2/-2). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "f58e0a0af573cfce0aedfb5297694869cd46d462",
+          "subject": "fix(service): stage approved cores during Windows service installation",
+          "reason": "Screened (4 files, +117/-6). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "de24496fa7531ec09a3b73d5bf16d604737e1d0c",
+          "subject": "chore(deps): update cargo dependencies (#7765)",
+          "reason": "Dependency bump (4 files, +470/-609). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "619d6ae36a193a5839d6e289ae46279cc158e165",
+          "subject": "chore(deps): update npm dependencies (#7896)",
+          "reason": "Dependency bump (2 files, +383/-478). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "2f097790ed3678f0096d44be108653229489ed09",
+          "subject": "fix(updater): downgrade manual check failure notice to warning",
+          "reason": "Screened (3 files, +10/-4). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "e385d37e5b1f3dd1ac216b4f87524b5913ab2d44",
+          "subject": "ci(gate): align linked-issue-check with the slop review trust tier",
+          "reason": "CI only (1 files, +8/-0).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "20141e791ebb5b9be6ff3faddb8e09f7d58491d8",
+          "subject": "fix(profile): virtualize editor lists for rule/proxy/group editors (#7944)",
+          "reason": "Screened (5 files, +421/-512). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "9a879dd8d869f1497a65d9c2c9d2f9e1ba65778d",
+          "subject": "fix(service): fall back to elevated sidecar on path permission rejection",
+          "reason": "Screened (27 files, +225/-39). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "a36dcd319f37d9c7256fdc4f5b8e4f4ebb13eaec",
+          "subject": "CI: update autobuild time",
+          "reason": "CI only (1 files, +2/-2).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "0d0ed72467fee465ed4852e216b9fc62ff252dfc",
+          "subject": "chore(renovate): Add `pnpm` version catch up in `devcontainer.json` (#7951)",
+          "reason": "Maintenance or tooling (1 files, +11/-1). Not a crash, leak, or security source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "c7ffb212947664bad06482c761de6cfb96368d72",
+          "subject": "Release v2.5.4-rc",
+          "reason": "Release, revert, or test bookkeeping (4 files, +4/-4).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "2baa629ac41ff300458f80cbd202019dc9e23e1a",
+          "subject": "chore: remove unimportant notice in changelog",
+          "reason": "Maintenance or tooling (1 files, +0/-3). Not a crash, leak, or security source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "65ed8d3cf2d754fafd994655f4d88a380f025bb9",
+          "subject": "fix(home): stabilize proxy group and node dropdowns",
+          "reason": "Screened (2 files, +233/-171). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "f6fdb34745bb602565759b405473a8ac754f2dce",
+          "subject": "perf(home): render proxy dropdown options on demand",
+          "reason": "Performance change (2 files, +186/-140). Not ported as a small fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "c599f5547ec98cf998626a30c0003b41a5bd5579",
+          "subject": "fix(proxy): validate user-entered URLs via isValidUrl",
+          "reason": "Screened (21 files, +67/-5). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "8f6fd3bbf94eba0cc501773b0edad8aa103b63d9",
+          "subject": "chore(deps): update github/gh-aw-actions action to v0.89.17 (#7971)",
+          "reason": "Dependency bump (1 files, +1/-1). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "78516dc1dc126d9a5b94c49cb55b31c0a36cbf07",
+          "subject": "chore(renovate): Prevent auto-updates of `gh-aw` (#7972)",
+          "reason": "Maintenance or tooling (1 files, +6/-0). Not a crash, leak, or security source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "94491b4ba4f72f1f6010773bd7cd29fdde971aea",
+          "subject": "chore(gh-aw): Bump `gh-aw` to version 0.89.15 (#7973)",
+          "reason": "Maintenance or tooling (3 files, +135/-117). Not a crash, leak, or security source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "04a2a09368f76620d3eeb51eafeb1791b41e00ae",
+          "subject": "fix(linux): restore SELinux service startup with v2.7.2",
+          "reason": "Screened (5 files, +44/-4). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "9f97d938f5afe5b37d7e9a517abe0a6f22578d21",
+          "subject": "chore(i18n): complete Turkish (tr) translations (#7969)",
+          "reason": "Maintenance or tooling (11 files, +182/-182). Not a crash, leak, or security source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "73ea0fbd80745149f56000260cdfb6fe02ed7a0a",
+          "subject": "fix(dns): keep profile values the override leaves blank or off",
+          "reason": "Screened (5 files, +81/-75). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "19334368cd95775fd3051b809563187e7a526716",
+          "subject": "chore(deps): update dependency pnpm to v12.5.1 (#7976)",
+          "reason": "Dependency bump (4 files, +64/-64). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "13676d3335b4242a8342541bdd510295502268c1",
+          "subject": "Release 2.5.4",
+          "reason": "Release, revert, or test bookkeeping (5 files, +54/-19).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "433cd0628f4feb9a47dd17badc56719aff83d8cb",
+          "subject": "fix(dns): replace configured override fields and prepare v2.5.5",
+          "reason": "Screened (8 files, +133/-143). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "c6a4de1c6ace7234f2304ac77bff27d590d825f0",
+          "subject": "fix(service): require exact version match and uninstall before reinstall",
+          "reason": "Screened (16 files, +25/-21). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "df79ed3efb5f9676b4191b49d1455af950544461",
+          "subject": "Revert \"feat(dns): protect provider DNS from unconfirmed overrides (#7902)\"",
+          "reason": "Release, revert, or test bookkeeping (37 files, +37/-570).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "b469bee352f5b330d94d9a52ec97a20ccfb49214",
+          "subject": "fix(logging): include paths in file failure logs",
+          "reason": "Screened (11 files, +104/-45). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "81ce247eccc606e3c01d6c0fdd42eefcef44c39a",
+          "subject": "fix(service): repair initial owner identity and extend readiness wait",
+          "reason": "Screened (3 files, +10/-10). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "8982525fd2f3879c9350df6acbcfa735e70351b0",
+          "subject": "fix(updater): detect stable releases from build metadata versions",
+          "reason": "Screened (3 files, +26/-8). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "af0f502f9859e349837389e3e48b851884061499",
+          "subject": "fix(macos): silence notification when hiding window with Cmd+W",
+          "reason": "Screened (15 files, +0/-48). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "5059cdcb9d2f20cec1b1085dcc351f641f5d9b34",
+          "subject": "feat: build in asn mmdb (#7974)",
+          "reason": "Feature (4 files, +21/-12). Not a small crash, leak, or security fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "d7e0126586edbd40d5b278819e217d5d2d71b311",
+          "subject": "fix(updater): follow the latest stable release",
+          "reason": "Screened (2 files, +6/-14). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "07825afb1e890f3b914160a51782d4769dddc48e",
+          "subject": "Reapply \"feat(dns): protect provider DNS from unconfirmed overrides (#7902)\"",
+          "reason": "Screened (37 files, +570/-36). Not a small crash, leak, or security fix for this fork.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "7bf8e1dcf5e831406ecfa44cf3ef66939087be7f",
+          "subject": "feat(enhance): warn when extensions write app-owned keys",
+          "reason": "Feature (23 files, +153/-7). Not a small crash, leak, or security fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "b7197f6f4bac8f3c34def2a7ac0e6b8a402d3767",
+          "subject": "fix(windows): fall back to sidecar after confirmed service failure",
+          "reason": "Screened (18 files, +215/-38). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "d374ab4350a2243c9db54cb32280cf88368f1654",
+          "subject": "refactor(enhance): unify discarded-key notice state",
+          "reason": "Refactor (1 files, +20/-8). Not ported as a small fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "3b958acb22b2ad9fa360245f97d109f245908ea9",
+          "subject": "fix(config): isolate conflicting provider cache paths",
+          "reason": "Screened (4 files, +179/-3). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "93b7bb8fe8353f8cb48cbf452647ce97760ae32c",
+          "subject": "fix(linux): stage approved cores when installing service",
+          "reason": "Screened (2 files, +40/-24). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "bffe91db5eed88995ed1d3becc211e6f590ed47f",
+          "subject": "fix(service): prompt reinstallation after path permission rejection",
+          "reason": "Screened (25 files, +105/-11). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "6a85d0344e5df34c750ca3158e53b8b37a5ddf82",
+          "subject": "fix(enhance): replace DNS fields in merge overrides",
+          "reason": "Screened (3 files, +82/-20). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "ff1ce92facfd17ef66d4e8d150b224a94741c80a",
+          "subject": "feat(dns): remember override state per profile",
+          "reason": "Feature (25 files, +237/-64). Not a small crash, leak, or security fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "ed0b8015738de1afdac2c260f4b7961247127c89",
+          "subject": "fix(service): unify installation and safe sidecar handoff",
+          "reason": "Screened (28 files, +364/-727). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "fd06fbb3b71ee5c4467bc0e3cc505dcac5348371",
+          "subject": "fix(service): adopt IPC 2.7.3 and correct dev fallback handling",
+          "reason": "Screened (6 files, +145/-33). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "659ee1a1814820018a5f0ac9c56d97193a1a2123",
+          "subject": "feat(profiles): explain extension override order",
+          "reason": "Feature (20 files, +162/-0). Not a small crash, leak, or security fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "758300ac34bc149c957f85125899dd3c6e1a24c2",
+          "subject": "fix(dns): prioritize configured fields over extensions",
+          "reason": "Screened (2 files, +130/-73). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "22e3f1ac8aefe4102ae2eb646a11a1ec614e8576",
+          "subject": "feat(profiles): highlight current extension step",
+          "reason": "Feature (15 files, +41/-17). Not a small crash, leak, or security fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "afc32f568ac9b3bf7c49d03238249ad4e842923a",
+          "subject": "chore(deps): Bump `pnpm` and `cargo` dependencies (#8022)",
+          "reason": "Dependency bump (6 files, +972/-911). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "3458c9b07531a5e52a2a304f38b8a6ee57c3cdbf",
+          "subject": "fix(layout): restore \"New\" label in update button",
+          "reason": "Screened (1 files, +1/-3). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "f9ef9d78cbeab945d9612f7ca7802c6cd91cdeca",
+          "subject": "chore: bump version to 2.5.6",
+          "reason": "Dependency bump (4 files, +4/-4). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "3456de1fb67508263b3c99fbc154a8d5de1b8ffb",
+          "subject": "fix(rules): disable auto-capitalization in rule content input (#8042)",
+          "reason": "Screened (2 files, +11/-0). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "fbc4b516b81d689f60e4c6e94811aec2b11ecfc0",
+          "subject": "fix(service): fall back after installation verification rejects cores",
+          "reason": "Screened (26 files, +266/-44). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "ae4f416766cb1470e9ebeece200d96732d55a8fd",
+          "subject": "fix(service): explain core security failures and link repair guidance",
+          "reason": "Screened (21 files, +105/-14). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "61c33c6113b9147a2523dd207bfe6ef393567ef9",
+          "subject": "fix(core): retain startup diagnostics until recovery",
+          "reason": "Screened (10 files, +180/-11). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "78bf79cc0968f2858c11c63f2b66771d7022d2a0",
+          "subject": "chore: update changelog",
+          "reason": "Maintenance or tooling (2 files, +51/-21). Not a crash, leak, or security source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "04d74ac48fa46999158cfd248bf2a6e1c062c075",
+          "subject": "fix(service): offer repair when a residual helper blocks Sidecar",
+          "reason": "Screened (4 files, +21/-3). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "1f140dfd3a177d61782e85ceb75f15c143c54172",
+          "subject": "fix(service): show how to reclaim an app data root the service refuses",
+          "reason": "Screened (24 files, +97/-3). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "daae17a40cda6f9f4b7f5eeeb5d89bde4732a858",
+          "subject": "fix(service): surface a service core that stopped for good",
+          "reason": "Screened (24 files, +174/-45). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "32e5d5bda33c9fef191733886a3e196bcdcf1adf",
+          "subject": "chore(deps): pin clash-verge-service-ipc to v2.7.4",
+          "reason": "Dependency bump (3 files, +4/-2). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "6a752994cf5f33c85a21ce3a590ff250b80e9846",
+          "subject": "fix(service): fail fast when the Windows service is stopped",
+          "reason": "Screened (3 files, +34/-6). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "897a117dc5fc474650512064cb96601aa5c39af5",
+          "subject": "chore(deps): bump tauri-plugin-mihomo for provider update timeouts",
+          "reason": "Dependency bump (3 files, +6/-5). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "b057bd964ccd156f68bc43a3a8ed66cf3cb1cd7b",
+          "subject": "fix clippy",
+          "reason": "Screened (1 files, +4/-1). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "5d7dc3aed9393f08ed8210e733aff5245f0d36bd",
+          "subject": "chore(gh-aw): Bump gh-aw to version v0.89.21 (#8072)",
+          "reason": "Maintenance or tooling (3 files, +126/-70). Not a crash, leak, or security source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "1638ab48d8b86e19063c4de49276ada008720bff",
+          "subject": "fix(layout): don't expose locked sidebar items as draggables (#8064)",
+          "reason": "Screened (2 files, +12/-6). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "0c7e0c853545a7b7cb8664e75f017a68f6d46396",
+          "subject": "fix(dns): persist DNS override confirmation across restarts",
+          "reason": "Screened (2 files, +16/-9). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "c4f9d65e07a9fad6d87fe1bbf8f0e90f5a3ebd84",
+          "subject": "fix(service): don't ask to repair the service when the proxy clear fails",
+          "reason": "Screened (1 files, +21/-1). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "e0e97a920ec9b0fbfab180557d93619ed15424e9",
+          "subject": "chore(deps): update dependency pnpm to v12.8.1 (#8127)",
+          "reason": "Dependency bump (4 files, +64/-64). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "8ddd99f2267e0504134690b308b4eef28037bab3",
+          "subject": "chore: bump version v2.5.7",
+          "reason": "Dependency bump (6 files, +46/-21). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "52d616302ca518256b8873aab892af08f8cea5c0",
+          "subject": "fix(service): explain a startup core rejection instead of the generic fallback",
+          "reason": "Screened (9 files, +71/-17). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "ea509b82363a40c3c32e951d7ce9d66d66da411f",
+          "subject": "chore(deps): pin clash-verge-service-ipc to v2.7.6",
+          "reason": "Dependency bump (12 files, +33/-27). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "3607e66bb357914976c53704f274a2d510501d39",
+          "subject": "perf(traffic): reuse canvas pixels while scrolling",
+          "reason": "Performance change (7 files, +90/-100). Not ported as a small fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "8c1fb3ac5648f16b80b73d55fa60db0966f4b868",
+          "subject": "feat: set Tun.stack to mips (#8144)",
+          "reason": "Feature (2 files, +5/-5). Not a small crash, leak, or security fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "f958dccb25530b5a4c7b13dc2c2afb79fe9fab9f",
+          "subject": "fix(service): explain sidecar failures and clear recovered notices",
+          "reason": "Screened (24 files, +284/-84). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "a58cefdc316f081a2a1f50a22c3e9d1501c03424",
+          "subject": "fix(notice): keep code-based dismissal internal",
+          "reason": "Screened (1 files, +1/-1). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "d87bb7b6a38fd315eab9430d38213668dbe748e0",
+          "subject": "fix(singleton): acknowledge window restoration before UI work",
+          "reason": "Screened (2 files, +17/-201). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "4a0882fc18c062633e82d6926f58f4ecdb002230",
+          "subject": "fix(singleton): repair Windows lock file permissions in place",
+          "reason": "Screened (3 files, +51/-19). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "57c5484080b3d52bc08d0bf35ae7bd0ac6b011a4",
+          "subject": "fix(service): stop waiting on a service that no longer starts with Windows",
+          "reason": "Screened (23 files, +64/-12). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "14770df157068e21ecf97d43c6ad4349fff28c1c",
+          "subject": "chore(deps): update rust toolchain to v1.99.0 (#8147)",
+          "reason": "Dependency bump (8 files, +20/-18). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "a9a3cfa3a7b8ea321e538565e5fc6ab597af480a",
+          "subject": "fix(proxy): resolve provider members within each group's providers",
+          "reason": "Screened (3 files, +119/-344). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "1575f134e07169447833f7bbb90e43e7a4f6075d",
+          "subject": "chore(deps): update cargo dependencies (#7961)",
+          "reason": "Dependency bump (6 files, +291/-222). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "1a01844cb817c41e5e6b628d15e929787402187a",
+          "subject": "chore(deps): update npm dependencies (#8155)",
+          "reason": "Dependency bump (2 files, +297/-321). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "4cae1ff132bb64c94b25731c55bb54faf97a2c93",
+          "subject": "fix a wrong in README.md（强迫症犯了） (#8176)",
+          "reason": "Screened (1 files, +2/-2). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "c7cee50fc187ff3d955a29fdf2b584660f6d556f",
+          "subject": "docs: 补充中文 README 的系统支持说明 (#8158)",
+          "reason": "Documentation only (1 files, +1/-0).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "7cc6c1ed95961e1b57ba6410c067012b4bf04ef0",
+          "subject": "fix(port): edit the saved mixed port, not the session fallback",
+          "reason": "Screened (17 files, +72/-17). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "30f05a7a39b39cb86f2d8c6cf2ae46f45ebee2e1",
+          "subject": "refactor(port): build the port dialog rows from one listener table",
+          "reason": "Refactor (2 files, +160/-229). Not ported as a small fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "6ec35c8195f6a98208ea0d481ccd533ec5d5f013",
+          "subject": "fix(macos): restore system DNS reliably after TUN",
+          "reason": "Screened (12 files, +298/-142). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "c341b9b238a7526e487519f180a24200171f4200",
+          "subject": "fix(updater): install the already downloaded update instead of fetching it again",
+          "reason": "Screened (8 files, +162/-111). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "dba0f471bf242875e079e8978dc6eac760e06054",
+          "subject": "fix(updater): retry slow update downloads from other sources and honour cancel",
+          "reason": "Screened (6 files, +196/-42). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "2caff762b5f5d8d0b7a523ec0f6ef82c0069a52f",
+          "subject": "chore(deps): update dependency pnpm to v12.9.1 (#8181)",
+          "reason": "Dependency bump (4 files, +64/-64). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "af808a677c7dd952742d217799a63d2b77723953",
+          "subject": "chore(i18n): translate English leftovers in German locale (#8184)",
+          "reason": "Maintenance or tooling (11 files, +186/-186). Not a crash, leak, or security source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "78691ea5c848fff9d150af4bedee4fe0422a4cc1",
+          "subject": "fix(updater): clear cache when auto-check is disabled (#8091)",
+          "reason": "Screened (3 files, +46/-2). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "8328e34208c418c745023ef4fe52d9c6dd190061",
+          "subject": "refactor(backend): declarative effects (#8128)",
+          "reason": "Refactor (53 files, +1926/-877). Not ported as a small fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "69b76cc6a9e4d521d42d9241e3ddc09f405b39c8",
+          "subject": "refactor(frontend): contract flow (#8131)",
+          "reason": "Refactor (100 files, +2210/-1129). Not ported as a small fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "720dc13e96060fd8f74faab8a4815845522cab0a",
+          "subject": "refactor(backend): downgrade lock (#8135)",
+          "reason": "Refactor (3 files, +29/-32). Not ported as a small fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "d01f43cc783a9dbd05f064b79ea3ce39dcbfce16",
+          "subject": "refactor(deps): replace once_cell with std OnceLock and LazyLock (#8136)",
+          "reason": "Refactor (14 files, +24/-33). Not ported as a small fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "ad2baf254a7d35ecc1bb2776582c7bc20f34498d",
+          "subject": "chore(deps): update dependency webdriverio to v10 (#8191)",
+          "reason": "Dependency bump (2 files, +208/-394). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "07b0e71cc698cafbad4b463f390c33f8549e2504",
+          "subject": "chore(deps): update dependency ubuntu to v26 (#8192)",
+          "reason": "Dependency bump (1 files, +1/-1). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "a4531cf926f685bd48154756052c07b2e4dd33ad",
+          "subject": "chore(deps): update cargo dependencies (#8189)",
+          "reason": "Dependency bump (2 files, +15/-20). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "89076f01c3178b921a740df7415bfdcb94c1423e",
+          "subject": "refactor(rust): adopt stable APIs through Rust 1.99 (#8193)",
+          "reason": "Refactor (7 files, +11/-23). Not ported as a small fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "1c2817023e427a194b287ddf55a797f6ec56c7c1",
+          "subject": "chore(deps): update dependency pnpm to v12.10.0 (#8194)",
+          "reason": "Dependency bump (4 files, +64/-64). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "6b4d4e1551310f811c21766db299b077ceb7a1fe",
+          "subject": "feat(i18n): add Brazilian Portuguese locale (#8203)",
+          "reason": "Feature (21 files, +1845/-21). Not a small crash, leak, or security fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "d9dc18a57b5837c5979b1be6e88a493c2768a61d",
+          "subject": "fix(profiles): cap the profile grid at four columns (#8068)",
+          "reason": "Screened (2 files, +4/-1). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "cb751052a423c017e75cf0379adb12848e3f0fae",
+          "subject": "feat(tray): add a per-group latency test (#8173)",
+          "reason": "Feature (37 files, +1247/-221). Not a small crash, leak, or security fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "4337bd85758d54d7b9044b2da3c9ac1176eae1f3",
+          "subject": "fix(core): clarify and localize existing core errors",
+          "reason": "Screened (33 files, +151/-23). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "9975322b9bb6d98638a55044472f268543b08a65",
+          "subject": "fix(ci): handle plain Copilot 429 in PR review (#8116)",
+          "reason": "Screened (2 files, +11/-7). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "b6d94d45d561f78636fea98d8bc8d6cdd23512df",
+          "subject": "chore(deps): update dependency pnpm to v12.10.1 (#8217)",
+          "reason": "Dependency bump (5 files, +65/-65). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "0fefa7a7ff26fc317a328c0b1ac7e5f2bbde605c",
+          "subject": "chore: bump version",
+          "reason": "Dependency bump (6 files, +57/-37). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "44477d97d4f568e8016d6a2b9a0001d52d8f56a1",
+          "subject": "fix(deps): remove obsolete tray-icon patch",
+          "reason": "Screened (2 files, +0/-10). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "52dca35acb4fa39bc37e258800a6324fd9a582c9",
+          "subject": "ci(signpath): add manual Windows test signing workflow (#8239)",
+          "reason": "CI only (1 files, +90/-0).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "63ee674dcba6cf1b3784df4f5c340421b89b4d88",
+          "subject": "fix(ui): disable auto-capitalization for rule content input (#8052)",
+          "reason": "Screened (1 files, +3/-0). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "84312a5cd171b338663c347d3182bd162306801f",
+          "subject": "fix(sysproxy): bypass *.local by default on Windows (#8054)",
+          "reason": "Screened (3 files, +6/-2). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "585c67f8c5baa6da1667312a155fcd85cb0d78f3",
+          "subject": "chore(deps): update rust crate zip to v9 (#8248)",
+          "reason": "Dependency bump (2 files, +7/-6). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "27efaf34f457f357bf73daa242df909fef1fa9ee",
+          "subject": "chore(deps): update dependency pnpm to v12.11.2 (#8252)",
+          "reason": "Dependency bump (4 files, +64/-64). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "6e08a77a8430593e9a72fe0059d9a6b7cddff6b2",
+          "subject": "refactor(backend): specta ipc bindings (#8195)",
+          "reason": "Refactor (89 files, +2703/-1343). Not ported as a small fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "3693efcf6c516275e86f212a6a8ff944a5134bb9",
+          "subject": "fix(tests): reset test item state when delay test fails (#8231)",
+          "reason": "Screened (2 files, +10/-3). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "3ec858eb9fb5f703a9dc57413196de349ee9beb8",
+          "subject": "fix(packaging): stop shipping frontend-contract in Linux bundles",
+          "reason": "Screened (3 files, +7/-1). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "5b10331022940dfbd049adfa6f714d3da2d5a6ef",
+          "subject": "feat!: remove signal crate for macOS and windows (#7827)",
+          "reason": "Feature (8 files, +36/-174). Not a small crash, leak, or security fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "b20fdc9b9632330bb6bc189c757520a06a3f307f",
+          "subject": "perf(runtime): cap tokio workers at 4",
+          "reason": "Performance change (1 files, +1/-1). Not ported as a small fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "d4287970bc7dbe3430c9a33bf2922e355c92c0be",
+          "subject": "perf(tray): cache speed-text attributes and derive width arithmetically",
+          "reason": "Performance change (1 files, +33/-11). Not ported as a small fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "c6b51171a1db9b75a4270d78944e132293dbdd83",
+          "subject": "fix(backup): keep WebDAV password masked (#8291)",
+          "reason": "Screened (1 files, +4/-32). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "476ddb63c3d63bd47b57cc5dd820509a894285b3",
+          "subject": "fix(proxy): revalidate proxy view when expanding a group",
+          "reason": "Screened (2 files, +17/-7). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "dc5a8a5ff443c020a3dec79c2b46bc1f55411d95",
+          "subject": "chore(deps): update node.js to v24.22.0 (#8324)",
+          "reason": "Dependency bump (10 files, +21/-21). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "089635c8bfef4d339fbc309fa1209e8ad203b344",
+          "subject": "ci(workflows): bump `gh-aw` from 0.89.21 to 0.92.0 (#8330)",
+          "reason": "CI only (6 files, +359/-172).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "f38ceae3fb6c95426413fc195869205ab239d040",
+          "subject": "fix(profiles): restore single switch error toast and refetch after busy",
+          "reason": "Screened (1 files, +2/-5). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "e014b913d285f15813b7fc71f469f07780cb655f",
+          "subject": "fix(profile): close switching-flag leak window and drop duplicate busy notice",
+          "reason": "Local profile switching already clears the flag on the validation early return and again when the update finishes.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "9f498a85d004c43b2c86e038fd894c2afe346ac9",
+          "subject": "perf(frontend): hoist notice table and skip no-op loading updates",
+          "reason": "Performance change (2 files, +208/-216). Not ported as a small fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "8f00096a9f8b36996c3440a47113cfdf1f1dfa85",
+          "subject": "chore(deps): group Tauri npm and Cargo updates into a single PR",
+          "reason": "Dependency bump (3 files, +7/-2). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "b238175f189a134668c2c40c9a72dcf6a69f5dfc",
+          "subject": "chore(deps): add @wdio/tauri-service to the tauri update group",
+          "reason": "Dependency bump (1 files, +6/-1). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "3b7bfa10fd9ab85a119de3d2dcc9e72330e3fa7a",
+          "subject": "chore(deps): label the tauri group PR",
+          "reason": "Dependency bump (1 files, +2/-1). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "cef66cd745ef29aa98e219ffb083b62e13c959e8",
+          "subject": "chore(deps): update dependency pnpm to v12.14.0 (#8340)",
+          "reason": "Dependency bump (4 files, +64/-64). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "a3cc58013bc02326fb607604c1bb3acc47378a1e",
+          "subject": "chore(deps): update rust toolchain to v1.99.1 (#8341)",
+          "reason": "Dependency bump (7 files, +17/-17). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "b729e59650f6b56db34c21974ddb30a845bc277e",
+          "subject": "Revert \"ci(workflows): bump `gh-aw` from 0.89.21 to 0.92.0 (#8330)\" (#8343)",
+          "reason": "Release, revert, or test bookkeeping (6 files, +172/-359).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "396d343a3ad55305987ff833f81c859e35a20345",
+          "subject": "chore(deps): update npm dependencies (#8335)",
+          "reason": "Dependency bump (2 files, +257/-253). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "79657119452b8202a4f1daf64acb12e7cf093080",
+          "subject": "chore(deps): update cargo dependencies (#8323)",
+          "reason": "Dependency bump (4 files, +41/-38). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "4e5ac8683b6de668e4ca59878303b428b7cbfa2f",
+          "subject": "feat(proxy): confirm before enabling chain proxy",
+          "reason": "Feature (21 files, +96/-27). Not a small crash, leak, or security fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "9dd5aa676b7fc8c3a82c968103de89b07bf0a9be",
+          "subject": "fix(profiles): refresh remote profile name from server on update (#8360)",
+          "reason": "Screened (2 files, +2/-0). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "27d8a71d4141c0be677fbca41d1caee53fc27cbd",
+          "subject": "Revert \"fix(profiles): refresh remote profile name from server on update (#8360)\" (#8366)",
+          "reason": "Release, revert, or test bookkeeping (2 files, +0/-2).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "5e6a696087a5c855f5fd1ab51f4a3f4c6451afc3",
+          "subject": "revert(tray): revert per-group latency testing (#8173)",
+          "reason": "Release, revert, or test bookkeeping (40 files, +225/-1312).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "b6c7af82a7c48e4b8ada3f3d9efd89613861c02a",
+          "subject": "chore(deps): update tauri (#8346)",
+          "reason": "Dependency bump (5 files, +240/-327). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "02bd739ab68ceecb9637ecce006dc10bc5704655",
+          "subject": "docs: clarify issue and PR intake rules",
+          "reason": "Documentation only (5 files, +73/-22).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "8b88ddb7f24fbf9890a44f5a32bd13e6d2095069",
+          "subject": "chore(deps): update node.js to v24.22.1 (#8389)",
+          "reason": "Dependency bump (10 files, +21/-21). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "3d9a79a3fb4d324ac66033cd3e27413eb6331e66",
+          "subject": "fix(windows): patch executable for common-controls-v6 (#8378)",
+          "reason": "Screened (1 files, +10/-5). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "1ed80509472664262bceeb38a9f83f1372c3e474",
+          "subject": "fix(perf): auto-derive WebDriver window rect scale in harness",
+          "reason": "Screened (1 files, +5/-4). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "5b8edbaeada58c5d5fdc1059f12fd42ae052b2d2",
+          "subject": "feat(tun): expose mihomo tun dns-mode in TUN settings",
+          "reason": "Feature (21 files, +103/-0). Not a small crash, leak, or security fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "02520d7392ba295a305e06b7d09789af32d6880e",
+          "subject": "fix(tray): skip Win-key accelerators on Windows (#8400)",
+          "reason": "Screened (1 files, +5/-6). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "324c8c90164eb42a8f219c2e50ca4a8cca1f02b7",
+          "subject": "chore(deps): update dependency pnpm to v12.15.0 (#8418)",
+          "reason": "Dependency bump (4 files, +65/-65). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "10ca0a5d0c81792910056cdba03aeac2441595f3",
+          "subject": "chore(deps): update npm dependencies (#8421)",
+          "reason": "Dependency bump (2 files, +214/-418). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "eefd025806f255b85e7bc28158c30fdad477935d",
+          "subject": "feat(home): add an IP auto-refresh toggle (#8403)",
+          "reason": "Feature (2 files, +38/-9). Not a small crash, leak, or security fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "488f022c052705d9b83e8967a7c1ac0a91365d17",
+          "subject": "feat(media-unlock): add Muse AI (muse.ai) detection (#8411)",
+          "reason": "Feature (18 files, +72/-2). Not a small crash, leak, or security fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "f39644ee6b46610e1feaf9f044bb5196d5e5935d",
+          "subject": "chore(typecheck): replace tsc with tsrs as the typecheck gate (#8428)",
+          "reason": "Maintenance or tooling (5 files, +107/-6). Not a crash, leak, or security source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "0498ba3e4f8ef888b6b62997eb9ef50f491445e8",
+          "subject": "fix(proxies): render configured groups in global mode (#8402)",
+          "reason": "Screened (3 files, +4/-3). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "02e5e0e4a6bea90e9b7f5c61d54dd90806967893",
+          "subject": "ci: gate frontend and rust checks by changed paths (#8433)",
+          "reason": "CI only (5 files, +107/-143).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "cbd5ed73a5a62d133fcdf2b7ed1b8c7d8451e986",
+          "subject": "fix(theme): allow injected CSS to style Monaco view containers (#8385)",
+          "reason": "Screened (2 files, +2/-1). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "8128227302dea0a8fe116437f96e812e56dfbf06",
+          "subject": "chore(deps): update dependency react-i18next to v17.1.9 (#8448)",
+          "reason": "Dependency bump (2 files, +6/-6). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "c9a6cf240da13701d3c8f86e1614f7c05b30441b",
+          "subject": "chore(deps): update node.js to v26 (#8450)",
+          "reason": "Dependency bump (11 files, +21/-21). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "4b87634da99056e208f2e11623c8e7e588667407",
+          "subject": "fix(macos): restore Big Sur home rendering without Array.at (#8358)",
+          "reason": "Screened (2 files, +7/-1). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "de22706f3bc1bd87764929066757706577a3445b",
+          "subject": "chore(deps): update rust crate zip to v9.0.5 [security] (#8454)",
+          "reason": "Security dependency bump (1 files, +4/-4). Not applied: it moves a forked lockfile rather than a one-line source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "df70146b025e06661c8364351cf8b250267ed985",
+          "subject": "chore(deps): update npm dependencies (#8453)",
+          "reason": "Dependency bump (2 files, +71/-38). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "e156ff09aeabc7ffa114ee1201c90c201a2e5084",
+          "subject": "chore(deps): update rust crate zip to v9.1.0 [security] (#8458)",
+          "reason": "Security dependency bump (1 files, +8/-7). Not applied: it moves a forked lockfile rather than a one-line source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "8bf20d199c90334c25ca6bc6f459e2ff53bc73ca",
+          "subject": "chore(deps): update rust crate zip to v9.1.1 [security] (#8460)",
+          "reason": "Security dependency bump (1 files, +19/-19). Not applied: it moves a forked lockfile rather than a one-line source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "afd9d4b5a0b0aae0ba68f6e7aae3c22d8d7bc107",
+          "subject": "chore(deps): update rust crate zip to v9.1.2 [security] (#8461)",
+          "reason": "Security dependency bump (1 files, +3/-3). Not applied: it moves a forked lockfile rather than a one-line source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "44d50eb67d86d80015b0b1664f33ed88880f19ee",
+          "subject": "chore(deps): update rust crate zip to v9.1.3 [security] (#8464)",
+          "reason": "Security dependency bump (1 files, +4/-3). Not applied: it moves a forked lockfile rather than a one-line source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "bdea31a7cac63dc8578308c0ce652e818ec26e74",
+          "subject": "chore(deps): update dependency pnpm to v12.16.1 (#8475)",
+          "reason": "Dependency bump (4 files, +64/-64). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "c236f5094e0608b7be82f62350a4ef397dc062ae",
+          "subject": "deps: upgrade updater to remove vulnerable zip (#8476)",
+          "reason": "Security dependency bump (4 files, +30/-62). Not applied: it moves a forked lockfile rather than a one-line source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "ef784e459d31fe9d1946568b6fe47ac3a7e692b7",
+          "subject": "docs: document complete development setup (#8457)",
+          "reason": "Documentation only (1 files, +19/-6).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "719f63b57fdc97ad229d47211441c6fd2fa84c63",
+          "subject": "chore: update tao and wry",
+          "reason": "Maintenance or tooling (1 files, +25/-26). Not a crash, leak, or security source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "8e9832712a123eaa637d82ad49df9113f97080b6",
+          "subject": "doc: clash-verge-rev with mihomo 1.19.33",
+          "reason": "Documentation only (1 files, +2/-0).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "12f842d038c69f842f8c458fe708a099e24c1db0",
+          "subject": "fix(macos): prevent menu bar flicker when closing the window",
+          "reason": "Screened (2 files, +0/-4). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "0cae907de659b0856364e172fe7d2bf4ab9cb09e",
+          "subject": "fix(config): wait for pending configuration writes",
+          "reason": "Local apply_verge_patch does not use try_lock_config_write.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "261178b6d89b898f98fd8bd3a6bb8864ae29c405",
+          "subject": "fix(updater): render release notes without remark-gfm",
+          "reason": "Screened (3 files, +0/-205). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "633f166e46920d6e6dd9b14a25f40760d5b32adf",
+          "subject": "ci: trigger rust checks when their configuration changes (#8487)",
+          "reason": "CI only (2 files, +3/-0).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "693f2f7ac74a4764237971723970d348b8ca2783",
+          "subject": "chore(deps): update npm dependencies (#8490)",
+          "reason": "Dependency bump (2 files, +13/-13). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "07ee0a602a8a1035ab8240aad7d5ba00742499e4",
+          "subject": "ci(release): unify RC and stable publication through dev",
+          "reason": "CI only (4 files, +965/-70).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "a5b22fa512db3934666d6ed6e0742fe145c9e628",
+          "subject": "fix(webdav): allow clearing saved configuration",
+          "reason": "Screened (4 files, +81/-40). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "160bb4fe8eaef2bc626163d89622229e5d7c5b59",
+          "subject": "Release: v2.5.9 (#8508)",
+          "reason": "Release, revert, or test bookkeeping (0 files, +0/-0).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "3f39c2ceca88dd8665ae779cf16144485b8e0b97",
+          "subject": "fix(release): filter draft lookup before buffering output",
+          "reason": "Screened (1 files, +8/-3). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "de15283ef624519c6c9034641bd7217dbc94e418",
+          "subject": "fix(release): omit comments when archiving changelog",
+          "reason": "Screened (1 files, +4/-1). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "a0e57c59629e8c959aa6a6e862adf299ce9ca649",
+          "subject": "Dev: v2.5.10 (#8511)",
+          "reason": "Screened (6 files, +74/-35). Not a small crash, leak, or security fix for this fork.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "3027e2b87f7083ecf50bfb527f0d78c59b33a6bf",
+          "subject": "fix(proxies): restore GLOBAL selection in global mode",
+          "reason": "Screened (2 files, +18/-14). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "ebd78ae9ffb8c8e5632339bc65a2c9345b27a8f2",
+          "subject": "revert(macos): restore Dock hiding when closing the window",
+          "reason": "Release, revert, or test bookkeeping (2 files, +4/-0).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "f149604eb679e0d5eade68d7c57d1ae15c767a2a",
+          "subject": "fix(installer): prompt to terminate running instance before uninstall or overwrite (#8519)",
+          "reason": "Screened (2 files, +12/-3). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "a038e01cd5e885c9dceec38d40431f120b81da01",
+          "subject": "fix(service): stage file-based ssh private keys for the service core",
+          "reason": "Screened (2 files, +94/-2). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "726b2b362fe4e10fc4ff3df546bdc9a5f2ade284",
+          "subject": "fix(service): sync core-updated geo databases before validation",
+          "reason": "Screened (5 files, +82/-4). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "bcbb5e3a5800b5083c9d5779c00d4d00bed7fded",
+          "subject": "fix(dns): save the DNS override decision on every runtime replacement",
+          "reason": "Screened (8 files, +53/-11). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "5b7e876ab0332620e100bf826fc84f20f1658acd",
+          "subject": "refactor(service): simplify DNS override sync and runtime asset staging",
+          "reason": "Refactor (14 files, +41/-108). Not ported as a small fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "55bb74c36d8f3383672887f2939025c22d9ff59e",
+          "subject": "fix: changelog",
+          "reason": "Screened (1 files, +4/-12). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "c83f7ad529c7c9cb3d2d54a0955ef8c1b22a411b",
+          "subject": "Release: v2.5.10 (#8533)",
+          "reason": "Release, revert, or test bookkeeping (0 files, +0/-0).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "6aeae2f970d5dc0e9c144ff72bfba30b07da9e45",
+          "subject": "fix(ci): share build caches and mention the release team",
+          "reason": "Screened (5 files, +33/-116). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "d7964e6d80eff4662e820b41f5c7c5feff70f698",
+          "subject": "Dev: v2.6.0 (#8537)",
+          "reason": "Screened (6 files, +34/-16). Not a small crash, leak, or security fix for this fork.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "9a904af3aad3a1bdb8fd08c083daa0aee49fbe55",
+          "subject": "refactor: backend cleanup (#8436)",
+          "reason": "Refactor (30 files, +525/-856). Not ported as a small fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "8039feb270664e7b97b1f4fe28aae452d1cbd21b",
+          "subject": "fix: backend lock safety (#8439)",
+          "reason": "Local mode switching and backup restore do not use the upstream draft and lock layout, so the lock patch has no call site.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "40fd1d5012cc17ea5b87ec5f81b9bb389ce71d94",
+          "subject": "refactor: frontend cleanup (#8447)",
+          "reason": "Refactor (47 files, +377/-1071). Not ported as a small fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "2b7b7cc0e78acdbb6e79e3d4442ee5266459f5e3",
+          "subject": "fix(updater): refresh changed update offers before installation",
+          "reason": "Screened (9 files, +87/-148). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "891757ede63005a2a78859c03b7842ad6c56dcfa",
+          "subject": "chore(deps): update dependency vite to v8.3.3 [security] (#8538)",
+          "reason": "Security dependency bump (1 files, +89/-89). Not applied: it moves a forked lockfile rather than a one-line source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "1105eedeb69d42cb847983801251384595adab26",
+          "subject": "fix(react): avoid redundant DNS and proxy updates (#8543)",
+          "reason": "Screened (3 files, +22/-22). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "5d41f99eb10efdd5c25dc7394b4ef152cd009805",
+          "subject": "chore(renovate): group compatible Specta dependencies",
+          "reason": "Maintenance or tooling (1 files, +35/-0). Not a crash, leak, or security source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "01fbc5714fbc2002714997e191dd1f85d13c8572",
+          "subject": "style(renovate): format Specta package rules",
+          "reason": "Style only (1 files, +6/-21).",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "8be05c178b8df1cea8a390750d98b2f0a82c2510",
+          "subject": "fix(renovate): create Specta pull requests before CI",
+          "reason": "Screened (1 files, +1/-0). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "943e18e8cafb121b6d7375d01237ee6c4379c896",
+          "subject": "fix(proxies): list only GLOBAL members in global mode",
+          "reason": "Screened (2 files, +62/-21). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "9fb46607b596b6f2aa6f3aeb30e8816e37f146a5",
+          "subject": "chore(deps): update cargo dependencies (#8384)",
+          "reason": "Dependency bump (10 files, +472/-238). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "e4d82a1b3f5a1256abdd108fa69141afdb731920",
+          "subject": "chore(deps): update tauri (#8388)",
+          "reason": "Dependency bump (5 files, +145/-187). Not a source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "84bbe790e8fff315d73bdbe6c73f784f66db071e",
+          "subject": "fix(proxies): move an unpicked GLOBAL off DIRECT to its first group",
+          "reason": "Screened (4 files, +62/-16). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "14abc4c4ee82deb48e13d054a2f336c9d7888cc5",
+          "subject": "refactor(react): replace avoidable effects with derived state and handlers",
+          "reason": "Refactor (16 files, +329/-418). Not ported as a small fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "f65a7f13489a19e18667c013d4b8578549dab5c1",
+          "subject": "fix(tray): refresh icon after service operations",
+          "reason": "Screened (1 files, +1/-1). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "97dc1622ee8ad11c247dc612416756904762ecd9",
+          "subject": "chore(updater): prefer GitHub before mirror endpoints",
+          "reason": "Maintenance or tooling (4 files, +8/-5). Not a crash, leak, or security source fix.",
+          "reviewDate": "2026-11-04"
+        },
+        {
+          "sha": "f076d4cd5de03eaf0c9d4fca72dce2843ca5760f",
+          "subject": "fix(macos): preserve DNS and proxy state across network changes",
+          "reason": "Screened (7 files, +190/-116). The change sits in upstream UI, service, updater, DNS, or platform code this fork does not share.",
+          "reviewDate": "2026-11-04"
         }
       ],
       "pending": [
@@ -1178,10 +2574,11 @@
         }
       ],
       "lastIncrementalReview": {
-        "date": "2026-09-13",
-        "from": "f68f204fc296d9f2151132bb9fe18c76d28db44f",
-        "commitCount": 77,
-        "scope": "All incremental subjects screened; selected fix diffs compared with local source. No builds, runtime tests or patches applied."
+        "date": "2026-11-04",
+        "from": "d72ffcde0366fcd8612fd08bb0534fac3702fb98",
+        "to": "f076d4cd5de03eaf0c9d4fca72dce2843ca5760f",
+        "commitCount": 221,
+        "scope": "All 221 subjects screened. Two small patches applied in the clash-verge-rev working tree. Frontend typecheck and cargo test were not run. Earlier decisions already recorded in this file were left as they were."
       }
     }
   },
