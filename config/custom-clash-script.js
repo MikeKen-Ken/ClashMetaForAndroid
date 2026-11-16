@@ -3,9 +3,9 @@ function main(config) {
     const DIRECT = "Direct";
     const FALLBACK = "Final";
     const NO_HK = "NoHK";
-    const DOWNLOAD = "Download";
-    /** 订阅节点名称中用于排除出 Download 组的标记（反选：名称含此标记的节点不加入 Download） */
-    const DOWNLOAD_NODE_MARK = "✅";
+    const GOOGLE = "Google";
+    /** 订阅节点名称中的日本标记：Google 组只收录日本节点 */
+    const JP_MARK = "🇯🇵";
 
     const DEFAULT_AUTO = "🚀 节点选择";
     const DEFAULT_DIRECT = "🎯 全球直连";
@@ -22,7 +22,7 @@ function main(config) {
     const PROXY_GROUP_ORDER = [
         AUTO,
         NO_HK,
-        DOWNLOAD,
+        GOOGLE,
         DIRECT,
         FALLBACK,
         PROXY_GROUP_ORDER_REST,
@@ -157,6 +157,17 @@ function main(config) {
                 return name;
             };
 
+            /** 日本节点：国旗优先，兼容「日本 / Japan / JP」命名；在裁剪尾字母前判定，避免 JP/Japan 被误裁 */
+            const isJapanNode = (proxy) =>
+                typeof proxy === "string" &&
+                (proxy.includes(JP_MARK) || /日本|Japan|(?:^|[^A-Za-z])JP(?:$|[^A-Za-z])/i.test(proxy));
+            const rawFirstGroupProxies = Array.isArray(config["proxy-groups"][0].proxies)
+                ? config["proxy-groups"][0].proxies
+                : [];
+            const japanIndexes = rawFirstGroupProxies
+                .map((proxy, index) => (isJapanNode(proxy) ? index : -1))
+                .filter((index) => index >= 0);
+
             if (config.proxies) {
                 config.proxies = config.proxies.map((proxy) => {
                     proxy.name = removeLastChar(proxy.name);
@@ -173,28 +184,28 @@ function main(config) {
             const firstGroup = config["proxy-groups"][0];
             const firstGroupProxies = Array.isArray(firstGroup.proxies) ? firstGroup.proxies : [];
 
-            // 反选：名称含 ✅ 的节点不加入 Download
-            const downloadProxies = firstGroupProxies.filter((proxy) => !proxy.includes(DOWNLOAD_NODE_MARK));
-            if (downloadProxies.length === 0) {
-                console.warn(`全部节点名称均含 ${DOWNLOAD_NODE_MARK}，${DOWNLOAD} 策略组回退为全部节点`);
+            const japanProxies = japanIndexes.map((index) => firstGroupProxies[index]).filter(Boolean);
+            if (japanProxies.length === 0) {
+                console.warn(`未匹配到 ${JP_MARK} 日本节点，${GOOGLE} 策略组回退为全部节点`);
             }
 
-            const newGroups = [
-                {
-                    name: NO_HK,
-                    proxies: firstGroupProxies.filter((proxy) => !proxy.includes("🇭🇰")),
-                },
-                {
-                    name: DOWNLOAD,
-                    proxies: downloadProxies.length > 0 ? downloadProxies : firstGroupProxies,
-                },
-            ].map((group) => ({ ...firstGroup, ...group }));
+            const noHkGroup = {
+                ...firstGroup,
+                name: NO_HK,
+                proxies: firstGroupProxies.filter((proxy) => !proxy.includes("🇭🇰")),
+            };
+            const googleGroup = {
+                name: GOOGLE,
+                type: "select",
+                proxies: japanProxies.length > 0 ? japanProxies : firstGroupProxies,
+                "disable-udp": false,
+            };
 
-            config["proxy-groups"].splice(1, 0, ...newGroups);
+            config["proxy-groups"].splice(1, 0, noHkGroup, googleGroup);
 
             config["proxy-groups"].slice(2).forEach((group) => {
-                // Download 与 Auto 同为节点列表组，勿改写为策略组引用
-                if (group.name === DOWNLOAD) {
+                // Google 与 Auto 同为节点列表组，勿改写为策略组引用
+                if (group.name === GOOGLE) {
                     return;
                 }
                 if (group.proxies && Array.isArray(group.proxies)) {
@@ -228,6 +239,8 @@ function main(config) {
             dustinwin: "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/mihomo-ruleset",
             custome: "https://raw.githubusercontent.com/MikeKen-Ken/custome-rule/release",
         };
+        /** MetaCubeX/meta-rules-dat（v2fly geosite / geoip 每日生成）：geosite 与 geoip 分目录，URL 单独拼接 */
+        const METACUBEX_GEO_BASE = "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo";
 
         /** 与 custome-rule release 文件名一致：c-* 自建 */
         const isCustomeRuleset = (name) => name.startsWith("c-");
@@ -257,38 +270,42 @@ function main(config) {
             ["c-proc-dir", "c-proc-dir.list", "classical", "text"],
             ["c-proc-pxy", "c-proc-pxy.list", "classical", "text"],
             ["c-proc-nohk", "c-proc-nohk.list", "classical", "text"],
+            ["c-proc-google", "c-proc-google.list", "classical", "text"],
             ["c-wl-dir", "c-wl-dir.mrs", "domain", "mrs"],
             ["c-wl-pxy", "c-wl-pxy.mrs", "domain", "mrs"],
             ["c-pxy", "c-pxy.mrs", "domain", "mrs"],
             ["c-nohk", "c-nohk.mrs", "domain", "mrs"],
             ["c-dir", "c-dir.mrs", "domain", "mrs"],
 
-            // Sukka download（CI 同步为 c-download.*，每日刷新）
-            ["c-download", "c-download.mrs", "domain", "mrs", 86400],
-            ["c-download-kw", "c-download-kw.list", "classical", "text", 86400],
+            // Google 系（MetaCubeX meta-rules-dat）：geosite:google 已含 YouTube / Gemini / Drive / googleapis.cn
+            // 第 6 项为完整 URL，覆盖默认 `${base}/${filename}` 拼接
+            ["google", "google.mrs", "domain", "mrs", 86400, `${METACUBEX_GEO_BASE}/geosite/google.mrs`],
+            ["googleip", "googleip.mrs", "ipcidr", "mrs", 86400, `${METACUBEX_GEO_BASE}/geoip/google.mrs`],
         ];
 
         const resolveRulesetBase = (name) =>
             isCustomeRuleset(name) ? RULESET_RAW_BASE.custome : RULESET_RAW_BASE.dustinwin;
 
         // 每个 provider 间隔错开 2 分钟，避免大量 provider 同时到期、集中刷新时持有写锁阻塞连接
-        // 元组第 5 项可指定 interval（秒）；c-download 等为 86400（每日）
+        // 元组第 5 项可指定 interval（秒）；Google 系为 86400（每日，与上游每日构建同步）
         config["rule-providers"] = Object.fromEntries(
-            ruleProvidersList.map(([name, filename, behavior, format, intervalOverride], index) => {
-                const base = resolveRulesetBase(name);
-                const interval = intervalOverride ?? 28800 + index * 120;
-                return [
-                    name,
-                    {
-                        type: "http",
-                        behavior,
-                        format,
-                        path: `./ruleset/${filename}`,
-                        url: `${base}/${filename}`,
-                        interval,
-                    },
-                ];
-            })
+            ruleProvidersList.map(
+                ([name, filename, behavior, format, intervalOverride, urlOverride], index) => {
+                    const base = resolveRulesetBase(name);
+                    const interval = intervalOverride ?? 28800 + index * 120;
+                    return [
+                        name,
+                        {
+                            type: "http",
+                            behavior,
+                            format,
+                            path: `./ruleset/${filename}`,
+                            url: urlOverride ?? `${base}/${filename}`,
+                            interval,
+                        },
+                    ];
+                }
+            )
         );
 
         /** ipcidr 规则集须 no-resolve，与 rule-providers 的 behavior 一致 */
@@ -319,7 +336,12 @@ function main(config) {
 
             { kind: "proxy", name: "c-wl-pxy", target: AUTO },
 
+            // 广告拦截优先于 Google 组：doubleclick 等 Google 广告域名仍走 REJECT
             { kind: "reject", name: "ads" },
+
+            // Google 系：域名 + Google IP 段 + Google 进程 → 仅日本节点
+            // 位于 c-dir 之前：想让某个 Google 域名直连，须写进 c-wl-dir（c-dir 不会生效）
+            { kind: "proxy", names: ["google", "googleip", "c-proc-google"], target: GOOGLE },
 
             { kind: "direct", names: ["c-proc-dir", "c-dir"] },
 
@@ -339,8 +361,6 @@ function main(config) {
                     "cnip",
                 ],
             },
-
-            { kind: "proxy", names: ["c-download", "c-download-kw"], target: DOWNLOAD },
 
             { kind: "footer" },
         ];
