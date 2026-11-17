@@ -2,9 +2,9 @@ function main(config) {
     const AUTO = "Auto";
     const DIRECT = "Direct";
     const FALLBACK = "Final";
-    const NO_HK = "NoHK";
-    const GOOGLE = "Google";
-    /** 订阅节点名称中的日本标记：Google 组只收录日本节点 */
+    /** 仅含日本节点：Google 系 + AI / Unity / DeepSeek 统一走这里 */
+    const JP = "JP";
+    /** 订阅节点名称中的日本标记：JP 组只收录日本节点 */
     const JP_MARK = "🇯🇵";
 
     const DEFAULT_AUTO = "🚀 节点选择";
@@ -16,13 +16,12 @@ function main(config) {
 
     /**
      * 最终 proxy-groups 在客户端中的显示顺序。
-     * 除 PROXY_GROUP_ORDER_REST 外每一项为 group.name，须与上方 AUTO / NO_HK 等常量一致。
+     * 除 PROXY_GROUP_ORDER_REST 外每一项为 group.name，须与上方 AUTO / JP 等常量一致。
      * DIRECT / FALLBACK 来自订阅里「全球直连」「漏网之鱼」经脚本改名后的 name，不写进列表时等同「未点名」，会走 __REST__ 或末尾兜底。
      */
     const PROXY_GROUP_ORDER = [
         AUTO,
-        NO_HK,
-        GOOGLE,
+        JP,
         DIRECT,
         FALLBACK,
         PROXY_GROUP_ORDER_REST,
@@ -35,7 +34,7 @@ function main(config) {
      * 字段说明：
      * - type：Mihomo 规则类型，如 DOMAIN / DOMAIN-SUFFIX / DOMAIN-KEYWORD / PROCESS-NAME / IP-CIDR 等
      * - pattern：匹配内容（域名、进程名、IP 等）；type 为 MATCH 时可省略
-     * - target：策略组，可用上方常量 AUTO / NO_HK / DIRECT / FALLBACK / REJECT，或任意已有组名
+     * - target：策略组，可用上方常量 AUTO / JP / DIRECT / FALLBACK / REJECT，或任意已有组名
      * - noResolve：可选，IP 类规则设为 true 时追加 ,no-resolve
      *
      * 进程规则需客户端开启 find-process-mode（建议 strict），否则 PROCESS-NAME 不生效。
@@ -43,7 +42,7 @@ function main(config) {
      * 示例：
      * { type: "DOMAIN-SUFFIX", pattern: "test.example.com", target: AUTO },
      * { type: "DOMAIN-KEYWORD", pattern: "debug", target: AUTO },
-     * { type: "PROCESS-NAME", pattern: "chrome.exe", target: NO_HK },
+     * { type: "PROCESS-NAME", pattern: "chrome.exe", target: JP },
      * { type: "PROCESS-NAME", pattern: "WeChat.exe", target: DIRECT },
      * { type: "MATCH", target: "REJECT" }, // reject all
      */
@@ -186,34 +185,29 @@ function main(config) {
 
             const japanProxies = japanIndexes.map((index) => firstGroupProxies[index]).filter(Boolean);
             if (japanProxies.length === 0) {
-                console.warn(`未匹配到 ${JP_MARK} 日本节点，${GOOGLE} 策略组回退为全部节点`);
+                console.warn(`未匹配到 ${JP_MARK} 日本节点，${JP} 策略组回退为全部节点`);
             }
 
-            const noHkGroup = {
-                ...firstGroup,
-                name: NO_HK,
-                proxies: firstGroupProxies.filter((proxy) => !proxy.includes("🇭🇰")),
-            };
-            // 与 NoHK 同构：整份继承 Auto 的 fallback / url / interval /
-            // max-connect-times，Google 组才会自己测速、参与积分重排，
+            // JP 只收日本节点；整份继承 Auto 的 fallback / url / interval /
+            // max-connect-times，才会自己测速、参与积分重排，
             // 并在标题后显示 (connectTimes/maxConnectTimes)。
-            const googleGroup = {
+            const jpGroup = {
                 ...firstGroup,
-                name: GOOGLE,
+                name: JP,
                 proxies: japanProxies.length > 0 ? japanProxies : firstGroupProxies,
             };
 
-            config["proxy-groups"].splice(1, 0, noHkGroup, googleGroup);
+            config["proxy-groups"].splice(1, 0, jpGroup);
 
             config["proxy-groups"].slice(2).forEach((group) => {
-                // Google 与 Auto 同为节点列表组，勿改写为策略组引用
-                if (group.name === GOOGLE) {
+                // JP 与 Auto 同为节点列表组，勿改写为策略组引用
+                if (group.name === JP) {
                     return;
                 }
                 if (group.proxies && Array.isArray(group.proxies)) {
                     const autoName = config["proxy-groups"][0].name;
-                    // 可选的节点组：Auto / NoHK / Google；新增节点组时在此补充
-                    const nodeGroupNames = [autoName, NO_HK, GOOGLE];
+                    // 可选的节点组：Auto / JP；新增节点组时在此补充
+                    const nodeGroupNames = [autoName, JP];
                     // 按组名定序：Direct 默认 DIRECT；其余（如 Final）默认 Auto
                     if (group.name === DEFAULT_DIRECT || group.name === DIRECT) {
                         group.proxies = ["DIRECT", ...nodeGroupNames];
@@ -271,12 +265,12 @@ function main(config) {
             ["c-proc-wl-dir", "c-proc-wl-dir.list", "classical", "text"],
             ["c-proc-dir", "c-proc-dir.list", "classical", "text"],
             ["c-proc-pxy", "c-proc-pxy.list", "classical", "text"],
-            ["c-proc-nohk", "c-proc-nohk.list", "classical", "text"],
+            ["c-proc-jp", "c-proc-jp.list", "classical", "text"],
             ["c-proc-google", "c-proc-google.list", "classical", "text"],
             ["c-wl-dir", "c-wl-dir.mrs", "domain", "mrs"],
             ["c-wl-pxy", "c-wl-pxy.mrs", "domain", "mrs"],
             ["c-pxy", "c-pxy.mrs", "domain", "mrs"],
-            ["c-nohk", "c-nohk.mrs", "domain", "mrs"],
+            ["c-jp", "c-jp.mrs", "domain", "mrs"],
             ["c-dir", "c-dir.mrs", "domain", "mrs"],
 
             // Google 系（MetaCubeX meta-rules-dat）：geosite:google 已含 YouTube / Gemini / Drive / googleapis.cn
@@ -338,16 +332,18 @@ function main(config) {
 
             { kind: "proxy", name: "c-wl-pxy", target: AUTO },
 
-            // 广告拦截优先于 Google 组：doubleclick 等 Google 广告域名仍走 REJECT
+            // 广告拦截优先于 JP 组：doubleclick 等 Google 广告域名仍走 REJECT
             { kind: "reject", name: "ads" },
 
             // Google 系：域名 + Google IP 段 + Google 进程 → 仅日本节点
             // 位于 c-dir 之前：想让某个 Google 域名直连，须写进 c-wl-dir（c-dir 不会生效）
-            { kind: "proxy", names: ["google", "googleip", "c-proc-google"], target: GOOGLE },
+            { kind: "proxy", names: ["google", "googleip", "c-proc-google"], target: JP },
 
             { kind: "direct", names: ["c-proc-dir", "c-dir"] },
 
-            { kind: "proxy", names: ["c-proc-nohk", "c-nohk", "ai"], target: NO_HK },
+            // 进程 / 域名 / AI 三组 → JP（仅日本节点）；
+            // 位于 c-dir 之后，写进 c-dir 的域名照旧优先直连
+            { kind: "proxy", names: ["c-proc-jp", "c-jp", "ai"], target: JP },
             { kind: "proxy", name: "c-proc-pxy", target: AUTO },
             { kind: "proxy", name: "c-pxy", target: AUTO },
 

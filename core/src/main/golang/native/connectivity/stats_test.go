@@ -478,11 +478,11 @@ func TestShouldApplyConnectivityOrder(t *testing.T) {
 func TestSortGroupProxiesFieldSkipsSelector(t *testing.T) {
 	group := map[string]any{
 		"type":    "select",
-		"proxies": []any{"DIRECT", "Auto", "NoHK"},
+		"proxies": []any{"DIRECT", "Auto", "JP"},
 	}
 	sortGroupProxiesField(group)
 	list := group["proxies"].([]any)
-	if list[0] != "DIRECT" || list[1] != "Auto" || list[2] != "NoHK" {
+	if list[0] != "DIRECT" || list[1] != "Auto" || list[2] != "JP" {
 		t.Fatalf("select proxies reordered: %v", list)
 	}
 }

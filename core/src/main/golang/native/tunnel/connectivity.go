@@ -64,7 +64,7 @@ func HealthCheck(name string) {
 
 	wg.Wait()
 	resetGroupConnectTimes(g)
-	// 测速后按最新积分重排所有 url-test/fallback 组。NoHK / Download 与 Auto
+	// 测速后按最新积分重排所有 url-test/fallback 组。JP / Download 与 Auto
 	// 共用节点，只重排当前组时第二、第三组仍会停留在配置原序。固定不受影响。
 	ApplyRuntimeConnectivityOrderAll()
 }
