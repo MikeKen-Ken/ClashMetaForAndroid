@@ -50,6 +50,10 @@ function main(config) {
         // { type: "MATCH", target: "REJECT" }, // reject all
         // { type: "DOMAIN-SUFFIX", pattern: "example.com", target: AUTO },
         // { type: "PROCESS-NAME", pattern: "YourApp.exe", target: AUTO },
+        { type: "IP-CIDR", pattern: "130.94.32.254/32", target: DIRECT, noResolve: true },
+        { type: "IP-CIDR", pattern: "130.94.45.104/32", target: DIRECT, noResolve: true },
+        { type: "IP-CIDR", pattern: "23.95.79.141/32", target: DIRECT, noResolve: true },
+        { type: "IP-CIDR", pattern: "23.95.79.153/32", target: DIRECT, noResolve: true },
     ];
 
     /** @param {{ type: string; pattern?: string; target: string; noResolve?: boolean }} rule */
