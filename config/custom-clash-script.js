@@ -194,11 +194,13 @@ function main(config) {
                 name: NO_HK,
                 proxies: firstGroupProxies.filter((proxy) => !proxy.includes("🇭🇰")),
             };
+            // 与 NoHK 同构：整份继承 Auto 的 fallback / url / interval /
+            // max-connect-times，Google 组才会自己测速、参与积分重排，
+            // 并在标题后显示 (connectTimes/maxConnectTimes)。
             const googleGroup = {
+                ...firstGroup,
                 name: GOOGLE,
-                type: "select",
                 proxies: japanProxies.length > 0 ? japanProxies : firstGroupProxies,
-                "disable-udp": false,
             };
 
             config["proxy-groups"].splice(1, 0, noHkGroup, googleGroup);
@@ -210,13 +212,13 @@ function main(config) {
                 }
                 if (group.proxies && Array.isArray(group.proxies)) {
                     const autoName = config["proxy-groups"][0].name;
-                    const nohkName = config["proxy-groups"][1].name;
-                    group.proxies = [];
+                    // 可选的节点组：Auto / NoHK / Google；新增节点组时在此补充
+                    const nodeGroupNames = [autoName, NO_HK, GOOGLE];
                     // 按组名定序：Direct 默认 DIRECT；其余（如 Final）默认 Auto
                     if (group.name === DEFAULT_DIRECT || group.name === DIRECT) {
-                        group.proxies.push("DIRECT", autoName, nohkName);
+                        group.proxies = ["DIRECT", ...nodeGroupNames];
                     } else {
-                        group.proxies.push(autoName, nohkName, "DIRECT");
+                        group.proxies = [...nodeGroupNames, "DIRECT"];
                     }
                 }
                 if (group.name === DEFAULT_DIRECT) {

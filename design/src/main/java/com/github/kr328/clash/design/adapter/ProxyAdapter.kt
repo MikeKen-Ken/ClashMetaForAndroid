@@ -9,6 +9,7 @@ import com.github.kr328.clash.design.component.ProxyRegion
 import com.github.kr328.clash.design.component.ProxyView
 import com.github.kr328.clash.design.component.ProxyViewConfig
 import com.github.kr328.clash.design.component.ProxyViewState
+import com.github.kr328.clash.design.component.isAlwaysAvailable
 import com.github.kr328.clash.design.component.isProxyDelayWithinGroupTimeout
 
 enum class ProxyNodeTap {
@@ -77,13 +78,17 @@ class ProxyAdapter(
     private fun updateVisibleStates() {
         var visibleStates = allStates
         if (regionFilter.isNotEmpty()) {
+            // 地区筛选只约束可探测的叶子节点；组本身没有地区，不能被地区筛选掉
             visibleStates = visibleStates.filter {
-                ProxyRegion.resolve(it.proxy.name) == regionFilter
+                it.proxy.isAlwaysAvailable() ||
+                    ProxyRegion.resolve(it.proxy.name) == regionFilter
             }
         }
         if (hideUnavailable) {
             visibleStates = visibleStates.filter {
-                it.currentGroupNow == it.proxy.name ||
+                // 嵌套组与内置出站没有可探测的延迟，永远不会超时，不能按 delay 隐藏
+                it.proxy.isAlwaysAvailable() ||
+                    it.currentGroupNow == it.proxy.name ||
                     isProxyDelayWithinGroupTimeout(it.proxy.delay, delayTimeoutMs)
             }
         }

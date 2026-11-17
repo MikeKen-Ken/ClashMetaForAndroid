@@ -75,6 +75,12 @@ class ProxyViewState(
                 delayText = "T"
                 delayTimeout = true
             }
+
+            // 嵌套组没有可探测的延迟：不显示"超时"，避免把可用的分组画成 T
+            if (proxy.type.group && !isUsableProxyDelay(proxy.delay)) {
+                delayText = ""
+                delayTimeout = false
+            }
         }
 
         if (effectiveDelay != proxy.effectiveDelay) {
@@ -155,6 +161,18 @@ class ProxyViewState(
 
 /** 1 until 0xffff = 成功延迟。未测速与超时均为 0xffff（显示为 T）。 */
 fun isUsableProxyDelay(delay: Int): Boolean = delay in 1 until 0xffff
+
+/**
+ * 嵌套组与内置出站（DIRECT / REJECT 等）没有可探测的延迟：
+ * 它们不会超时，也不该被"隐藏超时节点"过滤掉。
+ */
+fun Proxy.isAlwaysAvailable(): Boolean =
+    type.group ||
+        type == Proxy.Type.Direct ||
+        type == Proxy.Type.Reject ||
+        type == Proxy.Type.RejectDrop ||
+        type == Proxy.Type.Pass ||
+        type == Proxy.Type.Compatible
 
 /** Desktop hide-unavailable: a measured delay stays visible only while it is under the group timeout. */
 fun isProxyDelayWithinGroupTimeout(delay: Int, timeoutMs: Int): Boolean {
