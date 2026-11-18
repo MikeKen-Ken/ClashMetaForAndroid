@@ -108,35 +108,7 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 	proxies := convertProxies(g.Proxies(), testURL, uiSubtitlePattern, scoreCtx)
 	// 	proxies := collectProviders(g.Providers(), uiSubtitlePattern)
 
-	switch sortMode {
-	case Title:
-		wrapper := &sortableProxyList{
-			list: proxies,
-			less: func(a, b *Proxy) bool {
-				return strings.Compare(a.Title, b.Title) < 0
-			},
-		}
-
-		sort.Sort(wrapper)
-	case Delay:
-		wrapper := &sortableProxyList{
-			list: proxies,
-			less: func(a, b *Proxy) bool {
-				return a.Delay < b.Delay
-			},
-		}
-
-		sort.Sort(wrapper)
-	case Score:
-		sortProxiesByConnectivity(proxies)
-	case Default:
-		// Same score order url-test / fallback walks. `now` is still the first
-		// healthy member, so a dead top-score node can sit above the node in use.
-		if shouldApplyRuntimeConnectivityOrder(g.Type()) {
-			sortProxiesByConnectivity(proxies)
-		}
-	default:
-	}
+	sortProxyViews(proxies, sortMode, g.Type())
 
 	nowIsManual := false
 	if manualable, ok := g.(outboundgroup.NowIsManualAble); ok {
@@ -158,6 +130,53 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 		MaxConnectTimes:    maxConnectTimes,
 		DelayTestTimeoutMs: startupGroupTimeout(g),
 		Proxies:            proxies,
+	}
+}
+
+// sortProxyViews applies the proxy page's display order.
+//
+// select 组的成员顺序是配置/用户顺序，也是默认节点的依据（默认 = 第一个）。
+// 它不能被任何排序模式改动（含标题排序），否则界面看起来就像换了选中节点。
+// url-test / fallback 这类自动选组才按速度（延迟 / 评分）重排：它们的成员
+// 顺序本身就是测速结果。延迟数字仍然照常显示。
+func sortProxyViews(proxies []*Proxy, sortMode SortMode, adapterType C.AdapterType) {
+	if adapterType == C.Selector {
+		return
+	}
+
+	speedSortable := shouldApplyRuntimeConnectivityOrder(adapterType)
+
+	switch sortMode {
+	case Title:
+		wrapper := &sortableProxyList{
+			list: proxies,
+			less: func(a, b *Proxy) bool {
+				return strings.Compare(a.Title, b.Title) < 0
+			},
+		}
+		sort.Sort(wrapper)
+	case Delay:
+		if !speedSortable {
+			return
+		}
+		wrapper := &sortableProxyList{
+			list: proxies,
+			less: func(a, b *Proxy) bool {
+				return a.Delay < b.Delay
+			},
+		}
+		sort.Sort(wrapper)
+	case Score:
+		if speedSortable {
+			sortProxiesByConnectivity(proxies)
+		}
+	case Default:
+		// Same score order url-test / fallback walks. `now` is still the first
+		// healthy member, so a dead top-score node can sit above the node in use.
+		if speedSortable {
+			sortProxiesByConnectivity(proxies)
+		}
+	default:
 	}
 }
 

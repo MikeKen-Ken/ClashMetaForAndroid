@@ -98,7 +98,11 @@ func ApplyProxyOrderToRawConfig(cfg *config.RawConfig) {
 	}
 }
 
-// ApplyManualProxyOrderToRawConfig 在用户手动完成延迟测试后，按最新联通评分重排所有组的 proxies 列表。
+// ApplyManualProxyOrderToRawConfig 在用户手动完成延迟测试后，按最新联通评分重排
+// 自动选组（url-test / fallback）的 proxies 列表。
+//
+// 选择组（select / selector）必须保持配置顺序：它们的默认节点就是列表第一项，
+// 重排会让实际生效节点从 DIRECT 变成别的成员（例如 Direct 组变成 Auto）。
 // 这只改变生成的运行时配置；订阅/配置源文件保持不变。
 func ApplyManualProxyOrderToRawConfig(cfg *config.RawConfig) {
 	if cfg == nil {
@@ -108,33 +112,9 @@ func ApplyManualProxyOrderToRawConfig(cfg *config.RawConfig) {
 		sortProxyMappings(cfg.Proxy)
 	}
 	for _, group := range cfg.ProxyGroup {
-		if group == nil {
-			continue
-		}
-		raw, ok := group["proxies"]
-		if !ok || raw == nil {
-			continue
-		}
-		switch list := raw.(type) {
-		case []any:
-			names := make([]string, 0, len(list))
-			for _, item := range list {
-				name, ok := item.(string)
-				if ok && name != "" {
-					names = append(names, name)
-				}
-			}
-			if len(names) > 1 {
-				out := make([]any, len(names))
-				for i, name := range SortNamesByConnectivity(names) {
-					out[i] = name
-				}
-				group["proxies"] = out
-			}
-		case []string:
-			if len(list) > 1 {
-				group["proxies"] = SortNamesByConnectivity(list)
-			}
+		if group != nil {
+			// sortGroupProxiesField 只处理 url-test / fallback，选择组原样保留
+			sortGroupProxiesField(group)
 		}
 	}
 }
