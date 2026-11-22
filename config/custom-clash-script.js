@@ -219,7 +219,9 @@ function main(config) {
                         group.proxies = [...nodeGroupNames, "DIRECT"];
                     }
                 }
-                if (group.name === DEFAULT_DIRECT) {
+                if (group.name === DEFAULT_DIRECT || group.name === DIRECT) {
+                    // 已经叫 Direct 时也要落成 select。停在 fallback / url-test 上时，
+                    // DIRECT 还没测速成功就会被跳过，组会落到 Auto 或别的节点。
                     group.name = DIRECT;
                     group.type = "select";
                     delete group.url;
